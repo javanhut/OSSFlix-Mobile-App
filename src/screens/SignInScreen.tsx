@@ -1,0 +1,100 @@
+import { useMemo, useState } from "react";
+import { Alert, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { Feather } from "@expo/vector-icons";
+
+import { api } from "../api/client";
+import { AppHeader } from "../components/AppHeader";
+import type { RootStackParamList } from "../navigation/RootNavigator";
+import { useSessionStore } from "../state/session";
+import { colors } from "../theme/colors";
+
+type Props = NativeStackScreenProps<RootStackParamList, "SignIn">;
+
+export function SignInScreen({ navigation }: Props) {
+  const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const selectedProfile = useSessionStore((state) => state.selectedProfile);
+  const setAuthenticatedSession = useSessionStore((state) => state.setAuthenticatedSession);
+
+  const needsSetPassword = useMemo(() => selectedProfile && !selectedProfile.has_password, [selectedProfile]);
+
+  const submit = async () => {
+    if (!selectedProfile) {
+      navigation.goBack();
+      return;
+    }
+    try {
+      setSubmitting(true);
+      const response = needsSetPassword
+        ? await api.mobileSetPassword(selectedProfile.id, password)
+        : await api.mobileLogin(selectedProfile.id, password);
+      setAuthenticatedSession(response.token, response.profile);
+    } catch (error) {
+      Alert.alert("Authentication failed", error instanceof Error ? error.message : "Unable to sign in.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <View style={styles.screen}>
+      <AppHeader
+        eyebrow="Profile"
+        title={selectedProfile?.name || "Profile"}
+        subtitle={needsSetPassword ? "Set a password for this profile." : "Enter the profile password to continue."}
+        actionLabel="Back"
+        onAction={() => navigation.goBack()}
+      />
+      <TextInput
+        secureTextEntry
+        value={password}
+        onChangeText={setPassword}
+        placeholder="Password"
+        placeholderTextColor="#64748b"
+        style={styles.input}
+      />
+      <Pressable onPress={submit} disabled={submitting} style={styles.button}>
+        <View style={styles.buttonContent}>
+          <Feather name={needsSetPassword ? "lock" : "log-in"} size={18} color={colors.primaryText} />
+          <Text style={styles.buttonLabel}>{submitting ? "Working..." : needsSetPassword ? "Set Password" : "Sign In"}</Text>
+        </View>
+      </Pressable>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    padding: 24,
+    backgroundColor: colors.background,
+  },
+  input: {
+    backgroundColor: colors.surfaceElevated,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    color: colors.text,
+    paddingHorizontal: 16,
+    paddingVertical: 15,
+    fontSize: 16,
+  },
+  button: {
+    marginTop: 16,
+    backgroundColor: colors.primary,
+    borderRadius: 16,
+    paddingVertical: 15,
+    alignItems: "center",
+  },
+  buttonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  buttonLabel: {
+    color: colors.primaryText,
+    fontSize: 16,
+    fontWeight: "700",
+  },
+});

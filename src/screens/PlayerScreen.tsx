@@ -1,0 +1,878 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  AppState,
+  LayoutChangeEvent,
+  PanResponder,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { Feather } from "@expo/vector-icons";
+import * as ScreenOrientation from "expo-screen-orientation";
+import { useQuery } from "@tanstack/react-query";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import Video, { SelectedTrackType, TextTrackType } from "react-native-video";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import { api } from "../api/client";
+import type { RootStackParamList } from "../navigation/RootNavigator";
+import { getSystemMusicVolume, setSystemMusicVolume } from "../native/systemVolume";
+import { colors } from "../theme/colors";
+
+type Props = NativeStackScreenProps<RootStackParamList, "Player">;
+
+type GestureZone = "left" | "center" | "right";
+type SkipFeedback = { text: string; key: number } | null;
+
+const DOUBLE_TAP_MS = 280;
+const SEEK_STEP = 10;
+const VOLUME_ACTIVATION_DISTANCE = 12;
+const VOLUME_DRAG_RANGE = 0.45;
+
+function formatTime(seconds: number): string {
+  if (!isFinite(seconds) || seconds < 0) return "0:00";
+  const total = Math.floor(seconds);
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const secs = total % 60;
+  if (hours > 0) return `${hours}:${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  return `${minutes}:${secs.toString().padStart(2, "0")}`;
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
+
+function normalizeSubtitleLanguage(language: string): "en" | "es" | "fr" | "de" | "it" | "pt" | "ja" | "ko" | "zh" {
+  const code = language.trim().toLowerCase().slice(0, 2);
+  switch (code) {
+    case "es":
+    case "fr":
+    case "de":
+    case "it":
+    case "pt":
+    case "ja":
+    case "ko":
+    case "zh":
+      return code;
+    default:
+      return "en";
+  }
+}
+
+export function PlayerScreen({ route, navigation }: Props) {
+  const insets = useSafeAreaInsets();
+  const { dirPath, title, videos, startIndex, initialTime, subtitles } = route.params;
+
+  const playerRef = useRef<any>(null);
+  const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const volumeHudTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const volumeUpdateTokenRef = useRef(0);
+  const lastTapRef = useRef<{ time: number; zone: GestureZone | null }>({ time: 0, zone: null });
+  const gestureStartRef = useRef<{
+    zone: GestureZone;
+    startVolume: number;
+    volumeActive: boolean;
+  } | null>(null);
+
+  const [surfaceWidth, setSurfaceWidth] = useState(0);
+  const [surfaceHeight, setSurfaceHeight] = useState(0);
+  const [progressWidth, setProgressWidth] = useState(0);
+
+  const [currentIndex, setCurrentIndex] = useState(startIndex);
+  const [audioIndex, setAudioIndex] = useState(0);
+  const [currentTime, setCurrentTime] = useState(initialTime);
+  const [duration, setDuration] = useState(0);
+  const [pendingSeekTime, setPendingSeekTime] = useState(initialTime);
+  const [selectedSubtitle, setSelectedSubtitle] = useState<number | null>(null);
+  const [paused, setPaused] = useState(false);
+  const [showControls, setShowControls] = useState(true);
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const [showAudioMenu, setShowAudioMenu] = useState(false);
+  const [showSubtitleMenu, setShowSubtitleMenu] = useState(false);
+  const [showSpeedMenu, setShowSpeedMenu] = useState(false);
+  const [isScrubbing, setIsScrubbing] = useState(false);
+  const [scrubTime, setScrubTime] = useState(initialTime);
+  const [volume, setVolume] = useState(1);
+  const [volumeHud, setVolumeHud] = useState<number | null>(null);
+  const [skipFeedback, setSkipFeedback] = useState<SkipFeedback>(null);
+
+  const currentVideo = videos[currentIndex];
+  const hasNext = currentIndex < videos.length - 1;
+  const hasPrev = currentIndex > 0;
+  const speeds = [0.5, 0.75, 1, 1.25, 1.5, 2];
+
+  const probeQuery = useQuery({
+    queryKey: ["stream-probe", currentVideo],
+    queryFn: () => api.getProbe(currentVideo),
+  });
+  const timingsQuery = useQuery({
+    queryKey: ["episode-timings", currentVideo],
+    queryFn: () => api.getTimings(currentVideo),
+  });
+
+  const subtitleTracks = useMemo(
+    () =>
+      (subtitles || []).map((track) => ({
+        title: track.label,
+        language: normalizeSubtitleLanguage(track.language),
+        type: TextTrackType.VTT,
+        uri: api.buildSubtitleUrl(track.src),
+      })),
+    [subtitles]
+  );
+
+  const totalDuration = duration || probeQuery.data?.duration || 0;
+  const displayTime = isScrubbing ? scrubTime : currentTime;
+  const playedPercent = totalDuration > 0 ? clamp((displayTime / totalDuration) * 100, 0, 100) : 0;
+
+  const persistProgress = useCallback(
+    async (time: number, knownDuration: number) => {
+      if (!currentVideo) return;
+      await api.saveProgress({
+        video_src: currentVideo,
+        dir_path: dirPath,
+        current_time: time,
+        duration: knownDuration,
+      }).catch(() => {});
+    },
+    [currentVideo, dirPath]
+  );
+
+  const clearMenus = useCallback(() => {
+    setShowAudioMenu(false);
+    setShowSubtitleMenu(false);
+    setShowSpeedMenu(false);
+  }, []);
+
+  const hideControlsSoon = useCallback(() => {
+    if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+    if (paused) return;
+    controlsTimeoutRef.current = setTimeout(() => {
+      setShowControls(false);
+      clearMenus();
+    }, 3200);
+  }, [clearMenus, paused]);
+
+  const showControlsTemporarily = useCallback(() => {
+    setShowControls(true);
+    hideControlsSoon();
+  }, [hideControlsSoon]);
+
+  const seekTo = useCallback((time: number) => {
+    const bounded = clamp(time, 0, totalDuration || time);
+    playerRef.current?.seek(bounded);
+    setCurrentTime(bounded);
+    setScrubTime(bounded);
+    setPendingSeekTime(0);
+  }, [totalDuration]);
+
+  const showSkip = useCallback((text: string) => {
+    setSkipFeedback({ text, key: Date.now() });
+    setTimeout(() => {
+      setSkipFeedback((current) => (current?.text === text ? null : current));
+    }, 650);
+  }, []);
+
+  const skipBy = useCallback((seconds: number) => {
+    seekTo(displayTime + seconds);
+    showSkip(seconds > 0 ? `+${seconds}s` : `${seconds}s`);
+    showControlsTemporarily();
+  }, [displayTime, seekTo, showControlsTemporarily, showSkip]);
+
+  const togglePlayPause = useCallback(() => {
+    setPaused((value) => !value);
+    setShowControls(true);
+  }, []);
+
+  const goToNext = useCallback(() => {
+    if (!hasNext) return;
+    setCurrentIndex((value) => value + 1);
+    setCurrentTime(0);
+    setScrubTime(0);
+    setPendingSeekTime(0);
+    setAudioIndex(0);
+    setPaused(false);
+    clearMenus();
+  }, [clearMenus, hasNext]);
+
+  const goToPrev = useCallback(() => {
+    if (!hasPrev) return;
+    setCurrentIndex((value) => value - 1);
+    setCurrentTime(0);
+    setScrubTime(0);
+    setPendingSeekTime(0);
+    setAudioIndex(0);
+    setPaused(false);
+    clearMenus();
+  }, [clearMenus, hasPrev]);
+
+  useEffect(() => {
+    if (currentIndex === startIndex) {
+      setCurrentTime(initialTime);
+      setPendingSeekTime(initialTime);
+      setScrubTime(initialTime);
+      return;
+    }
+    setCurrentTime(0);
+    setPendingSeekTime(0);
+    setScrubTime(0);
+  }, [currentIndex, initialTime, startIndex]);
+
+  useEffect(() => {
+    void ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE).catch(() => {});
+    void getSystemMusicVolume().then(setVolume).catch(() => {});
+    return () => {
+      void ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(() => {});
+      if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+      if (tapTimeoutRef.current) clearTimeout(tapTimeoutRef.current);
+      if (volumeHudTimeoutRef.current) clearTimeout(volumeHudTimeoutRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      void persistProgress(currentTime, totalDuration);
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [currentTime, persistProgress, totalDuration]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state !== "active") {
+        void persistProgress(currentTime, totalDuration);
+      }
+    });
+    return () => subscription.remove();
+  }, [currentTime, persistProgress, totalDuration]);
+
+  useEffect(() => {
+    return () => {
+      void persistProgress(currentTime, totalDuration);
+    };
+  }, [currentTime, persistProgress, totalDuration]);
+
+  useEffect(() => {
+    setShowControls(true);
+    hideControlsSoon();
+  }, [currentVideo, hideControlsSoon]);
+
+  useEffect(() => {
+    if (paused) {
+      if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+      setShowControls(true);
+      return;
+    }
+    hideControlsSoon();
+  }, [hideControlsSoon, paused]);
+
+  const progressToTime = useCallback((locationX: number) => {
+    if (progressWidth <= 0 || totalDuration <= 0) return 0;
+    const ratio = clamp(locationX / progressWidth, 0, 1);
+    return ratio * totalDuration;
+  }, [progressWidth, totalDuration]);
+
+  const handleProgressLayout = useCallback((event: LayoutChangeEvent) => {
+    setProgressWidth(event.nativeEvent.layout.width);
+  }, []);
+
+  const handleSurfaceLayout = useCallback((event: LayoutChangeEvent) => {
+    setSurfaceWidth(event.nativeEvent.layout.width);
+    setSurfaceHeight(event.nativeEvent.layout.height);
+  }, []);
+
+  const getZoneForX = useCallback((x: number): GestureZone => {
+    if (surfaceWidth <= 0) return "center";
+    const third = surfaceWidth / 3;
+    if (x < third) return "left";
+    if (x > third * 2) return "right";
+    return "center";
+  }, [surfaceWidth]);
+
+  const isVolumeTouchZone = useCallback((x: number) => {
+    if (surfaceWidth <= 0) return false;
+    return x >= surfaceWidth / 2;
+  }, [surfaceWidth]);
+
+  const handleSingleTap = useCallback(() => {
+    if (showControls) {
+      setShowControls(false);
+      clearMenus();
+    } else {
+      showControlsTemporarily();
+    }
+  }, [clearMenus, showControls, showControlsTemporarily]);
+
+  const handleDoubleTap = useCallback((zone: GestureZone) => {
+    if (zone === "left") {
+      skipBy(-SEEK_STEP);
+      return;
+    }
+    if (zone === "right") {
+      skipBy(SEEK_STEP);
+      return;
+    }
+    togglePlayPause();
+    showControlsTemporarily();
+  }, [showControlsTemporarily, skipBy, togglePlayPause]);
+
+  const applySystemVolume = useCallback((nextVolume: number) => {
+    const clamped = clamp(nextVolume, 0, 1);
+    setVolume(clamped);
+    setVolumeHud(clamped);
+    const token = volumeUpdateTokenRef.current + 1;
+    volumeUpdateTokenRef.current = token;
+    void setSystemMusicVolume(clamped)
+      .then((appliedVolume) => {
+        if (volumeUpdateTokenRef.current !== token) return;
+        setVolume(appliedVolume);
+        setVolumeHud(appliedVolume);
+      })
+      .catch(() => {});
+  }, []);
+
+  const gestureResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: () => true,
+        onPanResponderGrant: (event) => {
+          const { locationX } = event.nativeEvent;
+          gestureStartRef.current = {
+            zone: getZoneForX(locationX),
+            startVolume: volume,
+            volumeActive: false,
+          };
+        },
+        onPanResponderMove: (event, gestureState) => {
+          const state = gestureStartRef.current;
+          if (!state || !isVolumeTouchZone(event.nativeEvent.locationX) || surfaceHeight <= 0) return;
+          if (!state.volumeActive && Math.abs(gestureState.dy) < VOLUME_ACTIVATION_DISTANCE) return;
+          state.volumeActive = true;
+          const dragRange = Math.max(surfaceHeight * VOLUME_DRAG_RANGE, 1);
+          const delta = -gestureState.dy / dragRange;
+          const nextVolume = clamp(state.startVolume + delta, 0, 1);
+          applySystemVolume(nextVolume);
+          setShowControls(true);
+          if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+          if (volumeHudTimeoutRef.current) clearTimeout(volumeHudTimeoutRef.current);
+        },
+        onPanResponderRelease: () => {
+          const state = gestureStartRef.current;
+          gestureStartRef.current = null;
+
+          if (state?.volumeActive) {
+            volumeHudTimeoutRef.current = setTimeout(() => setVolumeHud(null), 700);
+            showControlsTemporarily();
+            return;
+          }
+
+          const now = Date.now();
+          const lastTap = lastTapRef.current;
+          if (lastTap.zone === state?.zone && now - lastTap.time < DOUBLE_TAP_MS) {
+            if (tapTimeoutRef.current) clearTimeout(tapTimeoutRef.current);
+            lastTapRef.current = { time: 0, zone: null };
+            handleDoubleTap(state?.zone || "center");
+            return;
+          }
+
+          lastTapRef.current = { time: now, zone: state?.zone || "center" };
+          if (tapTimeoutRef.current) clearTimeout(tapTimeoutRef.current);
+          tapTimeoutRef.current = setTimeout(() => {
+            lastTapRef.current = { time: 0, zone: null };
+            handleSingleTap();
+          }, DOUBLE_TAP_MS);
+        },
+        onPanResponderTerminate: () => {
+          gestureStartRef.current = null;
+          if (volumeHudTimeoutRef.current) clearTimeout(volumeHudTimeoutRef.current);
+          setVolumeHud(null);
+        },
+      }),
+    [applySystemVolume, getZoneForX, handleDoubleTap, handleSingleTap, isVolumeTouchZone, showControlsTemporarily, surfaceHeight, volume]
+  );
+
+  const progressResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: () => true,
+        onPanResponderGrant: (event) => {
+          const nextTime = progressToTime(event.nativeEvent.locationX);
+          setIsScrubbing(true);
+          setScrubTime(nextTime);
+        },
+        onPanResponderMove: (event) => {
+          setScrubTime(progressToTime(event.nativeEvent.locationX));
+        },
+        onPanResponderRelease: () => {
+          setIsScrubbing(false);
+          seekTo(scrubTime);
+          hideControlsSoon();
+        },
+        onPanResponderTerminate: () => {
+          setIsScrubbing(false);
+          seekTo(scrubTime);
+          hideControlsSoon();
+        },
+      }),
+    [hideControlsSoon, progressToTime, scrubTime, seekTo]
+  );
+
+  const skipRange = useMemo(() => {
+    const timings = timingsQuery.data;
+    if (!timings) return null;
+    if (timings.intro_start != null && timings.intro_end != null && currentTime >= timings.intro_start && currentTime <= timings.intro_end) {
+      return { label: "Skip Intro", target: timings.intro_end };
+    }
+    if (timings.outro_start != null && timings.outro_end != null && currentTime >= timings.outro_start && currentTime <= timings.outro_end) {
+      return { label: "Skip Credits", target: timings.outro_end };
+    }
+    return null;
+  }, [currentTime, timingsQuery.data]);
+
+  return (
+    <View style={styles.screen} onLayout={handleSurfaceLayout}>
+      <Video
+        ref={playerRef}
+        source={{
+          uri: api.buildStreamUrl(currentVideo, audioIndex),
+          headers: api.buildStreamHeaders(),
+        }}
+        textTracks={subtitleTracks}
+        selectedTextTrack={
+          selectedSubtitle != null
+            ? { type: SelectedTrackType.INDEX, value: selectedSubtitle }
+            : { type: SelectedTrackType.DISABLED }
+        }
+        controls={false}
+        resizeMode="contain"
+        style={styles.video}
+        paused={paused}
+        rate={playbackRate}
+        volume={1}
+        onLoad={(event) => {
+          setDuration(event.duration);
+          if (pendingSeekTime > 0) {
+            playerRef.current?.seek(pendingSeekTime);
+            setPendingSeekTime(0);
+          }
+          hideControlsSoon();
+        }}
+        onProgress={(event) => {
+          if (!isScrubbing) setCurrentTime(event.currentTime);
+        }}
+        onEnd={() => {
+          void persistProgress(totalDuration, totalDuration);
+          if (hasNext) {
+            goToNext();
+            return;
+          }
+          navigation.goBack();
+        }}
+      />
+
+      <View style={styles.gestureSurface} {...gestureResponder.panHandlers} />
+
+      {skipFeedback ? (
+        <View key={skipFeedback.key} style={styles.feedbackBubble}>
+          <Text style={styles.feedbackText}>{skipFeedback.text}</Text>
+        </View>
+      ) : null}
+
+      {volumeHud != null ? (
+        <View style={styles.volumeHud}>
+          <View style={styles.volumeTrack}>
+            <View style={[styles.volumeFill, { height: `${volumeHud * 100}%` }]} />
+          </View>
+          <Text style={styles.volumeText}>{Math.round(volumeHud * 100)}%</Text>
+        </View>
+      ) : null}
+
+      {showControls ? (
+        <>
+          <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 18) }]}>
+            <Pressable onPress={() => navigation.goBack()} style={styles.iconButton}>
+              <Feather name="arrow-left" size={22} color={colors.text} />
+            </Pressable>
+            <View style={styles.titleWrap}>
+              <Text style={styles.title} numberOfLines={1}>{title}</Text>
+              <Text style={styles.meta} numberOfLines={1}>{currentVideo.split("/").pop()}</Text>
+            </View>
+          </View>
+
+          <View style={styles.centerControls} pointerEvents="box-none">
+            {hasPrev ? (
+              <Pressable onPress={goToPrev} style={styles.iconButtonLarge}>
+                <Feather name="skip-back" size={24} color={colors.text} />
+              </Pressable>
+            ) : (
+              <View style={styles.sideSpacer} />
+            )}
+
+            <Pressable onPress={togglePlayPause} style={styles.playButton}>
+              <Feather name={paused ? "play" : "pause"} size={30} color={colors.text} />
+            </Pressable>
+
+            {hasNext ? (
+              <Pressable onPress={goToNext} style={styles.iconButtonLarge}>
+                <Feather name="skip-forward" size={24} color={colors.text} />
+              </Pressable>
+            ) : (
+              <View style={styles.sideSpacer} />
+            )}
+          </View>
+
+          {skipRange ? (
+            <Pressable onPress={() => seekTo(skipRange.target)} style={styles.skipButton}>
+              <Text style={styles.skipLabel}>{skipRange.label}</Text>
+            </Pressable>
+          ) : null}
+
+          <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 18) }]}>
+            <View style={styles.progressMeta}>
+              <Text style={styles.timeLabel}>{formatTime(displayTime)}</Text>
+              <Text style={styles.timeLabel}>{formatTime(totalDuration)}</Text>
+            </View>
+
+            <View style={styles.progressTrack} onLayout={handleProgressLayout} {...progressResponder.panHandlers}>
+              <View style={styles.progressTrackBg} />
+              <View style={[styles.progressFill, { width: `${playedPercent}%` }]} />
+              <View style={[styles.progressThumb, { left: `${playedPercent}%` }]} />
+            </View>
+
+            <View style={styles.controlsRow}>
+              <View style={styles.controlsCluster}>
+                <Pressable onPress={() => skipBy(-SEEK_STEP)} style={styles.iconButton}>
+                  <Feather name="rotate-ccw" size={20} color={colors.text} />
+                </Pressable>
+                <Pressable onPress={() => skipBy(SEEK_STEP)} style={styles.iconButton}>
+                  <Feather name="rotate-cw" size={20} color={colors.text} />
+                </Pressable>
+              </View>
+
+              <View style={styles.controlsCluster}>
+                <Pressable
+                  onPress={() => {
+                    setShowAudioMenu((value) => !value);
+                    setShowSubtitleMenu(false);
+                    setShowSpeedMenu(false);
+                  }}
+                  style={[styles.iconButton, showAudioMenu && styles.iconButtonActive]}
+                >
+                  <Feather name="music" size={20} color={colors.text} />
+                </Pressable>
+                <Pressable
+                  onPress={() => {
+                    setShowSubtitleMenu((value) => !value);
+                    setShowAudioMenu(false);
+                    setShowSpeedMenu(false);
+                  }}
+                  style={[styles.iconButton, showSubtitleMenu && styles.iconButtonActive]}
+                >
+                  <Feather name="message-square" size={20} color={colors.text} />
+                </Pressable>
+                <Pressable
+                  onPress={() => {
+                    setShowSpeedMenu((value) => !value);
+                    setShowAudioMenu(false);
+                    setShowSubtitleMenu(false);
+                  }}
+                  style={[styles.iconButton, showSpeedMenu && styles.iconButtonActive]}
+                >
+                  <Feather name="settings" size={20} color={colors.text} />
+                </Pressable>
+              </View>
+            </View>
+
+            {showAudioMenu ? (
+              <View style={styles.menuSheet}>
+                {(probeQuery.data?.audioTracks || []).map((track, index) => (
+                  <Pressable
+                    key={track.index}
+                    onPress={() => {
+                      setPendingSeekTime(currentTime);
+                      setAudioIndex(index);
+                      setShowAudioMenu(false);
+                      hideControlsSoon();
+                    }}
+                    style={[styles.menuItem, audioIndex === index && styles.menuItemActive]}
+                  >
+                    <Text style={styles.menuLabel}>{track.title || track.language || `Audio ${index + 1}`}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
+
+            {showSubtitleMenu ? (
+              <View style={styles.menuSheet}>
+                <Pressable
+                  onPress={() => {
+                    setSelectedSubtitle(null);
+                    setShowSubtitleMenu(false);
+                    hideControlsSoon();
+                  }}
+                  style={[styles.menuItem, selectedSubtitle == null && styles.menuItemActive]}
+                >
+                  <Text style={styles.menuLabel}>Subtitles Off</Text>
+                </Pressable>
+                {subtitleTracks.map((track, index) => (
+                  <Pressable
+                    key={track.title}
+                    onPress={() => {
+                    setSelectedSubtitle(index);
+                    setShowSubtitleMenu(false);
+                    hideControlsSoon();
+                  }}
+                    style={[styles.menuItem, selectedSubtitle === index && styles.menuItemActive]}
+                  >
+                    <Text style={styles.menuLabel}>{track.title}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
+
+            {showSpeedMenu ? (
+              <View style={styles.menuSheet}>
+                {speeds.map((speed) => (
+                  <Pressable
+                    key={speed}
+                    onPress={() => {
+                      setPlaybackRate(speed);
+                      setShowSpeedMenu(false);
+                      hideControlsSoon();
+                    }}
+                    style={[styles.menuItem, playbackRate === speed && styles.menuItemActive]}
+                  >
+                    <Text style={styles.menuLabel}>{speed === 1 ? "Normal" : `${speed}x`}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
+          </View>
+        </>
+      ) : null}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: "#000",
+    justifyContent: "center",
+  },
+  video: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "#000",
+  },
+  gestureSurface: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 5,
+  },
+  topBar: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 18,
+    paddingBottom: 18,
+    backgroundColor: "rgba(0,0,0,0.45)",
+  },
+  titleWrap: {
+    flex: 1,
+  },
+  title: {
+    color: colors.text,
+    fontSize: 18,
+    fontWeight: "800",
+  },
+  meta: {
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  centerControls: {
+    position: "absolute",
+    inset: 0,
+    zIndex: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 28,
+  },
+  sideSpacer: {
+    width: 54,
+    height: 54,
+  },
+  playButton: {
+    width: 82,
+    height: 82,
+    borderRadius: 41,
+    backgroundColor: "rgba(37,99,235,0.92)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  iconButtonLarge: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: "rgba(0,0,0,0.42)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  iconButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  iconButtonActive: {
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.surfaceAccent,
+  },
+  bottomBar: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 20,
+    paddingHorizontal: 18,
+    paddingTop: 18,
+    backgroundColor: "rgba(0,0,0,0.62)",
+  },
+  progressMeta: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 4,
+  },
+  timeLabel: {
+    color: colors.textSoft,
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  progressTrack: {
+    height: 24,
+    justifyContent: "center",
+  },
+  progressTrackBg: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    height: 5,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.2)",
+  },
+  progressFill: {
+    height: 5,
+    borderRadius: 999,
+    backgroundColor: colors.primary,
+  },
+  progressThumb: {
+    position: "absolute",
+    top: 4,
+    marginLeft: -8,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: "#ffffff",
+  },
+  controlsRow: {
+    marginTop: 10,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  controlsCluster: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  skipButton: {
+    position: "absolute",
+    right: 20,
+    bottom: 122,
+    zIndex: 22,
+    backgroundColor: colors.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 999,
+  },
+  skipLabel: {
+    color: colors.primaryText,
+    fontWeight: "700",
+  },
+  menuSheet: {
+    marginTop: 14,
+    backgroundColor: "rgba(10,15,28,0.96)",
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 8,
+    gap: 6,
+  },
+  menuItem: {
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: "transparent",
+  },
+  menuItemActive: {
+    backgroundColor: colors.surfaceAccent,
+  },
+  menuLabel: {
+    color: colors.text,
+    fontWeight: "700",
+  },
+  feedbackBubble: {
+    position: "absolute",
+    top: "46%",
+    alignSelf: "center",
+    zIndex: 30,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: "rgba(15,23,42,0.92)",
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+  },
+  feedbackText: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: "800",
+  },
+  volumeHud: {
+    position: "absolute",
+    right: 24,
+    top: "28%",
+    zIndex: 30,
+    alignItems: "center",
+    gap: 10,
+  },
+  volumeTrack: {
+    width: 36,
+    height: 160,
+    borderRadius: 18,
+    overflow: "hidden",
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(255,255,255,0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.15)",
+  },
+  volumeFill: {
+    width: "100%",
+    backgroundColor: colors.primary,
+  },
+  volumeText: {
+    color: colors.text,
+    fontWeight: "800",
+  },
+});
