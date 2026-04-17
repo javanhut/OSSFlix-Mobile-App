@@ -6,6 +6,7 @@
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
+    "icon": "./assets/ReelScape_Icon.png",
     "androidStatusBar": {
       "hidden": true,
       "translucent": true,
@@ -20,6 +21,7 @@
     "android": {
       "package": "com.ossflix.mobile",
       "adaptiveIcon": {
+        "foregroundImage": "./assets/ReelScape_Icon.png",
         "backgroundColor": "#0b1020"
       }
     }

@@ -41,5 +41,3 @@ Thumbs.db
 # test / coverage
 coverage/
 
-# accidental Bun lockfile for this npm-managed app
-bun.lock
