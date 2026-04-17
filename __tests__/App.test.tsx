@@ -3,18 +3,18 @@
  * the Android-only ImmersiveMode side effects.
  */
 
-const mockSetVisibility = jest.fn(async () => {});
-const mockSetBehavior = jest.fn(async () => {});
-const mockSetBg = jest.fn(async () => {});
-const mockSetButton = jest.fn(async () => {});
-const mockSetPosition = jest.fn(async () => {});
+const mockSetVisibility = jest.fn<Promise<void>, [string]>(async () => {});
+const mockSetBehavior = jest.fn<Promise<void>, [string]>(async () => {});
+const mockSetBg = jest.fn<Promise<void>, [string]>(async () => {});
+const mockSetButton = jest.fn<Promise<void>, [string]>(async () => {});
+const mockSetPosition = jest.fn<Promise<void>, [string]>(async () => {});
 
 jest.mock('expo-navigation-bar', () => ({
-  setVisibilityAsync: (...a: unknown[]) => mockSetVisibility(...(a as [string])),
-  setBehaviorAsync: (...a: unknown[]) => mockSetBehavior(...(a as [string])),
-  setBackgroundColorAsync: (...a: unknown[]) => mockSetBg(...(a as [string])),
-  setButtonStyleAsync: (...a: unknown[]) => mockSetButton(...(a as [string])),
-  setPositionAsync: (...a: unknown[]) => mockSetPosition(...(a as [string])),
+  setVisibilityAsync: (arg: string) => mockSetVisibility(arg),
+  setBehaviorAsync: (arg: string) => mockSetBehavior(arg),
+  setBackgroundColorAsync: (arg: string) => mockSetBg(arg),
+  setButtonStyleAsync: (arg: string) => mockSetButton(arg),
+  setPositionAsync: (arg: string) => mockSetPosition(arg),
 }));
 
 jest.mock('expo-status-bar', () => ({

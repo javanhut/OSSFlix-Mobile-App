@@ -5,14 +5,14 @@
  * branches.
  */
 
-const mockGetItemAsync = jest.fn(async () => null);
-const mockSetItemAsync = jest.fn(async () => {});
-const mockDeleteItemAsync = jest.fn(async () => {});
+const mockGetItemAsync = jest.fn<Promise<string | null>, [string]>(async () => null);
+const mockSetItemAsync = jest.fn<Promise<void>, [string, string]>(async () => {});
+const mockDeleteItemAsync = jest.fn<Promise<void>, [string]>(async () => {});
 
 jest.mock('expo-secure-store', () => ({
-  getItemAsync: (...args: unknown[]) => mockGetItemAsync(...(args as [string])),
-  setItemAsync: (...args: unknown[]) => mockSetItemAsync(...(args as [string, string])),
-  deleteItemAsync: (...args: unknown[]) => mockDeleteItemAsync(...(args as [string])),
+  getItemAsync: (key: string) => mockGetItemAsync(key),
+  setItemAsync: (key: string, value: string) => mockSetItemAsync(key, value),
+  deleteItemAsync: (key: string) => mockDeleteItemAsync(key),
 }));
 
 jest.mock('react-native-safe-area-context', () => {

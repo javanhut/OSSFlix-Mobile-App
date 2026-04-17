@@ -172,20 +172,25 @@ describe('PlayerScreen — Video lifecycle callbacks', () => {
   });
 });
 
+function pressIconButton(root: any, iconLabel: string) {
+  const icon = root.findByProps({ accessibilityLabel: iconLabel });
+  const parent = icon.parent;
+  if (!parent) throw new Error(`Icon ${iconLabel} has no parent Pressable`);
+  fireEvent.press(parent);
+}
+
 describe('PlayerScreen — control buttons', () => {
   it('back arrow calls navigation.goBack', async () => {
     const { UNSAFE_root } = renderPlayer();
     await waitFor(() => expect((Video as any).lastProps).toBeDefined());
-    const backIcon = UNSAFE_root.findByProps({ accessibilityLabel: 'Feather-arrow-left' });
-    fireEvent.press(backIcon.parent);
+    pressIconButton(UNSAFE_root, 'Feather-arrow-left');
     expect(navigation.goBack).toHaveBeenCalled();
   });
 
   it('toggles play/pause', async () => {
     const { UNSAFE_root } = renderPlayer();
     await waitFor(() => expect((Video as any).lastProps).toBeDefined());
-    const pauseIcon = UNSAFE_root.findByProps({ accessibilityLabel: 'Feather-pause' });
-    fireEvent.press(pauseIcon.parent);
+    pressIconButton(UNSAFE_root, 'Feather-pause');
     await waitFor(() => {
       expect((Video as any).lastProps.paused).toBe(true);
     });
@@ -198,8 +203,7 @@ describe('PlayerScreen — control buttons', () => {
       (Video as any).lastProps.onLoad({ duration: 1800 });
       (Video as any).lastProps.onProgress({ currentTime: 50 });
     });
-    const back = UNSAFE_root.findByProps({ accessibilityLabel: 'Feather-rotate-ccw' });
-    fireEvent.press(back.parent);
+    pressIconButton(UNSAFE_root, 'Feather-rotate-ccw');
     await waitFor(() => expect(mockSeek).toHaveBeenCalledWith(40));
   });
 
@@ -210,8 +214,7 @@ describe('PlayerScreen — control buttons', () => {
       (Video as any).lastProps.onLoad({ duration: 1800 });
       (Video as any).lastProps.onProgress({ currentTime: 50 });
     });
-    const fwd = UNSAFE_root.findByProps({ accessibilityLabel: 'Feather-rotate-cw' });
-    fireEvent.press(fwd.parent);
+    pressIconButton(UNSAFE_root, 'Feather-rotate-cw');
     await waitFor(() => expect(mockSeek).toHaveBeenCalledWith(60));
   });
 
@@ -230,8 +233,7 @@ describe('PlayerScreen — control buttons', () => {
   it('skip-forward (next episode button) advances when there is a next video', async () => {
     const { UNSAFE_root } = renderPlayer();
     await waitFor(() => expect((Video as any).lastProps).toBeDefined());
-    const next = UNSAFE_root.findByProps({ accessibilityLabel: 'Feather-skip-forward' });
-    fireEvent.press(next.parent);
+    pressIconButton(UNSAFE_root, 'Feather-skip-forward');
     await waitFor(() => {
       expect((Video as any).lastProps.source.uri).toContain('foo_s1_ep2.mkv');
     });
@@ -240,8 +242,7 @@ describe('PlayerScreen — control buttons', () => {
   it('skip-back (previous episode) goes back when not on the first', async () => {
     const { UNSAFE_root } = renderPlayer(makeRoute({ startIndex: 1 }));
     await waitFor(() => expect((Video as any).lastProps).toBeDefined());
-    const prev = UNSAFE_root.findByProps({ accessibilityLabel: 'Feather-skip-back' });
-    fireEvent.press(prev.parent);
+    pressIconButton(UNSAFE_root, 'Feather-skip-back');
     await waitFor(() => {
       expect((Video as any).lastProps.source.uri).toContain('foo_s1_ep1.mkv');
     });
@@ -252,8 +253,7 @@ describe('PlayerScreen — menus', () => {
   it('toggles the audio menu and selects a track', async () => {
     const { UNSAFE_root, findByText } = renderPlayer();
     await waitFor(() => expect((Video as any).lastProps).toBeDefined());
-    const music = UNSAFE_root.findByProps({ accessibilityLabel: 'Feather-music' });
-    fireEvent.press(music.parent);
+    pressIconButton(UNSAFE_root, 'Feather-music');
     const japaneseRow = await findByText('Japanese');
     fireEvent.press(japaneseRow);
     await waitFor(() => {
@@ -264,14 +264,12 @@ describe('PlayerScreen — menus', () => {
   it('toggles the subtitle menu, picks a track, then turns it off', async () => {
     const { UNSAFE_root, findByText } = renderPlayer();
     await waitFor(() => expect((Video as any).lastProps).toBeDefined());
-    const findSubtitleBtn = () =>
-      UNSAFE_root.findByProps({ accessibilityLabel: 'Feather-message-square' }).parent;
-    fireEvent.press(findSubtitleBtn());
+    pressIconButton(UNSAFE_root, 'Feather-message-square');
     fireEvent.press(await findByText('EN'));
     await waitFor(() => {
       expect((Video as any).lastProps.selectedTextTrack).toEqual({ type: 'index', value: 0 });
     });
-    fireEvent.press(findSubtitleBtn());
+    pressIconButton(UNSAFE_root, 'Feather-message-square');
     fireEvent.press(await findByText('Subtitles Off'));
     await waitFor(() => {
       expect((Video as any).lastProps.selectedTextTrack).toEqual({ type: 'disabled' });
@@ -281,8 +279,7 @@ describe('PlayerScreen — menus', () => {
   it('toggles the speed menu and selects a non-default rate', async () => {
     const { UNSAFE_root, findByText } = renderPlayer();
     await waitFor(() => expect((Video as any).lastProps).toBeDefined());
-    const speedBtn = UNSAFE_root.findByProps({ accessibilityLabel: 'Feather-settings' });
-    fireEvent.press(speedBtn.parent);
+    pressIconButton(UNSAFE_root, 'Feather-settings');
     fireEvent.press(await findByText('1.5x'));
     await waitFor(() => {
       expect((Video as any).lastProps.rate).toBe(1.5);
