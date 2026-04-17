@@ -129,24 +129,24 @@ jobs:
         if: steps.cache-node-modules-build.outputs.cache-hit != 'true'
         run: bun install --frozen-lockfile
 
-      - name: Build debug APK
+      - name: Build release APK
         working-directory: android
-        run: ./gradlew assembleDebug --no-daemon
+        run: ./gradlew assembleRelease --no-daemon
 
       - name: Stage APK with version filename
         run: |
-          cp android/app/build/outputs/apk/debug/app-debug.apk \
-             "OSSFlix-${GITHUB_REF_NAME}-debug.apk"
+          cp android/app/build/outputs/apk/release/app-release.apk \
+             "OSSFlix-${GITHUB_REF_NAME}.apk"
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: OSSFlix-*-debug.apk
-          name: OSSFlix ${{ github.ref_name }} (debug)
+          files: OSSFlix-*.apk
+          name: OSSFlix ${{ github.ref_name }}
           tag_name: ${{ github.ref_name }}
           prerelease: true
           generate_release_notes: true
           body: |
-            Debug-signed Android APK for sideloading. Not a production release.
+            Android APK for sideloading, signed with the debug keystore. Not for Play Store.
 
             **Install:** download the `.apk`, enable "Install unknown apps" for your browser/file manager on Android, then open the file to install.
