@@ -1,5 +1,15 @@
 import { useMemo, useState } from "react";
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 
@@ -8,10 +18,13 @@ import { AppHeader } from "../components/AppHeader";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { useSessionStore } from "../state/session";
 import { colors } from "../theme/colors";
+import { useLockPortrait } from "../hooks/useLockPortrait";
 
 type Props = NativeStackScreenProps<RootStackParamList, "SignIn">;
 
 export function SignInScreen({ navigation }: Props) {
+  useLockPortrait();
+
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const selectedProfile = useSessionStore((state) => state.selectedProfile);
@@ -38,37 +51,53 @@ export function SignInScreen({ navigation }: Props) {
   };
 
   return (
-    <View style={styles.screen}>
-      <AppHeader
-        eyebrow="Profile"
-        title={selectedProfile?.name || "Profile"}
-        subtitle={needsSetPassword ? "Set a password for this profile." : "Enter the profile password to continue."}
-        actionLabel="Back"
-        onAction={() => navigation.goBack()}
-      />
-      <TextInput
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-        placeholder="Password"
-        placeholderTextColor="#64748b"
-        style={styles.input}
-      />
-      <Pressable onPress={submit} disabled={submitting} style={styles.button}>
-        <View style={styles.buttonContent}>
-          <Feather name={needsSetPassword ? "lock" : "log-in"} size={18} color={colors.primaryText} />
-          <Text style={styles.buttonLabel}>{submitting ? "Working..." : needsSetPassword ? "Set Password" : "Sign In"}</Text>
-        </View>
-      </Pressable>
-    </View>
+    <KeyboardAvoidingView
+      style={styles.flex}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <ScrollView
+        style={styles.screen}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
+        <AppHeader
+          eyebrow="Profile"
+          title={selectedProfile?.name || "Profile"}
+          subtitle={needsSetPassword ? "Set a password for this profile." : "Enter the profile password to continue."}
+          actionLabel="Back"
+          onAction={() => navigation.goBack()}
+        />
+        <TextInput
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+          placeholder="Password"
+          placeholderTextColor="#64748b"
+          style={styles.input}
+        />
+        <Pressable onPress={submit} disabled={submitting} style={styles.button}>
+          <View style={styles.buttonContent}>
+            <Feather name={needsSetPassword ? "lock" : "log-in"} size={18} color={colors.primaryText} />
+            <Text style={styles.buttonLabel}>{submitting ? "Working..." : needsSetPassword ? "Set Password" : "Sign In"}</Text>
+          </View>
+        </Pressable>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   screen: {
     flex: 1,
-    padding: 24,
     backgroundColor: colors.background,
+  },
+  content: {
+    padding: 24,
+    flexGrow: 1,
   },
   input: {
     backgroundColor: colors.surfaceElevated,

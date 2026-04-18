@@ -106,7 +106,7 @@ describe('TitleDetailsScreen', () => {
     const { findByText } = renderWithQuery(
       <TitleDetailsScreen navigation={navigation} route={route} />
     );
-    const row = await findByText('S1 E2 - foo');
+    const row = await findByText('S1 E2 - Foo');
     fireEvent.press(row);
     expect(navigation.navigate).toHaveBeenCalledWith('Player', expect.objectContaining({
       startIndex: 1,
@@ -123,7 +123,7 @@ describe('TitleDetailsScreen', () => {
     const { findByText } = renderWithQuery(
       <TitleDetailsScreen navigation={navigation} route={route} />
     );
-    expect(await findByText('random clip')).toBeTruthy();
+    expect(await findByText('Random Clip')).toBeTruthy();
   });
 
   it('shows the empty state when there are no videos', async () => {

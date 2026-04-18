@@ -1,13 +1,26 @@
 import { useState } from "react";
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { Feather } from "@expo/vector-icons";
 
 import { api, normalizeServerUrl } from "../api/client";
 import { AppHeader } from "../components/AppHeader";
 import { useSessionStore } from "../state/session";
 import { colors } from "../theme/colors";
+import { useLockPortrait } from "../hooks/useLockPortrait";
 
 export function ServerConnectScreen() {
+  useLockPortrait();
+
   const [serverUrl, setServerUrl] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const setConfiguredServerUrl = useSessionStore((state) => state.setServerUrl);
@@ -29,37 +42,53 @@ export function ServerConnectScreen() {
   };
 
   return (
-    <View style={styles.screen}>
-      <AppHeader
-        eyebrow="Android Setup"
-        title="Connect to Reelscape"
-        subtitle="Enter the base URL for your server. Example: http://192.168.1.20:3000"
-      />
-      <TextInput
-        value={serverUrl}
-        onChangeText={setServerUrl}
-        autoCapitalize="none"
-        autoCorrect={false}
-        placeholder="http://192.168.1.20:3000"
-        placeholderTextColor="#64748b"
-        style={styles.input}
-      />
-      <Pressable onPress={handleConnect} disabled={submitting} style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}>
-        <View style={styles.buttonContent}>
-          <Feather name="wifi" size={18} color={colors.primaryText} />
-          <Text style={styles.buttonLabel}>{submitting ? "Testing..." : "Connect"}</Text>
-        </View>
-      </Pressable>
-    </View>
+    <KeyboardAvoidingView
+      style={styles.flex}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <ScrollView
+        style={styles.screen}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
+        <AppHeader
+          eyebrow="Android Setup"
+          title="Connect to Reelscape"
+          subtitle="Enter the base URL for your server. Example: http://192.168.1.20:3000"
+        />
+        <TextInput
+          value={serverUrl}
+          onChangeText={setServerUrl}
+          autoCapitalize="none"
+          autoCorrect={false}
+          placeholder="http://192.168.1.20:3000"
+          placeholderTextColor="#64748b"
+          style={styles.input}
+        />
+        <Pressable onPress={handleConnect} disabled={submitting} style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}>
+          <View style={styles.buttonContent}>
+            <Feather name="wifi" size={18} color={colors.primaryText} />
+            <Text style={styles.buttonLabel}>{submitting ? "Testing..." : "Connect"}</Text>
+          </View>
+        </Pressable>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   screen: {
     flex: 1,
-    padding: 24,
-    justifyContent: "center",
     backgroundColor: colors.background,
+  },
+  content: {
+    padding: 24,
+    flexGrow: 1,
+    justifyContent: "center",
   },
   input: {
     backgroundColor: colors.surfaceElevated,

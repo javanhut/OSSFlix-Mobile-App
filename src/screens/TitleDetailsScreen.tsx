@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -8,19 +8,47 @@ import { api, resolveAssetUrl } from "../api/client";
 import { EmptyState } from "../components/EmptyState";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors } from "../theme/colors";
+import {
+  compareVideoSrc,
+  formatEpisodeLabel,
+  parseEpisodePath,
+  titleFromStem,
+  type ParsedEpisode,
+} from "../utils/episodeNaming";
+import { useLockPortrait } from "../hooks/useLockPortrait";
 
 type Props = NativeStackScreenProps<RootStackParamList, "TitleDetails">;
 
-function formatEpisodeLabel(videoSrc: string): string {
-  const fileName = videoSrc.split("/").pop() || videoSrc;
-  const match = fileName.match(/^(.*?)_s(\d+)_ep(\d+)\.[^.]+$/i);
-  if (match) {
-    return `S${match[2]} E${match[3]} - ${match[1].replace(/_/g, " ")}`;
+type EpisodeEntry = {
+  video: string;
+  parsed: ParsedEpisode | null;
+  label: string;
+};
+
+function toRelative(video: string, dirPath: string): string {
+  if (!dirPath) return video;
+  const prefix = dirPath.endsWith("/") ? dirPath : `${dirPath}/`;
+  if (video.startsWith(prefix)) return video.slice(prefix.length);
+  const idx = video.indexOf(dirPath);
+  if (idx >= 0) return video.slice(idx + prefix.length);
+  return video;
+}
+
+function buildEntry(video: string, dirPath: string): EpisodeEntry {
+  const rel = toRelative(video, dirPath);
+  const parsed = parseEpisodePath(rel);
+  if (parsed) {
+    return { video, parsed, label: formatEpisodeLabel(parsed) };
   }
-  return fileName.replace(/\.[^/.]+$/, "").replace(/_/g, " ");
+  const fileName = video.split("/").pop() || video;
+  const stem = fileName.replace(/\.[^/.]+$/, "");
+  const fallback = titleFromStem(stem) || fileName;
+  return { video, parsed: null, label: fallback };
 }
 
 export function TitleDetailsScreen({ route, navigation }: Props) {
+  useLockPortrait();
+
   const queryClient = useQueryClient();
   const { dirPath } = route.params;
   const detailsQuery = useQuery({ queryKey: ["title-details", dirPath], queryFn: () => api.getTitleDetails(dirPath) });
@@ -45,8 +73,41 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
     },
   });
 
+  const details = detailsQuery.data;
+
+  const grouped = useMemo(() => {
+    if (!details) return { bySeason: new Map<number, EpisodeEntry[]>(), other: [] as EpisodeEntry[] };
+    const bySeason = new Map<number, EpisodeEntry[]>();
+    const other: EpisodeEntry[] = [];
+    const sorted = [...details.videos].sort(compareVideoSrc);
+    for (const video of sorted) {
+      const entry = buildEntry(video, details.dirPath);
+      if (entry.parsed) {
+        const list = bySeason.get(entry.parsed.season) ?? [];
+        list.push(entry);
+        bySeason.set(entry.parsed.season, list);
+      } else {
+        other.push(entry);
+      }
+    }
+    return { bySeason, other };
+  }, [details]);
+
+  const seasonKeys = useMemo(
+    () => [...grouped.bySeason.keys()].sort((a, b) => a - b),
+    [grouped.bySeason],
+  );
+
+  const [selectedSeason, setSelectedSeason] = useState<number | null>(null);
+  const [seasonMenuOpen, setSeasonMenuOpen] = useState(false);
+
+  const effectiveSeason = selectedSeason ?? seasonKeys[0] ?? null;
+  const seasonMeta = useMemo(
+    () => details?.seasonsMeta?.find((m) => m.season === effectiveSeason) ?? null,
+    [details?.seasonsMeta, effectiveSeason],
+  );
+
   const playTarget = useMemo(() => {
-    const details = detailsQuery.data;
     if (!details?.videos?.length) return null;
     const progressEntries = progressQuery.data || [];
     const resumeEntry = progressEntries.find((entry) => entry.current_time > 0 && (entry.duration === 0 || entry.current_time < entry.duration - 5));
@@ -61,28 +122,36 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
       startIndex: 0,
       initialTime: 0,
     };
-  }, [detailsQuery.data, progressQuery.data]);
+  }, [details, progressQuery.data]);
 
   if (detailsQuery.isLoading) {
-      return (
+    return (
       <View style={styles.loading}>
         <ActivityIndicator color={colors.primary} />
       </View>
     );
   }
 
-  const details = detailsQuery.data;
   if (!details) {
     return null;
   }
-  const imageUrl = resolveAssetUrl(details.bannerImage);
+
+  const bannerSrc = seasonMeta?.logo ?? details.bannerImage;
+  const description = seasonMeta?.description ?? details.description;
+  const imageUrl = resolveAssetUrl(bannerSrc);
+
+  const visibleEntries = effectiveSeason != null
+    ? grouped.bySeason.get(effectiveSeason) ?? []
+    : grouped.other;
+
+  const showDropdown = seasonKeys.length >= 2;
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       {imageUrl ? <Image source={{ uri: imageUrl }} style={styles.poster} /> : <View style={styles.posterFallback} />}
       <Text style={styles.title}>{details.name}</Text>
       <Text style={styles.meta}>{details.type}</Text>
-      <Text style={styles.description}>{details.description}</Text>
+      <Text style={styles.description}>{description}</Text>
       {!!details.genre?.length ? (
         <View style={styles.chipRow}>
           {details.genre.map((genre) => (
@@ -121,27 +190,68 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
           </View>
         </Pressable>
       </View>
-      <Text style={styles.sectionTitle}>Episodes and Files</Text>
-      {details.videos.length ? (
-        details.videos.map((video, index) => (
+
+      {showDropdown ? (
+        <View style={styles.seasonSection}>
           <Pressable
-            key={video}
-            onPress={() =>
-              navigation.navigate("Player", {
-                dirPath: details.dirPath,
-                title: details.name,
-                videos: details.videos,
-                startIndex: index,
-                initialTime: 0,
-                subtitles: details.subtitles,
-              })
-            }
-            style={styles.episodeRow}
+            onPress={() => setSeasonMenuOpen((open) => !open)}
+            style={styles.seasonTrigger}
           >
-            <Text style={styles.episodeText}>{formatEpisodeLabel(video)}</Text>
-            <Feather name="play" size={16} color={colors.accentText} />
+            <Text style={styles.seasonTriggerLabel}>Season {effectiveSeason}</Text>
+            <Feather
+              name={seasonMenuOpen ? "chevron-up" : "chevron-down"}
+              size={18}
+              color={colors.text}
+            />
           </Pressable>
-        ))
+          {seasonMenuOpen ? (
+            <View style={styles.menuSheet}>
+              {seasonKeys.map((season) => {
+                const active = season === effectiveSeason;
+                return (
+                  <Pressable
+                    key={season}
+                    onPress={() => {
+                      setSelectedSeason(season);
+                      setSeasonMenuOpen(false);
+                    }}
+                    style={[styles.menuItem, active && styles.menuItemActive]}
+                  >
+                    <Text style={styles.menuLabel}>Season {season}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          ) : null}
+        </View>
+      ) : null}
+
+      <Text style={styles.sectionTitle}>
+        {seasonKeys.length > 0 ? "Episodes" : "Files"}
+      </Text>
+      {visibleEntries.length ? (
+        visibleEntries.map((entry) => {
+          const startIndex = details.videos.indexOf(entry.video);
+          return (
+            <Pressable
+              key={entry.video}
+              onPress={() =>
+                navigation.navigate("Player", {
+                  dirPath: details.dirPath,
+                  title: details.name,
+                  videos: details.videos,
+                  startIndex: startIndex >= 0 ? startIndex : 0,
+                  initialTime: 0,
+                  subtitles: details.subtitles,
+                })
+              }
+              style={styles.episodeRow}
+            >
+              <Text style={styles.episodeText}>{entry.label}</Text>
+              <Feather name="play" size={16} color={colors.accentText} />
+            </Pressable>
+          );
+        })
       ) : (
         <EmptyState title="No playable files found" subtitle="This title does not currently expose any videos from the server." />
       )}
@@ -254,11 +364,52 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 8,
   },
+  seasonSection: {
+    marginTop: 24,
+  },
+  seasonTrigger: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: colors.surfaceAccent,
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  seasonTriggerLabel: {
+    color: colors.text,
+    fontWeight: "800",
+    fontSize: 16,
+  },
+  menuSheet: {
+    marginTop: 8,
+    backgroundColor: "rgba(10,15,28,0.96)",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 8,
+    gap: 4,
+  },
+  menuItem: {
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: "transparent",
+  },
+  menuItemActive: {
+    backgroundColor: colors.surfaceAccent,
+  },
+  menuLabel: {
+    color: colors.text,
+    fontWeight: "700",
+  },
   sectionTitle: {
     color: colors.text,
     fontSize: 22,
     fontWeight: "800",
-    marginTop: 28,
+    marginTop: 24,
     marginBottom: 14,
   },
   episodeRow: {

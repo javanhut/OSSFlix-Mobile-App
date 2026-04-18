@@ -1,13 +1,26 @@
 import { useState } from "react";
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { Feather } from "@expo/vector-icons";
 
 import { api } from "../api/client";
 import { AppHeader } from "../components/AppHeader";
 import { useSessionStore } from "../state/session";
 import { colors } from "../theme/colors";
+import { useLockPortrait } from "../hooks/useLockPortrait";
 
 export function RegisterScreen() {
+  useLockPortrait();
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,27 +40,43 @@ export function RegisterScreen() {
   };
 
   return (
-    <View style={styles.screen}>
-      <AppHeader title="Create profile" subtitle="Register a new mobile-capable Reelscape profile on the connected server." />
-      <TextInput value={name} onChangeText={setName} placeholder="Profile name" placeholderTextColor="#64748b" style={styles.input} />
-      <TextInput value={email} onChangeText={setEmail} placeholder="Email" placeholderTextColor="#64748b" autoCapitalize="none" style={styles.input} />
-      <TextInput value={password} onChangeText={setPassword} placeholder="Password" placeholderTextColor="#64748b" secureTextEntry style={styles.input} />
-      <Pressable onPress={submit} disabled={submitting} style={styles.button}>
-        <View style={styles.buttonContent}>
-          <Feather name="user-plus" size={18} color={colors.primaryText} />
-          <Text style={styles.buttonLabel}>{submitting ? "Creating..." : "Create Account"}</Text>
-        </View>
-      </Pressable>
-    </View>
+    <KeyboardAvoidingView
+      style={styles.flex}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <ScrollView
+        style={styles.screen}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
+        <AppHeader title="Create profile" subtitle="Register a new mobile-capable Reelscape profile on the connected server." />
+        <TextInput value={name} onChangeText={setName} placeholder="Profile name" placeholderTextColor="#64748b" style={styles.input} />
+        <TextInput value={email} onChangeText={setEmail} placeholder="Email" placeholderTextColor="#64748b" autoCapitalize="none" style={styles.input} />
+        <TextInput value={password} onChangeText={setPassword} placeholder="Password" placeholderTextColor="#64748b" secureTextEntry style={styles.input} />
+        <Pressable onPress={submit} disabled={submitting} style={styles.button}>
+          <View style={styles.buttonContent}>
+            <Feather name="user-plus" size={18} color={colors.primaryText} />
+            <Text style={styles.buttonLabel}>{submitting ? "Creating..." : "Create Account"}</Text>
+          </View>
+        </Pressable>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   screen: {
     flex: 1,
+    backgroundColor: colors.background,
+  },
+  content: {
     padding: 24,
     gap: 14,
-    backgroundColor: colors.background,
+    flexGrow: 1,
   },
   input: {
     backgroundColor: colors.surfaceElevated,

@@ -46,6 +46,12 @@ export interface SubtitleTrack {
   format: string;
 }
 
+export interface SeasonMeta {
+  season: number;
+  description?: string;
+  logo?: string;
+}
+
 export interface TitleDetails {
   name: string;
   description: string;
@@ -58,6 +64,7 @@ export interface TitleDetails {
   dirPath: string;
   videos: string[];
   subtitles?: SubtitleTrack[];
+  seasonsMeta?: SeasonMeta[];
 }
 
 export interface PlaybackProgress {

@@ -452,7 +452,7 @@ export function PlayerScreen({ route, navigation }: Props) {
         style={styles.video}
         paused={paused}
         rate={playbackRate}
-        volume={1}
+        volume={volume}
         onLoad={(event) => {
           setDuration(event.duration);
           if (pendingSeekTime > 0) {

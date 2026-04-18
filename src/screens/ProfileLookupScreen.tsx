@@ -1,5 +1,15 @@
 import { useState } from "react";
-import { Alert, FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import {
+  Alert,
+  FlatList,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 
@@ -10,10 +20,13 @@ import { useSessionStore } from "../state/session";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors } from "../theme/colors";
 import type { PublicProfile } from "../types/api";
+import { useLockPortrait } from "../hooks/useLockPortrait";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ProfileLookup">;
 
 export function ProfileLookupScreen({ navigation }: Props) {
+  useLockPortrait();
+
   const [email, setEmail] = useState("");
   const [profiles, setProfiles] = useState<PublicProfile[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -57,36 +70,45 @@ export function ProfileLookupScreen({ navigation }: Props) {
   };
 
   return (
-    <View style={styles.screen}>
-      <AppHeader
-        eyebrow="Connected Server"
-        title="Choose a profile"
-        subtitle={currentServerUrl ? currentServerUrl : "No server configured"}
-        actionLabel="Change"
-        onAction={() => setServerUrl("")}
-      />
-      <TextInput
-        value={email}
-        onChangeText={setEmail}
-        autoCapitalize="none"
-        autoCorrect={false}
-        placeholder="Email"
-        placeholderTextColor="#64748b"
-        style={styles.input}
-      />
-      <Pressable onPress={handleLookup} disabled={submitting} style={styles.primaryButton}>
-        <Text style={styles.primaryLabel}>{submitting ? "Loading..." : "Find Profiles"}</Text>
-      </Pressable>
-      <Pressable onPress={handleUnclaimed} disabled={submitting} style={styles.secondaryButton}>
-        <Text style={styles.secondaryLabel}>Use Unclaimed Profile</Text>
-      </Pressable>
-      <Pressable onPress={() => navigation.navigate("Register")} style={styles.linkButton}>
-        <Text style={styles.linkLabel}>Create a new profile</Text>
-      </Pressable>
+    <KeyboardAvoidingView
+      style={styles.screen}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
       <FlatList
         data={profiles}
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={styles.list}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        ListHeaderComponent={
+          <View style={styles.formHeader}>
+            <AppHeader
+              eyebrow="Connected Server"
+              title="Choose a profile"
+              subtitle={currentServerUrl ? currentServerUrl : "No server configured"}
+              actionLabel="Change"
+              onAction={() => setServerUrl("")}
+            />
+            <TextInput
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              autoCorrect={false}
+              placeholder="Email"
+              placeholderTextColor="#64748b"
+              style={styles.input}
+            />
+            <Pressable onPress={handleLookup} disabled={submitting} style={styles.primaryButton}>
+              <Text style={styles.primaryLabel}>{submitting ? "Loading..." : "Find Profiles"}</Text>
+            </Pressable>
+            <Pressable onPress={handleUnclaimed} disabled={submitting} style={styles.secondaryButton}>
+              <Text style={styles.secondaryLabel}>Use Unclaimed Profile</Text>
+            </Pressable>
+            <Pressable onPress={() => navigation.navigate("Register")} style={styles.linkButton}>
+              <Text style={styles.linkLabel}>Create a new profile</Text>
+            </Pressable>
+          </View>
+        }
         ListEmptyComponent={<EmptyState title="No profiles loaded yet" subtitle="Look up profiles by email, use an unclaimed profile, or create a new one." />}
         renderItem={({ item }) => (
           <Pressable onPress={() => selectProfile(item)} style={styles.profileCard}>
@@ -101,15 +123,17 @@ export function ProfileLookupScreen({ navigation }: Props) {
           </Pressable>
         )}
       />
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    padding: 20,
     backgroundColor: colors.background,
+  },
+  formHeader: {
+    marginBottom: 18,
   },
   input: {
     backgroundColor: colors.surfaceElevated,
@@ -153,7 +177,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   list: {
-    paddingTop: 18,
+    padding: 20,
     paddingBottom: 32,
     flexGrow: 1,
   },

@@ -43,7 +43,7 @@ class SystemVolumeModule(reactContext: ReactApplicationContext) : ReactContextBa
       return
     }
 
-    val targetVolume = (normalized * maxVolume.toDouble()).toInt().coerceIn(0, maxVolume)
+    val targetVolume = Math.round(normalized * maxVolume).toInt().coerceIn(0, maxVolume)
     audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, targetVolume, 0)
     val appliedVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
     promise.resolve(appliedVolume.toDouble() / maxVolume.toDouble())
