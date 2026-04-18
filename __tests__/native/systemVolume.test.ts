@@ -34,6 +34,11 @@ describe('systemVolume on non-Android platforms', () => {
     await expect(mod.getSystemMusicVolume()).resolves.toBe(1);
   });
 
+  it('getSystemMusicVolumeInfo returns a fallback volume and max step count on iOS', async () => {
+    const mod = loadWithReactNativeMock(platformMock('ios'));
+    await expect(mod.getSystemMusicVolumeInfo()).resolves.toEqual({ volume: 1, maxVolume: 15 });
+  });
+
   it('setSystemMusicVolume clamps and returns the requested volume on iOS', async () => {
     const mod = loadWithReactNativeMock(platformMock('ios'));
     await expect(mod.setSystemMusicVolume(0.5)).resolves.toBe(0.5);
@@ -46,6 +51,11 @@ describe('systemVolume on Android without the native module installed', () => {
   it('getSystemMusicVolume returns 1', async () => {
     const mod = loadWithReactNativeMock(platformMock('android'));
     await expect(mod.getSystemMusicVolume()).resolves.toBe(1);
+  });
+
+  it('getSystemMusicVolumeInfo falls back when the richer native method is unavailable', async () => {
+    const mod = loadWithReactNativeMock(platformMock('android'));
+    await expect(mod.getSystemMusicVolumeInfo()).resolves.toEqual({ volume: 1, maxVolume: 15 });
   });
 
   it('setSystemMusicVolume clamps and returns the requested volume', async () => {
@@ -64,6 +74,16 @@ describe('systemVolume on Android with the native module', () => {
     const mod = loadWithReactNativeMock(androidWithModule(impl));
     await expect(mod.getSystemMusicVolume()).resolves.toBe(0.42);
     expect(impl.getMusicVolume).toHaveBeenCalledTimes(1);
+  });
+
+  it('getSystemMusicVolumeInfo reads volume metadata from the native module', async () => {
+    const impl = {
+      getMusicVolume: jest.fn(),
+      getMusicVolumeInfo: jest.fn().mockResolvedValue({ volume: 0.42, maxVolume: 25 }),
+      setMusicVolume: jest.fn(),
+    };
+    const mod = loadWithReactNativeMock(androidWithModule(impl));
+    await expect(mod.getSystemMusicVolumeInfo()).resolves.toEqual({ volume: 0.42, maxVolume: 25 });
   });
 
   it('getSystemMusicVolume clamps an out-of-range native value', async () => {

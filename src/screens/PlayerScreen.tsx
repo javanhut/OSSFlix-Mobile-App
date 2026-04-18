@@ -17,7 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { api } from "../api/client";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-import { getSystemMusicVolume, setSystemMusicVolume } from "../native/systemVolume";
+import { getSystemMusicVolumeInfo, setPlayerVolumeStream, setSystemMusicVolume } from "../native/systemVolume";
 import { colors } from "../theme/colors";
 import { formatEpisodeLabel, parseEpisodePath } from "../utils/episodeNaming";
 
@@ -29,7 +29,9 @@ type SkipFeedback = { text: string; key: number } | null;
 const DOUBLE_TAP_MS = 280;
 const SEEK_STEP = 10;
 const VOLUME_ACTIVATION_DISTANCE = 12;
-const VOLUME_DRAG_RANGE = 0.45;
+const VOLUME_HORIZONTAL_TOLERANCE = 10;
+const VOLUME_TOUCH_ZONE_WIDTH = 1 / 3;
+const VOLUME_TOUCH_PADDING = 16;
 const COUNTDOWN_SECONDS = 10;
 const COUNTDOWN_FALLBACK_BUFFER = 15;
 
@@ -45,6 +47,12 @@ function formatTime(seconds: number): string {
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
+}
+
+function quantizeVolumeToSystemStep(volume: number, maxVolume: number): number {
+  const bounded = clamp(volume, 0, 1);
+  const steps = Math.max(1, maxVolume);
+  return Math.round(bounded * steps) / steps;
 }
 
 function normalizeSubtitleLanguage(language: string): "en" | "es" | "fr" | "de" | "it" | "pt" | "ja" | "ko" | "zh" {
@@ -74,11 +82,12 @@ export function PlayerScreen({ route, navigation }: Props) {
   const volumeHudTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const countdownCancelledRef = useRef(false);
+  const lastAppliedSystemVolumeRef = useRef<number | null>(null);
   const volumeUpdateTokenRef = useRef(0);
   const lastTapRef = useRef<{ time: number; zone: GestureZone | null }>({ time: 0, zone: null });
   const gestureStartRef = useRef<{
     zone: GestureZone;
-    startVolume: number;
+    volumeEligible: boolean;
     volumeActive: boolean;
   } | null>(null);
 
@@ -100,7 +109,8 @@ export function PlayerScreen({ route, navigation }: Props) {
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const [isScrubbing, setIsScrubbing] = useState(false);
   const [scrubTime, setScrubTime] = useState(initialTime);
-  const [volume, setVolume] = useState(1);
+  const [systemVolume, setSystemVolume] = useState(1);
+  const [systemVolumeMax, setSystemVolumeMax] = useState(15);
   const [volumeHud, setVolumeHud] = useState<number | null>(null);
   const [skipFeedback, setSkipFeedback] = useState<SkipFeedback>(null);
   const [countdown, setCountdown] = useState<number | null>(null);
@@ -153,6 +163,11 @@ export function PlayerScreen({ route, navigation }: Props) {
     setShowSpeedMenu(false);
   }, []);
 
+  const hideVolumeHud = useCallback(() => {
+    if (volumeHudTimeoutRef.current) clearTimeout(volumeHudTimeoutRef.current);
+    setVolumeHud(null);
+  }, []);
+
   const hideControlsSoon = useCallback(() => {
     if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
     if (paused) return;
@@ -189,9 +204,10 @@ export function PlayerScreen({ route, navigation }: Props) {
   }, [displayTime, seekTo, showControlsTemporarily, showSkip]);
 
   const togglePlayPause = useCallback(() => {
+    hideVolumeHud();
     setPaused((value) => !value);
     setShowControls(true);
-  }, []);
+  }, [hideVolumeHud]);
 
   const goToNext = useCallback(() => {
     if (!hasNext) return;
@@ -274,7 +290,14 @@ export function PlayerScreen({ route, navigation }: Props) {
 
   useEffect(() => {
     void ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE).catch(() => {});
-    void getSystemMusicVolume().then(setVolume).catch(() => {});
+    setPlayerVolumeStream();
+    void getSystemMusicVolumeInfo()
+      .then(({ volume, maxVolume }) => {
+        setSystemVolume(volume);
+        setSystemVolumeMax(maxVolume);
+        lastAppliedSystemVolumeRef.current = volume;
+      })
+      .catch(() => {});
     return () => {
       void ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(() => {});
       if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
@@ -376,7 +399,7 @@ export function PlayerScreen({ route, navigation }: Props) {
 
   const isVolumeTouchZone = useCallback((x: number) => {
     if (surfaceWidth <= 0) return false;
-    return x >= surfaceWidth / 2;
+    return x >= surfaceWidth * (1 - VOLUME_TOUCH_ZONE_WIDTH);
   }, [surfaceWidth]);
 
   const handleSingleTap = useCallback(() => {
@@ -401,20 +424,43 @@ export function PlayerScreen({ route, navigation }: Props) {
     showControlsTemporarily();
   }, [showControlsTemporarily, skipBy, togglePlayPause]);
 
+  const getGestureTouchY = useCallback((event: { nativeEvent: { pageY?: number; locationY?: number } }, gestureState?: { moveY?: number }) => {
+    if (gestureState?.moveY != null && Number.isFinite(gestureState.moveY)) {
+      return gestureState.moveY;
+    }
+    if (event.nativeEvent.pageY != null && Number.isFinite(event.nativeEvent.pageY)) {
+      return event.nativeEvent.pageY;
+    }
+    return event.nativeEvent.locationY ?? 0;
+  }, []);
+
+  const getVolumeForTouchY = useCallback((touchY: number) => {
+    const trackHeight = Math.max(surfaceHeight - VOLUME_TOUCH_PADDING * 2, 1);
+    const normalizedY = clamp((touchY - VOLUME_TOUCH_PADDING) / trackHeight, 0, 1);
+    return 1 - normalizedY;
+  }, [surfaceHeight]);
+
   const applySystemVolume = useCallback((nextVolume: number) => {
-    const clamped = clamp(nextVolume, 0, 1);
-    setVolume(clamped);
+    const clamped = quantizeVolumeToSystemStep(nextVolume, systemVolumeMax);
+    if (lastAppliedSystemVolumeRef.current != null && Math.abs(lastAppliedSystemVolumeRef.current - clamped) < 0.0001) {
+      setVolumeHud(clamped);
+      return;
+    }
+
+    lastAppliedSystemVolumeRef.current = clamped;
+    setSystemVolume(clamped);
     setVolumeHud(clamped);
     const token = volumeUpdateTokenRef.current + 1;
     volumeUpdateTokenRef.current = token;
     void setSystemMusicVolume(clamped)
       .then((appliedVolume) => {
         if (volumeUpdateTokenRef.current !== token) return;
-        setVolume(appliedVolume);
+        setSystemVolume(appliedVolume);
         setVolumeHud(appliedVolume);
+        lastAppliedSystemVolumeRef.current = appliedVolume;
       })
       .catch(() => {});
-  }, []);
+  }, [systemVolumeMax]);
 
   const gestureResponder = useMemo(
     () =>
@@ -423,30 +469,42 @@ export function PlayerScreen({ route, navigation }: Props) {
         onMoveShouldSetPanResponder: () => true,
         onPanResponderGrant: (event) => {
           const { locationX } = event.nativeEvent;
+          const volumeEligible = isVolumeTouchZone(locationX);
           gestureStartRef.current = {
             zone: getZoneForX(locationX),
-            startVolume: volume,
+            volumeEligible,
             volumeActive: false,
           };
+          if (volumeEligible) {
+            setVolumeHud(systemVolume);
+          }
         },
         onPanResponderMove: (event, gestureState) => {
           const state = gestureStartRef.current;
-          if (!state || !isVolumeTouchZone(event.nativeEvent.locationX) || surfaceHeight <= 0) return;
-          if (!state.volumeActive && Math.abs(gestureState.dy) < VOLUME_ACTIVATION_DISTANCE) return;
+          if (!state || !state.volumeEligible || surfaceHeight <= 0) return;
+
+          const verticalDistance = Math.abs(gestureState.dy);
+          const horizontalDistance = Math.abs(gestureState.dx);
+          if (!state.volumeActive) {
+            if (verticalDistance < VOLUME_ACTIVATION_DISTANCE) return;
+            if (verticalDistance <= horizontalDistance + VOLUME_HORIZONTAL_TOLERANCE) return;
+          }
+
           state.volumeActive = true;
-          const dragRange = Math.max(surfaceHeight * VOLUME_DRAG_RANGE, 1);
-          const delta = -gestureState.dy / dragRange;
-          const nextVolume = clamp(state.startVolume + delta, 0, 1);
+          const nextVolume = getVolumeForTouchY(getGestureTouchY(event, gestureState));
           applySystemVolume(nextVolume);
           setShowControls(true);
           if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
           if (volumeHudTimeoutRef.current) clearTimeout(volumeHudTimeoutRef.current);
         },
-        onPanResponderRelease: () => {
+        onPanResponderRelease: (event, gestureState) => {
           const state = gestureStartRef.current;
           gestureStartRef.current = null;
 
           if (state?.volumeActive) {
+            if (surfaceHeight > 0) {
+              applySystemVolume(getVolumeForTouchY(getGestureTouchY(event, gestureState)));
+            }
             volumeHudTimeoutRef.current = setTimeout(() => setVolumeHud(null), 700);
             showControlsTemporarily();
             return;
@@ -474,7 +532,7 @@ export function PlayerScreen({ route, navigation }: Props) {
           setVolumeHud(null);
         },
       }),
-    [applySystemVolume, getZoneForX, handleDoubleTap, handleSingleTap, isVolumeTouchZone, showControlsTemporarily, surfaceHeight, volume]
+    [applySystemVolume, getGestureTouchY, getVolumeForTouchY, getZoneForX, handleDoubleTap, handleSingleTap, isVolumeTouchZone, showControlsTemporarily, surfaceHeight, systemVolume]
   );
 
   const progressResponder = useMemo(
@@ -517,7 +575,7 @@ export function PlayerScreen({ route, navigation }: Props) {
   }, [currentTime, timingsQuery.data]);
 
   return (
-    <View style={styles.screen} onLayout={handleSurfaceLayout}>
+    <View testID="player-screen" style={styles.screen} onLayout={handleSurfaceLayout}>
       <Video
         ref={playerRef}
         source={{
@@ -535,7 +593,7 @@ export function PlayerScreen({ route, navigation }: Props) {
         style={styles.video}
         paused={paused}
         rate={playbackRate}
-        volume={volume}
+        volume={1}
         onLoad={(event) => {
           setDuration(event.duration);
           if (pendingSeekTime > 0) {
