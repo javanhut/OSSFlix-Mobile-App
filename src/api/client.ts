@@ -58,7 +58,7 @@ async function parseResponse<T>(response: Response): Promise<T> {
       : undefined;
   if (!response.ok || error) {
     const message = error || `Request failed with status ${response.status}`;
-    if (response.status === 401) {
+    if (response.status === 401 && useSessionStore.getState().token) {
       useSessionStore.getState().clearAuth();
     }
     throw new Error(message);
