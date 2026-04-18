@@ -32,6 +32,11 @@ beforeEach(() => {
     selectedProfile: null,
   });
   jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+  // Default resolved shapes so React Query never sees an undefined return.
+  // Individual tests override these when they need different behavior.
+  jest.spyOn(api, 'getTitleDetails').mockResolvedValue(baseDetails as any);
+  jest.spyOn(api, 'watchlistCheck').mockResolvedValue({ inList: false });
+  jest.spyOn(api, 'getProgressForDir').mockResolvedValue([]);
 });
 
 afterEach(() => {

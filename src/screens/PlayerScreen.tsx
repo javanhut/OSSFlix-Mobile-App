@@ -19,6 +19,7 @@ import { api } from "../api/client";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { getSystemMusicVolume, setSystemMusicVolume } from "../native/systemVolume";
 import { colors } from "../theme/colors";
+import { formatEpisodeLabel, parseEpisodePath } from "../utils/episodeNaming";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Player">;
 
@@ -29,6 +30,8 @@ const DOUBLE_TAP_MS = 280;
 const SEEK_STEP = 10;
 const VOLUME_ACTIVATION_DISTANCE = 12;
 const VOLUME_DRAG_RANGE = 0.45;
+const COUNTDOWN_SECONDS = 10;
+const COUNTDOWN_FALLBACK_BUFFER = 15;
 
 function formatTime(seconds: number): string {
   if (!isFinite(seconds) || seconds < 0) return "0:00";
@@ -69,6 +72,8 @@ export function PlayerScreen({ route, navigation }: Props) {
   const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const volumeHudTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const countdownCancelledRef = useRef(false);
   const volumeUpdateTokenRef = useRef(0);
   const lastTapRef = useRef<{ time: number; zone: GestureZone | null }>({ time: 0, zone: null });
   const gestureStartRef = useRef<{
@@ -98,6 +103,7 @@ export function PlayerScreen({ route, navigation }: Props) {
   const [volume, setVolume] = useState(1);
   const [volumeHud, setVolumeHud] = useState<number | null>(null);
   const [skipFeedback, setSkipFeedback] = useState<SkipFeedback>(null);
+  const [countdown, setCountdown] = useState<number | null>(null);
 
   const currentVideo = videos[currentIndex];
   const hasNext = currentIndex < videos.length - 1;
@@ -209,6 +215,51 @@ export function PlayerScreen({ route, navigation }: Props) {
     clearMenus();
   }, [clearMenus, hasPrev]);
 
+  const nextEpisodeLabel = useMemo(() => {
+    if (!hasNext) return null;
+    const nextSrc = videos[currentIndex + 1];
+    if (!nextSrc) return null;
+    const parsed = parseEpisodePath(nextSrc);
+    if (parsed) return formatEpisodeLabel(parsed);
+    return nextSrc.split("/").pop() || nextSrc;
+  }, [currentIndex, hasNext, videos]);
+
+  const cancelCountdown = useCallback(() => {
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+    setCountdown(null);
+  }, []);
+
+  const startCountdown = useCallback(() => {
+    if (countdownIntervalRef.current) return;
+    setCountdown(COUNTDOWN_SECONDS);
+    countdownIntervalRef.current = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev === null || prev <= 1) {
+          if (countdownIntervalRef.current) {
+            clearInterval(countdownIntervalRef.current);
+            countdownIntervalRef.current = null;
+          }
+          goToNext();
+          return null;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, [goToNext]);
+
+  const handleCountdownCancel = useCallback(() => {
+    countdownCancelledRef.current = true;
+    cancelCountdown();
+  }, [cancelCountdown]);
+
+  const handleCountdownPlayNow = useCallback(() => {
+    cancelCountdown();
+    goToNext();
+  }, [cancelCountdown, goToNext]);
+
   useEffect(() => {
     if (currentIndex === startIndex) {
       setCurrentTime(initialTime);
@@ -257,7 +308,39 @@ export function PlayerScreen({ route, navigation }: Props) {
   useEffect(() => {
     setShowControls(true);
     hideControlsSoon();
-  }, [currentVideo, hideControlsSoon]);
+    countdownCancelledRef.current = false;
+    cancelCountdown();
+  }, [currentVideo, hideControlsSoon, cancelCountdown]);
+
+  useEffect(() => {
+    const timings = timingsQuery.data;
+    const hasOutro = timings?.outro_start != null && timings?.outro_end != null;
+    let trigger = -1;
+    if (hasOutro) {
+      trigger = timings!.outro_start as number;
+    } else if (totalDuration > COUNTDOWN_FALLBACK_BUFFER) {
+      trigger = totalDuration - COUNTDOWN_FALLBACK_BUFFER;
+    }
+    if (!hasNext || trigger <= 0) {
+      if (countdownIntervalRef.current) cancelCountdown();
+      return;
+    }
+    const pastTrigger = currentTime >= trigger;
+    if (pastTrigger && !countdownIntervalRef.current && !countdownCancelledRef.current) {
+      startCountdown();
+    } else if (!pastTrigger && countdownIntervalRef.current) {
+      cancelCountdown();
+    }
+  }, [currentTime, totalDuration, timingsQuery.data, hasNext, startCountdown, cancelCountdown]);
+
+  useEffect(() => {
+    return () => {
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+        countdownIntervalRef.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (paused) {
@@ -474,7 +557,7 @@ export function PlayerScreen({ route, navigation }: Props) {
         }}
       />
 
-      <View style={styles.gestureSurface} {...gestureResponder.panHandlers} />
+      <View testID="gesture-surface" style={styles.gestureSurface} {...gestureResponder.panHandlers} />
 
       {skipFeedback ? (
         <View key={skipFeedback.key} style={styles.feedbackBubble}>
@@ -488,6 +571,27 @@ export function PlayerScreen({ route, navigation }: Props) {
             <View style={[styles.volumeFill, { height: `${volumeHud * 100}%` }]} />
           </View>
           <Text style={styles.volumeText}>{Math.round(volumeHud * 100)}%</Text>
+        </View>
+      ) : null}
+
+      {countdown !== null ? (
+        <View style={styles.countdownOverlay} pointerEvents="box-none">
+          <View style={styles.countdownCard}>
+            <Text style={styles.countdownEyebrow}>Up Next</Text>
+            {nextEpisodeLabel ? (
+              <Text style={styles.countdownTitle} numberOfLines={2}>{nextEpisodeLabel}</Text>
+            ) : null}
+            <Text style={styles.countdownNumber}>{countdown}</Text>
+            <View style={styles.countdownButtons}>
+              <Pressable onPress={handleCountdownCancel} style={styles.countdownCancel}>
+                <Text style={styles.countdownCancelLabel}>Cancel</Text>
+              </Pressable>
+              <Pressable onPress={handleCountdownPlayNow} style={styles.countdownPlay}>
+                <Feather name="play" size={14} color={colors.primaryText} />
+                <Text style={styles.countdownPlayLabel}>Play Now</Text>
+              </Pressable>
+            </View>
+          </View>
         </View>
       ) : null}
 
@@ -537,7 +641,7 @@ export function PlayerScreen({ route, navigation }: Props) {
               <Text style={styles.timeLabel}>{formatTime(totalDuration)}</Text>
             </View>
 
-            <View style={styles.progressTrack} onLayout={handleProgressLayout} {...progressResponder.panHandlers}>
+            <View testID="progress-track" style={styles.progressTrack} onLayout={handleProgressLayout} {...progressResponder.panHandlers}>
               <View style={styles.progressTrackBg} />
               <View style={[styles.progressFill, { width: `${playedPercent}%` }]} />
               <View style={[styles.progressThumb, { left: `${playedPercent}%` }]} />
@@ -874,5 +978,71 @@ const styles = StyleSheet.create({
   volumeText: {
     color: colors.text,
     fontWeight: "800",
+  },
+  countdownOverlay: {
+    position: "absolute",
+    right: 20,
+    bottom: 140,
+    zIndex: 25,
+  },
+  countdownCard: {
+    minWidth: 240,
+    maxWidth: 320,
+    backgroundColor: "rgba(20,20,28,0.94)",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+  },
+  countdownEyebrow: {
+    color: colors.accentText,
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 1.1,
+    textTransform: "uppercase",
+  },
+  countdownTitle: {
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: "700",
+    marginTop: 6,
+  },
+  countdownNumber: {
+    color: colors.text,
+    fontSize: 36,
+    fontWeight: "800",
+    fontVariant: ["tabular-nums"],
+    marginTop: 8,
+  },
+  countdownButtons: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 10,
+  },
+  countdownCancel: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 10,
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.08)",
+  },
+  countdownCancelLabel: {
+    color: colors.text,
+    fontWeight: "700",
+  },
+  countdownPlay: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    backgroundColor: colors.primary,
+  },
+  countdownPlayLabel: {
+    color: colors.primaryText,
+    fontWeight: "700",
   },
 });

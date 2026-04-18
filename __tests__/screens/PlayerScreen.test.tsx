@@ -102,7 +102,12 @@ beforeEach(() => {
   jest.spyOn(api, 'saveProgress').mockResolvedValue({ ok: true });
 });
 
-afterEach(() => {
+afterEach(async () => {
+  // Flush any pending React Query notifyManager callbacks so they resolve
+  // inside act() rather than after teardown.
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
   jest.restoreAllMocks();
 });
 
@@ -311,4 +316,103 @@ describe('PlayerScreen — skip-intro / skip-credits banner', () => {
     fireEvent.press(skip);
     await waitFor(() => expect(mockSeek).toHaveBeenCalledWith(1750));
   });
+});
+
+describe('PlayerScreen — next-episode countdown', () => {
+  async function advanceIntoOutro() {
+    await waitFor(() => expect((Video as any).lastProps).toBeDefined());
+    await waitFor(() => expect(api.getTimings).toHaveBeenCalled());
+    await act(async () => {
+      (Video as any).lastProps.onLoad({ duration: 1800 });
+      (Video as any).lastProps.onProgress({ currentTime: 1705 });
+    });
+  }
+
+  it('shows the Up Next overlay with the next episode label when in outro window', async () => {
+    const { findByText } = renderPlayer();
+    await advanceIntoOutro();
+    expect(await findByText('Up Next')).toBeTruthy();
+    // Parsed episode label for foo_s1_ep2.mkv is "S1 E2 - Foo"
+    expect(await findByText(/S1 E2/)).toBeTruthy();
+  });
+
+  it('dismisses the overlay when Cancel is pressed and keeps the current episode', async () => {
+    const { findByText, queryByText } = renderPlayer();
+    await advanceIntoOutro();
+    const cancel = await findByText('Cancel');
+    fireEvent.press(cancel);
+    await waitFor(() => expect(queryByText('Up Next')).toBeNull());
+    expect((Video as any).lastProps.source.uri).toContain('foo_s1_ep1.mkv');
+  });
+
+  it('advances immediately when Play Now is pressed', async () => {
+    const { findByText } = renderPlayer();
+    await advanceIntoOutro();
+    const playNow = await findByText('Play Now');
+    fireEvent.press(playNow);
+    await waitFor(() => {
+      expect((Video as any).lastProps.source.uri).toContain('foo_s1_ep2.mkv');
+    });
+  });
+
+  it('falls back to 15 seconds before end when outro timings are null', async () => {
+    (api.getTimings as jest.Mock).mockResolvedValue({
+      video_src: 'foo', intro_start: null, intro_end: null, outro_start: null, outro_end: null,
+    });
+    const { findByText } = renderPlayer();
+    await waitFor(() => expect((Video as any).lastProps).toBeDefined());
+    await waitFor(() => expect(api.getTimings).toHaveBeenCalled());
+    await act(async () => {
+      (Video as any).lastProps.onLoad({ duration: 100 });
+      (Video as any).lastProps.onProgress({ currentTime: 86 });
+    });
+    expect(await findByText('Up Next')).toBeTruthy();
+  });
+
+  it('does not re-trigger the countdown after Cancel when still in the outro window', async () => {
+    const { findByText, queryByText } = renderPlayer();
+    await advanceIntoOutro();
+    fireEvent.press(await findByText('Cancel'));
+    await waitFor(() => expect(queryByText('Up Next')).toBeNull());
+    // Move a bit further within the outro window — should not restart
+    await act(async () => {
+      (Video as any).lastProps.onProgress({ currentTime: 1710 });
+    });
+    expect(queryByText('Up Next')).toBeNull();
+  });
+
+  it('does not show the overlay when there is no next episode', async () => {
+    const { queryByText } = renderPlayer(makeRoute({ videos: ['shows/Foo/only.mkv'], startIndex: 0 }));
+    await waitFor(() => expect((Video as any).lastProps).toBeDefined());
+    await waitFor(() => expect(api.getTimings).toHaveBeenCalled());
+    await act(async () => {
+      (Video as any).lastProps.onLoad({ duration: 1800 });
+      (Video as any).lastProps.onProgress({ currentTime: 1705 });
+    });
+    expect(queryByText('Up Next')).toBeNull();
+  });
+});
+
+describe('PlayerScreen — persistence lifecycle', () => {
+  it('persists progress when AppState transitions away from active', async () => {
+    const listeners: Array<(s: string) => void> = [];
+    const AppState = require('react-native').AppState;
+    const addSpy = jest.spyOn(AppState, 'addEventListener').mockImplementation((...args: unknown[]) => {
+      const cb = args[1] as (s: string) => void;
+      listeners.push(cb);
+      return { remove: () => {} } as any;
+    });
+    renderPlayer();
+    await waitFor(() => expect((Video as any).lastProps).toBeDefined());
+    await act(async () => {
+      (Video as any).lastProps.onLoad({ duration: 1800 });
+      (Video as any).lastProps.onProgress({ currentTime: 50 });
+    });
+    await act(async () => {
+      listeners.forEach((cb) => cb('background'));
+    });
+    await waitFor(() => expect(api.saveProgress).toHaveBeenCalled());
+    addSpy.mockRestore();
+  });
+
 });
