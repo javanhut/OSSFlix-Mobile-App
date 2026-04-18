@@ -52,8 +52,12 @@ function buildHeaders(authenticated = true, extra?: HeadersInit): Headers {
 
 async function parseResponse<T>(response: Response): Promise<T> {
   const payload = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const message = (payload as { error?: string }).error || `Request failed with status ${response.status}`;
+  const error =
+    payload && typeof payload === "object"
+      ? (payload as { error?: string }).error
+      : undefined;
+  if (!response.ok || error) {
+    const message = error || `Request failed with status ${response.status}`;
     if (response.status === 401) {
       useSessionStore.getState().clearAuth();
     }

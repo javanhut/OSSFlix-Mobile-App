@@ -42,9 +42,16 @@ export function SignInScreen({ navigation }: Props) {
       const response = needsSetPassword
         ? await api.mobileSetPassword(selectedProfile.id, password)
         : await api.mobileLogin(selectedProfile.id, password);
+      if (!response?.token || !response?.profile) {
+        throw new Error("Server did not return a valid session. Please try again.");
+      }
       setAuthenticatedSession(response.token, response.profile);
     } catch (error) {
-      Alert.alert("Authentication failed", error instanceof Error ? error.message : "Unable to sign in.");
+      const raw = error instanceof Error ? error.message : "Unable to sign in.";
+      const message = raw === "password_not_set"
+        ? "This profile has no password yet. Go back and select it again to set one."
+        : raw;
+      Alert.alert("Authentication failed", message);
     } finally {
       setSubmitting(false);
     }

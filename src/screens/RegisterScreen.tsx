@@ -31,6 +31,9 @@ export function RegisterScreen() {
     try {
       setSubmitting(true);
       const response = await api.mobileRegister(name.trim(), email.trim(), password);
+      if (!response?.token || !response?.profile) {
+        throw new Error("Server did not return a valid session. Please try again.");
+      }
       setAuthenticatedSession(response.token, response.profile);
     } catch (error) {
       Alert.alert("Registration failed", error instanceof Error ? error.message : "Unable to create the profile.");
