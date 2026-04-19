@@ -162,4 +162,31 @@ describe('ProfileLookupScreen', () => {
     fireEvent.press(getByText('Change'));
     expect(useSessionStore.getState().serverUrl).toBe('');
   });
+
+  it('Continue as Guest selects the guest profile and navigates to SignIn', async () => {
+    jest.spyOn(api, 'getGuestProfile').mockResolvedValue({
+      profile: { id: 9, name: 'Guest', image_path: null, has_password: true },
+    });
+
+    const { getByText } = render(<ProfileLookupScreen navigation={navigation} route={route} />);
+    await act(async () => {
+      fireEvent.press(getByText('Continue as Guest'));
+    });
+
+    await waitFor(() => {
+      expect(useSessionStore.getState().selectedProfile?.id).toBe(9);
+      expect(navigation.navigate).toHaveBeenCalledWith('SignIn');
+    });
+  });
+
+  it('Continue as Guest alerts when the server returns an error', async () => {
+    jest.spyOn(api, 'getGuestProfile').mockRejectedValue(new Error('Guest profile not available'));
+    const { getByText } = render(<ProfileLookupScreen navigation={navigation} route={route} />);
+    await act(async () => {
+      fireEvent.press(getByText('Continue as Guest'));
+    });
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith('Guest unavailable', 'Guest profile not available');
+    });
+  });
 });

@@ -32,6 +32,7 @@ export interface TitleSummary {
   imagePath: string | null;
   pathToDir: string;
   type?: string;
+  progressPct?: number;
 }
 
 export interface CategoryRow {

@@ -14,16 +14,24 @@ export function TitleCard({
   width?: number;
 }) {
   const imageUrl = resolveAssetUrl(item.imagePath);
+  const progress = typeof item.progressPct === "number" ? Math.max(0, Math.min(100, item.progressPct)) : 0;
 
   return (
     <Pressable onPress={onPress} style={[styles.card, { width }]}>
-      {imageUrl ? (
-        <Image source={{ uri: imageUrl }} style={styles.image} />
-      ) : (
-        <View style={[styles.image, styles.placeholder]}>
-          <Text style={styles.placeholderLabel}>{item.name}</Text>
-        </View>
-      )}
+      <View style={styles.imageWrapper}>
+        {imageUrl ? (
+          <Image source={{ uri: imageUrl }} style={styles.image} />
+        ) : (
+          <View style={[styles.image, styles.placeholder]}>
+            <Text style={styles.placeholderLabel}>{item.name}</Text>
+          </View>
+        )}
+        {progress > 0 ? (
+          <View style={styles.progressTrack} pointerEvents="none" testID="title-card-progress">
+            <View style={[styles.progressFill, { width: `${progress}%` }]} testID="title-card-progress-fill" />
+          </View>
+        ) : null}
+      </View>
       <Text style={styles.title} numberOfLines={2}>
         {item.name}
       </Text>
@@ -40,6 +48,9 @@ const styles = StyleSheet.create({
   card: {
     width: 148,
     marginRight: 14,
+  },
+  imageWrapper: {
+    position: "relative",
   },
   image: {
     width: "100%",
@@ -58,6 +69,21 @@ const styles = StyleSheet.create({
     color: colors.textSoft,
     textAlign: "center",
     fontWeight: "700",
+  },
+  progressTrack: {
+    position: "absolute",
+    left: 8,
+    right: 8,
+    bottom: 8,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "rgba(255,255,255,0.25)",
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: "100%",
+    backgroundColor: colors.primary,
+    borderRadius: 2,
   },
   title: {
     marginTop: 10,

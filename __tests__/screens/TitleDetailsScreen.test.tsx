@@ -233,6 +233,15 @@ describe('TitleDetailsScreen', () => {
     await waitFor(() => expect(toJSON()).toBeNull());
   });
 
+  it('genre chip navigates to the Genre screen when tapped', async () => {
+    const { findByText } = renderWithQuery(
+      <TitleDetailsScreen navigation={navigation} route={route} />
+    );
+    const chip = await findByText('Drama');
+    fireEvent.press(chip);
+    expect(navigation.navigate).toHaveBeenCalledWith('Genre', { genre: 'Drama' });
+  });
+
   it('disables Play (no playTarget) when there are no videos', async () => {
     const details = { ...baseDetails, videos: [] };
     jest.spyOn(api, 'getTitleDetails').mockResolvedValue(details as any);

@@ -109,6 +109,10 @@ export const api = {
     return postJson<{ profiles: PublicProfile[] }>("/api/auth/lookup-unclaimed", {}, false);
   },
 
+  getGuestProfile() {
+    return requestJson<{ profile: PublicProfile }>("/api/auth/guest-profile", undefined, false);
+  },
+
   mobileLogin(profileId: number, password: string) {
     return postJson<MobileAuthResponse>("/api/mobile/auth/login", { profileId, password }, false);
   },

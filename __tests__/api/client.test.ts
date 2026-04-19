@@ -190,6 +190,14 @@ describe('api endpoints', () => {
     });
   });
 
+  it('getGuestProfile GETs the guest endpoint without auth', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({ profile: { id: 1, name: 'Guest', image_path: null, has_password: true } })
+    );
+    await api.getGuestProfile();
+    expectCall(0, { url: `${SERVER}/api/auth/guest-profile`, method: 'GET', auth: false });
+  });
+
   it('mobileLogin posts profileId + password without auth', async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse({ token: 't', profile: {}, expiresAt: '' }));
     await api.mobileLogin(1, 'pw');

@@ -64,6 +64,19 @@ export function ProfileLookupScreen({ navigation }: Props) {
     }
   };
 
+  const handleGuest = async () => {
+    try {
+      setSubmitting(true);
+      const data = await api.getGuestProfile();
+      setSelectedProfile(data.profile);
+      navigation.navigate("SignIn");
+    } catch (error) {
+      Alert.alert("Guest unavailable", error instanceof Error ? error.message : "Unable to load guest profile.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const selectProfile = (profile: PublicProfile) => {
     setSelectedProfile(profile);
     navigation.navigate("SignIn");
@@ -103,6 +116,9 @@ export function ProfileLookupScreen({ navigation }: Props) {
             </Pressable>
             <Pressable onPress={handleUnclaimed} disabled={submitting} style={styles.secondaryButton}>
               <Text style={styles.secondaryLabel}>Use Unclaimed Profile</Text>
+            </Pressable>
+            <Pressable onPress={handleGuest} disabled={submitting} style={styles.secondaryButton}>
+              <Text style={styles.secondaryLabel}>Continue as Guest</Text>
             </Pressable>
             <Pressable onPress={() => navigation.navigate("Register")} style={styles.linkButton}>
               <Text style={styles.linkLabel}>Create a new profile</Text>

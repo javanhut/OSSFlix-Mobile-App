@@ -1,4 +1,4 @@
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useNavigation } from "@react-navigation/native";
@@ -34,6 +34,15 @@ export function HomeScreen() {
   };
 
   const loading = categoriesQuery.isLoading || continueWatchingQuery.isLoading || watchlistQuery.isLoading;
+  const refreshing =
+    categoriesQuery.isRefetching || continueWatchingQuery.isRefetching || watchlistQuery.isRefetching;
+  const handleRefresh = () => {
+    void Promise.all([
+      categoriesQuery.refetch(),
+      continueWatchingQuery.refetch(),
+      watchlistQuery.refetch(),
+    ]);
+  };
   const categoryRows = categoriesQuery.data || [];
   const highlighted = categoryRows[0]?.titles?.[0];
 
@@ -46,7 +55,13 @@ export function HomeScreen() {
   }
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.screen}
+      contentContainerStyle={styles.content}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} />
+      }
+    >
       <AppHeader
         eyebrow="Reelscape Mobile"
         title={`Welcome back${profile?.name ? `, ${profile.name}` : ""}`}

@@ -62,14 +62,24 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
       }
       return api.addToWatchlist(dirPath);
     },
-    onSuccess: async () => {
+    onMutate: async () => {
+      const checkKey = ["watchlist-check", dirPath];
+      await queryClient.cancelQueries({ queryKey: checkKey });
+      const previous = queryClient.getQueryData<{ inList: boolean }>(checkKey);
+      queryClient.setQueryData(checkKey, { inList: !previous?.inList });
+      return { previous };
+    },
+    onError: (error, _vars, context) => {
+      if (context?.previous !== undefined) {
+        queryClient.setQueryData(["watchlist-check", dirPath], context.previous);
+      }
+      Alert.alert("Unable to update My List", error instanceof Error ? error.message : "Request failed.");
+    },
+    onSettled: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["watchlist"] }),
         queryClient.invalidateQueries({ queryKey: ["watchlist-check", dirPath] }),
       ]);
-    },
-    onError: (error) => {
-      Alert.alert("Unable to update My List", error instanceof Error ? error.message : "Request failed.");
     },
   });
 
@@ -155,9 +165,13 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
       {!!details.genre?.length ? (
         <View style={styles.chipRow}>
           {details.genre.map((genre) => (
-            <View key={genre} style={styles.chip}>
+            <Pressable
+              key={genre}
+              onPress={() => navigation.navigate("Genre", { genre })}
+              style={({ pressed }) => [styles.chip, pressed && styles.chipPressed]}
+            >
               <Text style={styles.chipLabel}>{genre}</Text>
-            </View>
+            </Pressable>
           ))}
         </View>
       ) : null}
@@ -317,6 +331,11 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     borderRadius: 999,
     backgroundColor: colors.surfaceAccent,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  chipPressed: {
+    backgroundColor: colors.border,
   },
   chipLabel: {
     color: colors.textSoft,

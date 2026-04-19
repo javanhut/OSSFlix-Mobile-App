@@ -4,6 +4,7 @@ import { Feather } from "@expo/vector-icons";
 
 import { useSessionStore } from "../state/session";
 import { colors } from "../theme/colors";
+import { GenreScreen } from "../screens/GenreScreen";
 import { HomeScreen } from "../screens/HomeScreen";
 import { LibraryScreen } from "../screens/LibraryScreen";
 import { PlayerScreen } from "../screens/PlayerScreen";
@@ -22,6 +23,7 @@ export type RootStackParamList = {
   Register: undefined;
   MainTabs: undefined;
   TitleDetails: { dirPath: string };
+  Genre: { genre: string };
   Player: {
     dirPath: string;
     title: string;
@@ -116,6 +118,11 @@ export function RootNavigator() {
         <>
           <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
           <Stack.Screen name="TitleDetails" component={TitleDetailsScreen} options={{ title: "Details" }} />
+          <Stack.Screen
+            name="Genre"
+            component={GenreScreen}
+            options={({ route }) => ({ title: route.params.genre })}
+          />
           <Stack.Screen name="Player" component={PlayerScreen} options={{ headerShown: false }} />
         </>
       )}
