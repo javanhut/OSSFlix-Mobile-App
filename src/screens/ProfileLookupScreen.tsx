@@ -1,25 +1,22 @@
 import { useState } from "react";
 import {
   Alert,
-  FlatList,
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Feather } from "@expo/vector-icons";
 
 import { api } from "../api/client";
 import { AppHeader } from "../components/AppHeader";
-import { EmptyState } from "../components/EmptyState";
 import { useSessionStore } from "../state/session";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors } from "../theme/colors";
-import type { PublicProfile } from "../types/api";
 import { useLockPortrait } from "../hooks/useLockPortrait";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ProfileLookup">;
@@ -28,7 +25,6 @@ export function ProfileLookupScreen({ navigation }: Props) {
   useLockPortrait();
 
   const [email, setEmail] = useState("");
-  const [profiles, setProfiles] = useState<PublicProfile[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const setSelectedProfile = useSessionStore((state) => state.setSelectedProfile);
   const setServerUrl = useSessionStore((state) => state.setServerUrl);
@@ -38,10 +34,11 @@ export function ProfileLookupScreen({ navigation }: Props) {
     try {
       setSubmitting(true);
       const data = await api.lookupProfiles(email.trim());
-      setProfiles(data.profiles);
       if (!data.profiles.length) {
         Alert.alert("No profiles", "No profiles were found for that email address.");
+        return;
       }
+      navigation.navigate("ProfileSelect", { profiles: data.profiles, source: "email" });
     } catch (error) {
       Alert.alert("Lookup failed", error instanceof Error ? error.message : "Unable to load profiles.");
     } finally {
@@ -53,10 +50,11 @@ export function ProfileLookupScreen({ navigation }: Props) {
     try {
       setSubmitting(true);
       const data = await api.lookupUnclaimed();
-      setProfiles(data.profiles);
       if (!data.profiles.length) {
         Alert.alert("No profiles", "This server has no unclaimed profiles.");
+        return;
       }
+      navigation.navigate("ProfileSelect", { profiles: data.profiles, source: "unclaimed" });
     } catch (error) {
       Alert.alert("Lookup failed", error instanceof Error ? error.message : "Unable to load profiles.");
     } finally {
@@ -77,68 +75,45 @@ export function ProfileLookupScreen({ navigation }: Props) {
     }
   };
 
-  const selectProfile = (profile: PublicProfile) => {
-    setSelectedProfile(profile);
-    navigation.navigate("SignIn");
-  };
-
   return (
     <KeyboardAvoidingView
       style={styles.screen}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <FlatList
-        data={profiles}
-        keyExtractor={(item) => String(item.id)}
-        contentContainerStyle={styles.list}
+      <ScrollView
+        contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
-        ListHeaderComponent={
-          <View style={styles.formHeader}>
-            <AppHeader
-              eyebrow="Connected Server"
-              title="Choose a profile"
-              subtitle={currentServerUrl ? currentServerUrl : "No server configured"}
-              actionLabel="Change"
-              onAction={() => setServerUrl("")}
-            />
-            <TextInput
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              autoCorrect={false}
-              placeholder="Email"
-              placeholderTextColor="#64748b"
-              style={styles.input}
-            />
-            <Pressable onPress={handleLookup} disabled={submitting} style={styles.primaryButton}>
-              <Text style={styles.primaryLabel}>{submitting ? "Loading..." : "Find Profiles"}</Text>
-            </Pressable>
-            <Pressable onPress={handleUnclaimed} disabled={submitting} style={styles.secondaryButton}>
-              <Text style={styles.secondaryLabel}>Use Unclaimed Profile</Text>
-            </Pressable>
-            <Pressable onPress={handleGuest} disabled={submitting} style={styles.secondaryButton}>
-              <Text style={styles.secondaryLabel}>Continue as Guest</Text>
-            </Pressable>
-            <Pressable onPress={() => navigation.navigate("Register")} style={styles.linkButton}>
-              <Text style={styles.linkLabel}>Create a new profile</Text>
-            </Pressable>
-          </View>
-        }
-        ListEmptyComponent={<EmptyState title="No profiles loaded yet" subtitle="Look up profiles by email, use an unclaimed profile, or create a new one." />}
-        renderItem={({ item }) => (
-          <Pressable onPress={() => selectProfile(item)} style={styles.profileCard}>
-            <View style={styles.avatar}>
-              <Feather name="user" size={20} color={colors.primaryText} />
-            </View>
-            <View style={styles.profileText}>
-              <Text style={styles.profileName}>{item.name}</Text>
-              <Text style={styles.profileMeta}>{item.has_password ? "Password protected" : "Needs password"}</Text>
-            </View>
-            <Feather name="chevron-right" size={18} color={colors.textMuted} />
-          </Pressable>
-        )}
-      />
+      >
+        <AppHeader
+          eyebrow="Connected Server"
+          title="Find a profile"
+          subtitle={currentServerUrl ? currentServerUrl : "No server configured"}
+          actionLabel="Change"
+          onAction={() => setServerUrl("")}
+        />
+        <TextInput
+          value={email}
+          onChangeText={setEmail}
+          autoCapitalize="none"
+          autoCorrect={false}
+          placeholder="Email"
+          placeholderTextColor="#64748b"
+          style={styles.input}
+        />
+        <Pressable onPress={handleLookup} disabled={submitting} style={styles.primaryButton}>
+          <Text style={styles.primaryLabel}>{submitting ? "Loading..." : "Find Profiles"}</Text>
+        </Pressable>
+        <Pressable onPress={handleUnclaimed} disabled={submitting} style={styles.secondaryButton}>
+          <Text style={styles.secondaryLabel}>Use Unclaimed Profile</Text>
+        </Pressable>
+        <Pressable onPress={handleGuest} disabled={submitting} style={styles.secondaryButton}>
+          <Text style={styles.secondaryLabel}>Continue as Guest</Text>
+        </Pressable>
+        <Pressable onPress={() => navigation.navigate("Register")} style={styles.linkButton}>
+          <Text style={styles.linkLabel}>Create a new profile</Text>
+        </Pressable>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -148,8 +123,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  formHeader: {
-    marginBottom: 18,
+  content: {
+    padding: 20,
+    paddingBottom: 32,
+    flexGrow: 1,
   },
   input: {
     backgroundColor: colors.surfaceElevated,
@@ -187,45 +164,10 @@ const styles = StyleSheet.create({
   },
   linkButton: {
     marginTop: 12,
+    alignSelf: "center",
   },
   linkLabel: {
     color: colors.accentText,
     fontWeight: "600",
-  },
-  list: {
-    padding: 20,
-    paddingBottom: 32,
-    flexGrow: 1,
-  },
-  profileCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.surface,
-    borderRadius: 18,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.primaryPressed,
-  },
-  profileText: {
-    marginLeft: 14,
-    flex: 1,
-  },
-  profileName: {
-    color: colors.text,
-    fontSize: 17,
-    fontWeight: "700",
-  },
-  profileMeta: {
-    color: colors.textMuted,
-    marginTop: 4,
   },
 });

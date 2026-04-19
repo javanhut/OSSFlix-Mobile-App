@@ -19,7 +19,10 @@ export function AppHeader({
     <View style={styles.wrap}>
       <View style={styles.copy}>
         {!!eyebrow && <Text style={styles.eyebrow}>{eyebrow}</Text>}
-        <Text style={styles.title}>{title}</Text>
+        <View style={styles.titleRow}>
+          <View style={styles.titleAccent} />
+          <Text style={styles.title}>{title}</Text>
+        </View>
         {!!subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
       </View>
       {actionLabel && onAction ? (
@@ -51,11 +54,23 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     marginBottom: 8,
   },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  titleAccent: {
+    width: 5,
+    height: 28,
+    borderRadius: 3,
+    backgroundColor: colors.primary,
+    marginRight: 12,
+  },
   title: {
     color: colors.text,
     fontSize: 30,
     fontWeight: "800",
     lineHeight: 34,
+    flexShrink: 1,
   },
   subtitle: {
     color: colors.textMuted,

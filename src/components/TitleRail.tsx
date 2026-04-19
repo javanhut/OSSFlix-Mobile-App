@@ -60,7 +60,10 @@ export function TitleRail({
 
   return (
     <View style={styles.section}>
-      <Text style={styles.heading}>{title}</Text>
+      <View style={styles.headingRow}>
+        <View style={styles.headingAccent} />
+        <Text style={styles.heading}>{title.toUpperCase()}</Text>
+      </View>
       <View style={styles.railWrapper} onLayout={handleLayout}>
         <FlatList
           horizontal
@@ -99,11 +102,23 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: 28,
   },
+  headingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 14,
+  },
+  headingAccent: {
+    width: 4,
+    height: 18,
+    borderRadius: 2,
+    backgroundColor: colors.primary,
+    marginRight: 10,
+  },
   heading: {
     color: colors.text,
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: "800",
-    marginBottom: 14,
+    letterSpacing: 1.2,
   },
   railWrapper: {
     position: "relative",

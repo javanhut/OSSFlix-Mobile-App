@@ -7,7 +7,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -15,6 +14,7 @@ import { Feather } from "@expo/vector-icons";
 
 import { api } from "../api/client";
 import { AppHeader } from "../components/AppHeader";
+import { PasswordField } from "../components/PasswordField";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { useSessionStore } from "../state/session";
 import { colors } from "../theme/colors";
@@ -74,13 +74,10 @@ export function SignInScreen({ navigation }: Props) {
           actionLabel="Back"
           onAction={() => navigation.goBack()}
         />
-        <TextInput
-          secureTextEntry
+        <PasswordField
           value={password}
           onChangeText={setPassword}
           placeholder="Password"
-          placeholderTextColor="#64748b"
-          style={styles.input}
         />
         <Pressable onPress={submit} disabled={submitting} style={styles.button}>
           <View style={styles.buttonContent}>
@@ -105,16 +102,6 @@ const styles = StyleSheet.create({
   content: {
     padding: 24,
     flexGrow: 1,
-  },
-  input: {
-    backgroundColor: colors.surfaceElevated,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    color: colors.text,
-    paddingHorizontal: 16,
-    paddingVertical: 15,
-    fontSize: 16,
   },
   button: {
     marginTop: 16,

@@ -9,6 +9,7 @@ import { HomeScreen } from "../screens/HomeScreen";
 import { LibraryScreen } from "../screens/LibraryScreen";
 import { PlayerScreen } from "../screens/PlayerScreen";
 import { ProfileLookupScreen } from "../screens/ProfileLookupScreen";
+import { ProfileSelectScreen } from "../screens/ProfileSelectScreen";
 import { RegisterScreen } from "../screens/RegisterScreen";
 import { ServerConnectScreen } from "../screens/ServerConnectScreen";
 import { SignInScreen } from "../screens/SignInScreen";
@@ -19,6 +20,7 @@ import { WatchlistScreen } from "../screens/WatchlistScreen";
 export type RootStackParamList = {
   ServerConnect: undefined;
   ProfileLookup: undefined;
+  ProfileSelect: { profiles: import("../types/api").PublicProfile[]; source: "email" | "unclaimed" };
   SignIn: undefined;
   Register: undefined;
   MainTabs: undefined;
@@ -110,7 +112,12 @@ export function RootNavigator() {
         <Stack.Screen name="ServerConnect" component={ServerConnectScreen} options={{ title: "Connect to Server" }} />
       ) : !token || !profile ? (
         <>
-          <Stack.Screen name="ProfileLookup" component={ProfileLookupScreen} options={{ title: "Choose Profile" }} />
+          <Stack.Screen name="ProfileLookup" component={ProfileLookupScreen} options={{ title: "Find Profile" }} />
+          <Stack.Screen
+            name="ProfileSelect"
+            component={ProfileSelectScreen}
+            options={{ title: "Choose Profile" }}
+          />
           <Stack.Screen name="SignIn" component={SignInScreen} options={{ title: "Sign In" }} />
           <Stack.Screen name="Register" component={RegisterScreen} options={{ title: "Create Profile" }} />
         </>

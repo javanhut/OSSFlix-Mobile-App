@@ -6,6 +6,7 @@ import { Feather } from "@expo/vector-icons";
 
 import { api, resolveAssetUrl } from "../api/client";
 import { EmptyState } from "../components/EmptyState";
+import { EpisodeRow } from "../components/EpisodeRow";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors } from "../theme/colors";
 import {
@@ -15,6 +16,7 @@ import {
   titleFromStem,
   type ParsedEpisode,
 } from "../utils/episodeNaming";
+import { formatTitleType } from "../utils/titleType";
 import { useLockPortrait } from "../hooks/useLockPortrait";
 
 type Props = NativeStackScreenProps<RootStackParamList, "TitleDetails">;
@@ -108,6 +110,14 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
     [grouped.bySeason],
   );
 
+  const progressByVideo = useMemo(() => {
+    const map = new Map<string, { current_time: number; duration: number }>();
+    for (const entry of progressQuery.data || []) {
+      map.set(entry.video_src, { current_time: entry.current_time, duration: entry.duration });
+    }
+    return map;
+  }, [progressQuery.data]);
+
   const [selectedSeason, setSelectedSeason] = useState<number | null>(null);
   const [seasonMenuOpen, setSeasonMenuOpen] = useState(false);
 
@@ -160,7 +170,7 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       {imageUrl ? <Image source={{ uri: imageUrl }} style={styles.poster} /> : <View style={styles.posterFallback} />}
       <Text style={styles.title}>{details.name}</Text>
-      <Text style={styles.meta}>{details.type}</Text>
+      <Text style={styles.meta}>{formatTitleType(details.type)}</Text>
       <Text style={styles.description}>{description}</Text>
       {!!details.genre?.length ? (
         <View style={styles.chipRow}>
@@ -240,16 +250,28 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
         </View>
       ) : null}
 
-      <Text style={styles.sectionTitle}>
-        {seasonKeys.length > 0 ? "Episodes" : "Files"}
-      </Text>
+      {seasonKeys.length > 0 ? <Text style={styles.sectionTitle}>Episodes</Text> : null}
       {visibleEntries.length ? (
         visibleEntries.map((entry) => {
           const startIndex = details.videos.indexOf(entry.video);
+          const progress = progressByVideo.get(entry.video) ?? null;
           return (
-            <Pressable
+            <EpisodeRow
               key={entry.video}
-              onPress={() =>
+              parsed={entry.parsed}
+              fallbackLabel={entry.label}
+              progress={progress}
+              onPlay={() =>
+                navigation.navigate("Player", {
+                  dirPath: details.dirPath,
+                  title: details.name,
+                  videos: details.videos,
+                  startIndex: startIndex >= 0 ? startIndex : 0,
+                  initialTime: progress?.current_time ?? 0,
+                  subtitles: details.subtitles,
+                })
+              }
+              onRestart={() =>
                 navigation.navigate("Player", {
                   dirPath: details.dirPath,
                   title: details.name,
@@ -259,11 +281,7 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
                   subtitles: details.subtitles,
                 })
               }
-              style={styles.episodeRow}
-            >
-              <Text style={styles.episodeText}>{entry.label}</Text>
-              <Feather name="play" size={16} color={colors.accentText} />
-            </Pressable>
+            />
           );
         })
       ) : (
@@ -430,22 +448,5 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     marginTop: 24,
     marginBottom: 14,
-  },
-  episodeRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 14,
-    backgroundColor: colors.surfaceElevated,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginBottom: 10,
-  },
-  episodeText: {
-    color: colors.text,
-    fontSize: 15,
-    fontWeight: "600",
   },
 });

@@ -59,11 +59,11 @@ describe('TitleDetailsScreen', () => {
     jest.spyOn(api, 'watchlistCheck').mockResolvedValue({ inList: false });
     jest.spyOn(api, 'getProgressForDir').mockResolvedValue([]);
 
-    const { findByText, getByText } = renderWithQuery(
+    const { findAllByText, getByText } = renderWithQuery(
       <TitleDetailsScreen navigation={navigation} route={route} />
     );
-    expect(await findByText('Foo')).toBeTruthy();
-    expect(getByText('tv show')).toBeTruthy();
+    expect((await findAllByText('Foo')).length).toBeGreaterThanOrEqual(1);
+    expect(getByText('TV Show')).toBeTruthy();
     expect(getByText('Drama')).toBeTruthy();
     expect(getByText('Cast: Ada, Lin')).toBeTruthy();
     expect(getByText('Play')).toBeTruthy();
@@ -108,10 +108,10 @@ describe('TitleDetailsScreen', () => {
     jest.spyOn(api, 'watchlistCheck').mockResolvedValue({ inList: false });
     jest.spyOn(api, 'getProgressForDir').mockResolvedValue([]);
 
-    const { findByText } = renderWithQuery(
+    const { findByLabelText } = renderWithQuery(
       <TitleDetailsScreen navigation={navigation} route={route} />
     );
-    const row = await findByText('S1 E2 - Foo');
+    const row = await findByLabelText('Play Episode 2');
     fireEvent.press(row);
     expect(navigation.navigate).toHaveBeenCalledWith('Player', expect.objectContaining({
       startIndex: 1,
@@ -149,10 +149,10 @@ describe('TitleDetailsScreen', () => {
     jest.spyOn(api, 'watchlistCheck').mockResolvedValue({ inList: false });
     jest.spyOn(api, 'getProgressForDir').mockResolvedValue([]);
 
-    const { findByText } = renderWithQuery(
+    const { findAllByText } = renderWithQuery(
       <TitleDetailsScreen navigation={navigation} route={route} />
     );
-    expect(await findByText('Foo')).toBeTruthy();
+    expect((await findAllByText('Foo')).length).toBeGreaterThanOrEqual(1);
   });
 
   it('Add to My List triggers addToWatchlist', async () => {

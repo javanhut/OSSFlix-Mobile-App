@@ -475,9 +475,6 @@ export function PlayerScreen({ route, navigation }: Props) {
             volumeEligible,
             volumeActive: false,
           };
-          if (volumeEligible) {
-            setVolumeHud(systemVolume);
-          }
         },
         onPanResponderMove: (event, gestureState) => {
           const state = gestureStartRef.current;
@@ -532,7 +529,7 @@ export function PlayerScreen({ route, navigation }: Props) {
           setVolumeHud(null);
         },
       }),
-    [applySystemVolume, getGestureTouchY, getVolumeForTouchY, getZoneForX, handleDoubleTap, handleSingleTap, isVolumeTouchZone, showControlsTemporarily, surfaceHeight, systemVolume]
+    [applySystemVolume, getGestureTouchY, getVolumeForTouchY, getZoneForX, handleDoubleTap, handleSingleTap, isVolumeTouchZone, showControlsTemporarily, surfaceHeight]
   );
 
   const progressResponder = useMemo(

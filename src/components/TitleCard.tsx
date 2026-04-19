@@ -3,6 +3,7 @@ import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { resolveAssetUrl } from "../api/client";
 import { colors } from "../theme/colors";
 import type { TitleSummary } from "../types/api";
+import { formatTitleType } from "../utils/titleType";
 
 export function TitleCard({
   item,
@@ -37,7 +38,7 @@ export function TitleCard({
       </Text>
       {!!item.type && (
         <View style={styles.badge}>
-          <Text style={styles.badgeLabel}>{item.type}</Text>
+          <Text style={styles.badgeLabel}>{formatTitleType(item.type)}</Text>
         </View>
       )}
     </Pressable>

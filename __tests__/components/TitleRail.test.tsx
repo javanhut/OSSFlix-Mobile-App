@@ -29,7 +29,7 @@ describe('TitleRail', () => {
     const { getByText, getAllByText } = render(
       <TitleRail title="Featured" items={items} onSelect={() => {}} />
     );
-    expect(getByText('Featured')).toBeTruthy();
+    expect(getByText('FEATURED')).toBeTruthy();
     // Each item renders its title in a placeholder + caption — 2 occurrences each.
     expect(getAllByText('Inception').length).toBeGreaterThanOrEqual(1);
     expect(getAllByText('Arrival').length).toBeGreaterThanOrEqual(1);
