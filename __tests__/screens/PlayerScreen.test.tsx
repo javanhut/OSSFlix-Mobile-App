@@ -178,10 +178,10 @@ describe('PlayerScreen — render and Video wiring', () => {
     await waitFor(() => expect(mockSetPlayerStream).toHaveBeenCalled());
   });
 
-  it('renders the title and current file name in the top bar', async () => {
+  it('renders the show title in the top bar and the episode label in the controls', async () => {
     const { findByText } = renderPlayer();
     expect(await findByText('Foo')).toBeTruthy();
-    expect(await findByText('foo_s1_ep1.mkv')).toBeTruthy();
+    expect(await findByText('Episode 1: Foo')).toBeTruthy();
   });
 });
 

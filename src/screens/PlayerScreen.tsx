@@ -240,6 +240,13 @@ export function PlayerScreen({ route, navigation }: Props) {
     return nextSrc.split("/").pop() || nextSrc;
   }, [currentIndex, hasNext, videos]);
 
+  const currentEpisodeLabel = useMemo(() => {
+    if (!currentVideo) return null;
+    const parsed = parseEpisodePath(currentVideo);
+    if (!parsed) return null;
+    return parsed.title ? `Episode ${parsed.episode}: ${parsed.title}` : `Episode ${parsed.episode}`;
+  }, [currentVideo]);
+
   const cancelCountdown = useCallback(() => {
     if (countdownIntervalRef.current) {
       clearInterval(countdownIntervalRef.current);
@@ -658,7 +665,6 @@ export function PlayerScreen({ route, navigation }: Props) {
             </Pressable>
             <View style={styles.titleWrap}>
               <Text style={styles.title} numberOfLines={1}>{title}</Text>
-              <Text style={styles.meta} numberOfLines={1}>{currentVideo.split("/").pop()}</Text>
             </View>
           </View>
 
@@ -711,6 +717,12 @@ export function PlayerScreen({ route, navigation }: Props) {
                   <Feather name="rotate-cw" size={20} color={colors.text} />
                 </Pressable>
               </View>
+
+              {currentEpisodeLabel ? (
+                <Text style={styles.episodeLabel} numberOfLines={1}>
+                  {currentEpisodeLabel}
+                </Text>
+              ) : null}
 
               <View style={styles.controlsCluster}>
                 <Pressable
@@ -852,9 +864,14 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "800",
   },
-  meta: {
-    color: colors.textMuted,
-    marginTop: 2,
+  episodeLabel: {
+    flex: 1,
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: 0.2,
+    textAlign: "center",
+    marginHorizontal: 12,
   },
   centerControls: {
     position: "absolute",
