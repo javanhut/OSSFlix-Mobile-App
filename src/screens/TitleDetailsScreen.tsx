@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 
 import { api, resolveAssetUrl } from "../api/client";
@@ -54,8 +54,14 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
   const queryClient = useQueryClient();
   const { dirPath } = route.params;
   const detailsQuery = useQuery({ queryKey: ["title-details", dirPath], queryFn: () => api.getTitleDetails(dirPath) });
-  const watchlistQuery = useQuery({ queryKey: ["watchlist-check", dirPath], queryFn: () => api.watchlistCheck(dirPath) });
-  const progressQuery = useQuery({ queryKey: ["progress-dir", dirPath], queryFn: () => api.getProgressForDir(dirPath) });
+  const watchlistQuery = useQuery({
+    queryKey: ["watchlist-check", dirPath],
+    queryFn: () => api.watchlistCheck(dirPath),
+  });
+  const progressQuery = useQuery({
+    queryKey: ["progress-dir", dirPath],
+    queryFn: () => api.getProgressForDir(dirPath),
+  });
 
   const toggleWatchlist = useMutation({
     mutationFn: async () => {
@@ -105,10 +111,7 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
     return { bySeason, other };
   }, [details]);
 
-  const seasonKeys = useMemo(
-    () => [...grouped.bySeason.keys()].sort((a, b) => a - b),
-    [grouped.bySeason],
-  );
+  const seasonKeys = useMemo(() => [...grouped.bySeason.keys()].sort((a, b) => a - b), [grouped.bySeason]);
 
   const progressByVideo = useMemo(() => {
     const map = new Map<string, { current_time: number; duration: number }>();
@@ -130,9 +133,11 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
   const playTarget = useMemo(() => {
     if (!details?.videos?.length) return null;
     const progressEntries = progressQuery.data || [];
-    const resumeEntry = progressEntries.find((entry) => entry.current_time > 0 && (entry.duration === 0 || entry.current_time < entry.duration - 5));
+    const resumeEntry = progressEntries.find(
+      (entry) => entry.current_time > 0 && (entry.duration === 0 || entry.current_time < entry.duration - 5),
+    );
     if (resumeEntry) {
-      const startIndex = details.videos.findIndex((video) => video === resumeEntry.video_src);
+      const startIndex = details.videos.indexOf(resumeEntry.video_src);
       return {
         startIndex: startIndex >= 0 ? startIndex : 0,
         initialTime: resumeEntry.current_time,
@@ -160,9 +165,7 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
   const description = seasonMeta?.description ?? details.description;
   const imageUrl = resolveAssetUrl(bannerSrc);
 
-  const visibleEntries = effectiveSeason != null
-    ? grouped.bySeason.get(effectiveSeason) ?? []
-    : grouped.other;
+  const visibleEntries = effectiveSeason != null ? (grouped.bySeason.get(effectiveSeason) ?? []) : grouped.other;
 
   const showDropdown = seasonKeys.length >= 2;
 
@@ -172,7 +175,7 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
       <Text style={styles.title}>{details.name}</Text>
       <Text style={styles.meta}>{formatTitleType(details.type)}</Text>
       <Text style={styles.description}>{description}</Text>
-      {!!details.genre?.length ? (
+      {details.genre?.length ? (
         <View style={styles.chipRow}>
           {details.genre.map((genre) => (
             <Pressable
@@ -185,7 +188,7 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
           ))}
         </View>
       ) : null}
-      {!!details.cast?.length ? <Text style={styles.cast}>Cast: {details.cast.join(", ")}</Text> : null}
+      {details.cast?.length ? <Text style={styles.cast}>Cast: {details.cast.join(", ")}</Text> : null}
       <View style={styles.actionRow}>
         <Pressable
           onPress={() =>
@@ -210,23 +213,18 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
         <Pressable onPress={() => toggleWatchlist.mutate()} style={styles.secondaryButton}>
           <View style={styles.buttonContent}>
             <Feather name="bookmark" size={18} color={colors.text} />
-            <Text style={styles.secondaryLabel}>{watchlistQuery.data?.inList ? "Remove from My List" : "Add to My List"}</Text>
+            <Text style={styles.secondaryLabel}>
+              {watchlistQuery.data?.inList ? "Remove from My List" : "Add to My List"}
+            </Text>
           </View>
         </Pressable>
       </View>
 
       {showDropdown ? (
         <View style={styles.seasonSection}>
-          <Pressable
-            onPress={() => setSeasonMenuOpen((open) => !open)}
-            style={styles.seasonTrigger}
-          >
+          <Pressable onPress={() => setSeasonMenuOpen((open) => !open)} style={styles.seasonTrigger}>
             <Text style={styles.seasonTriggerLabel}>Season {effectiveSeason}</Text>
-            <Feather
-              name={seasonMenuOpen ? "chevron-up" : "chevron-down"}
-              size={18}
-              color={colors.text}
-            />
+            <Feather name={seasonMenuOpen ? "chevron-up" : "chevron-down"} size={18} color={colors.text} />
           </Pressable>
           {seasonMenuOpen ? (
             <View style={styles.menuSheet}>
@@ -285,7 +283,10 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
           );
         })
       ) : (
-        <EmptyState title="No playable files found" subtitle="This title does not currently expose any videos from the server." />
+        <EmptyState
+          title="No playable files found"
+          subtitle="This title does not currently expose any videos from the server."
+        />
       )}
     </ScrollView>
   );

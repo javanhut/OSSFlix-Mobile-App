@@ -1,4 +1,4 @@
-import { PropsWithChildren, useEffect } from "react";
+import { type PropsWithChildren, useEffect } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { NavigationContainer, DarkTheme } from "@react-navigation/native";
@@ -24,6 +24,7 @@ function BootstrappedApp({ children }: PropsWithChildren) {
       .catch(() => hydrate({ serverUrl: null, token: null, profile: null, selectedProfile: null }));
   }, [hydrate]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: buildSessionSnapshot reads from the store; these deps trigger the save when any field changes.
   useEffect(() => {
     if (!bootstrapped) return;
     void saveSessionSnapshot(buildSessionSnapshot());

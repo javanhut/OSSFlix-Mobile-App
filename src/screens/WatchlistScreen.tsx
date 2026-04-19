@@ -1,7 +1,7 @@
 import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, View } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { api } from "../api/client";
 import { AppHeader } from "../components/AppHeader";
@@ -17,7 +17,7 @@ export function WatchlistScreen() {
   const query = useQuery({ queryKey: ["watchlist"], queryFn: api.getWatchlist });
 
   if (query.isLoading) {
-      return (
+    return (
       <View style={styles.loading}>
         <ActivityIndicator color={colors.primary} />
       </View>
@@ -39,8 +39,16 @@ export function WatchlistScreen() {
         />
       }
       ListHeaderComponent={<AppHeader title="My List" subtitle="Titles you have explicitly saved for quick access." />}
-      ListEmptyComponent={<EmptyState title="Your list is empty" subtitle="Add titles from any details screen to keep them here." />}
-      renderItem={({ item }) => <TitleCard item={item} width={160} onPress={() => navigation.navigate("TitleDetails", { dirPath: item.pathToDir })} />}
+      ListEmptyComponent={
+        <EmptyState title="Your list is empty" subtitle="Add titles from any details screen to keep them here." />
+      }
+      renderItem={({ item }) => (
+        <TitleCard
+          item={item}
+          width={160}
+          onPress={() => navigation.navigate("TitleDetails", { dirPath: item.pathToDir })}
+        />
+      )}
     />
   );
 }

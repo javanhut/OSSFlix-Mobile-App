@@ -5,15 +5,7 @@ import { colors } from "../theme/colors";
 import type { TitleSummary } from "../types/api";
 import { formatTitleType } from "../utils/titleType";
 
-export function TitleCard({
-  item,
-  onPress,
-  width = 148,
-}: {
-  item: TitleSummary;
-  onPress: () => void;
-  width?: number;
-}) {
+export function TitleCard({ item, onPress, width = 148 }: { item: TitleSummary; onPress: () => void; width?: number }) {
   const imageUrl = resolveAssetUrl(item.imagePath);
   const progress = typeof item.progressPct === "number" ? Math.max(0, Math.min(100, item.progressPct)) : 0;
 

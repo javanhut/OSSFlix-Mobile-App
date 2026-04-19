@@ -1,7 +1,7 @@
 import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { useQuery } from "@tanstack/react-query";
-import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { type RouteProp, useNavigation, useRoute } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { api } from "../api/client";
 import { AppHeader } from "../components/AppHeader";
@@ -22,7 +22,7 @@ export function LibraryScreen() {
   });
 
   if (query.isLoading) {
-      return (
+    return (
       <View style={styles.loading}>
         <ActivityIndicator color={colors.primary} />
       </View>
@@ -48,8 +48,19 @@ export function LibraryScreen() {
           <AppHeader title={title} subtitle={`Browse every ${title.toLowerCase()} entry available on this server.`} />
         </View>
       }
-      ListEmptyComponent={<EmptyState title={`No ${title.toLowerCase()} found`} subtitle="This server has not scanned any matching titles yet." />}
-      renderItem={({ item }) => <TitleCard item={item} width={160} onPress={() => navigation.navigate("TitleDetails", { dirPath: item.pathToDir })} />}
+      ListEmptyComponent={
+        <EmptyState
+          title={`No ${title.toLowerCase()} found`}
+          subtitle="This server has not scanned any matching titles yet."
+        />
+      }
+      renderItem={({ item }) => (
+        <TitleCard
+          item={item}
+          width={160}
+          onPress={() => navigation.navigate("TitleDetails", { dirPath: item.pathToDir })}
+        />
+      )}
     />
   );
 }

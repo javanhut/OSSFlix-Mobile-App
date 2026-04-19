@@ -7,28 +7,28 @@
 
 const mockSeek = jest.fn();
 
-jest.mock('react-native-video', () => {
-  const React = require('react');
-  const { View } = require('react-native');
+jest.mock("react-native-video", () => {
+  const React = require("react");
+  const { View } = require("react-native");
   const Video = React.forwardRef((props: any, ref: any) => {
     React.useImperativeHandle(ref, () => ({ seek: mockSeek }));
     (Video as any).lastProps = props;
-    return React.createElement(View, { testID: 'mock-video' });
+    return React.createElement(View, { testID: "mock-video" });
   });
   return {
     __esModule: true,
     default: Video,
-    SelectedTrackType: { INDEX: 'index', DISABLED: 'disabled' },
-    TextTrackType: { VTT: 'vtt' },
+    SelectedTrackType: { INDEX: "index", DISABLED: "disabled" },
+    TextTrackType: { VTT: "vtt" },
   };
 });
 
-jest.mock('expo-screen-orientation', () => ({
+jest.mock("expo-screen-orientation", () => ({
   lockAsync: jest.fn(async () => {}),
   OrientationLock: { LANDSCAPE: 4, PORTRAIT_UP: 1 },
 }));
 
-jest.mock('react-native-safe-area-context', () => ({
+jest.mock("react-native-safe-area-context", () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
   SafeAreaProvider: ({ children }: any) => children,
 }));
@@ -36,35 +36,37 @@ jest.mock('react-native-safe-area-context', () => ({
 const mockSetVolume = jest.fn(async (v: number) => v);
 const mockGetVolumeInfo = jest.fn(async () => ({ volume: 0.7, maxVolume: 15 }));
 const mockSetPlayerStream = jest.fn();
-jest.mock('../../src/native/systemVolume', () => ({
+jest.mock("../../src/native/systemVolume", () => ({
   getSystemMusicVolume: jest.fn(async () => 0.7),
   getSystemMusicVolumeInfo: (...args: unknown[]) => mockGetVolumeInfo(...(args as [])),
   setSystemMusicVolume: (...args: unknown[]) => mockSetVolume(...(args as [number])),
   setPlayerVolumeStream: (...args: unknown[]) => mockSetPlayerStream(...(args as [])),
 }));
 
-import React from 'react';
-import { PanResponder } from 'react-native';
-import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import Video from 'react-native-video';
-import { PlayerScreen } from '../../src/screens/PlayerScreen';
-import { api } from '../../src/api/client';
-import { useSessionStore } from '../../src/state/session';
+import React from "react";
+import { PanResponder } from "react-native";
+import { act, fireEvent, render, waitFor } from "@testing-library/react-native";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import Video from "react-native-video";
+import { PlayerScreen } from "../../src/screens/PlayerScreen";
+import { api } from "../../src/api/client";
+import { useSessionStore } from "../../src/state/session";
 
 const navigation = { navigate: jest.fn(), goBack: jest.fn() } as any;
 
-function makeRoute(overrides: Partial<{ startIndex: number; initialTime: number; videos: string[]; subtitles: any[] }> = {}) {
+function makeRoute(
+  overrides: Partial<{ startIndex: number; initialTime: number; videos: string[]; subtitles: any[] }> = {},
+) {
   return {
-    key: 'k',
-    name: 'Player',
+    key: "k",
+    name: "Player",
     params: {
-      dirPath: 'shows/Foo',
-      title: 'Foo',
-      videos: overrides.videos ?? ['shows/Foo/foo_s1_ep1.mkv', 'shows/Foo/foo_s1_ep2.mkv'],
+      dirPath: "shows/Foo",
+      title: "Foo",
+      videos: overrides.videos ?? ["shows/Foo/foo_s1_ep1.mkv", "shows/Foo/foo_s1_ep2.mkv"],
       startIndex: overrides.startIndex ?? 0,
       initialTime: overrides.initialTime ?? 0,
-      subtitles: overrides.subtitles ?? [{ label: 'EN', language: 'en', src: 's.vtt', format: 'vtt' }],
+      subtitles: overrides.subtitles ?? [{ label: "EN", language: "en", src: "s.vtt", format: "vtt" }],
     },
   } as any;
 }
@@ -75,53 +77,53 @@ function renderPlayer(routeOverride?: ReturnType<typeof makeRoute>) {
   return render(
     <QueryClientProvider client={client}>
       <PlayerScreen navigation={navigation} route={route} />
-    </QueryClientProvider>
+    </QueryClientProvider>,
   );
 }
 
 function layoutPlayerScreen(root: ReturnType<typeof renderPlayer>) {
-  fireEvent(root.getByTestId('player-screen'), 'layout', {
+  fireEvent(root.getByTestId("player-screen"), "layout", {
     nativeEvent: { layout: { width: 300, height: 300, x: 0, y: 0 } },
   });
 }
 
 async function dragGesture(
   root: ReturnType<typeof renderPlayer>,
-  {
-    locationX,
-    locationY,
-    dx,
-    dy,
-  }: { locationX: number; locationY: number; dx: number; dy: number }
+  { locationX, locationY, dx, dy }: { locationX: number; locationY: number; dx: number; dy: number },
 ) {
-  const surface = root.getByTestId('gesture-surface');
+  const surface = root.getByTestId("gesture-surface");
   await act(async () => {
     surface.props.onResponderGrant?.(
       { nativeEvent: { locationX, locationY, pageY: locationY } },
-      { dx: 0, dy: 0, moveY: locationY }
+      { dx: 0, dy: 0, moveY: locationY },
     );
     surface.props.onResponderMove?.(
       { nativeEvent: { locationX: locationX + dx, locationY: locationY + dy, pageY: locationY + dy } },
-      { dx, dy, moveY: locationY + dy }
+      { dx, dy, moveY: locationY + dy },
     );
     surface.props.onResponderRelease?.(
       { nativeEvent: { locationX: locationX + dx, locationY: locationY + dy, pageY: locationY + dy } },
-      { dx, dy, moveY: locationY + dy }
+      { dx, dy, moveY: locationY + dy },
     );
   });
 }
 
 beforeEach(() => {
-  jest.spyOn(PanResponder, 'create').mockImplementation((config: any) => ({
-    panHandlers: {
-      onStartShouldSetResponder: (event: any) => config.onStartShouldSetPanResponder?.(event),
-      onMoveShouldSetResponder: (event: any, gestureState: any) => config.onMoveShouldSetPanResponder?.(event, gestureState),
-      onResponderGrant: (event: any, gestureState: any) => config.onPanResponderGrant?.(event, gestureState),
-      onResponderMove: (event: any, gestureState: any) => config.onPanResponderMove?.(event, gestureState),
-      onResponderRelease: (event: any, gestureState: any) => config.onPanResponderRelease?.(event, gestureState),
-      onResponderTerminate: (event: any, gestureState: any) => config.onPanResponderTerminate?.(event, gestureState),
-    },
-  }) as any);
+  jest.spyOn(PanResponder, "create").mockImplementation(
+    (config: any) =>
+      ({
+        panHandlers: {
+          onStartShouldSetResponder: (event: any) => config.onStartShouldSetPanResponder?.(event),
+          onMoveShouldSetResponder: (event: any, gestureState: any) =>
+            config.onMoveShouldSetPanResponder?.(event, gestureState),
+          onResponderGrant: (event: any, gestureState: any) => config.onPanResponderGrant?.(event, gestureState),
+          onResponderMove: (event: any, gestureState: any) => config.onPanResponderMove?.(event, gestureState),
+          onResponderRelease: (event: any, gestureState: any) => config.onPanResponderRelease?.(event, gestureState),
+          onResponderTerminate: (event: any, gestureState: any) =>
+            config.onPanResponderTerminate?.(event, gestureState),
+        },
+      }) as any,
+  );
   navigation.navigate.mockReset();
   navigation.goBack.mockReset();
   mockSeek.mockReset();
@@ -130,23 +132,26 @@ beforeEach(() => {
   mockSetPlayerStream.mockClear();
   useSessionStore.setState({
     bootstrapped: false,
-    serverUrl: 'http://media.local',
-    token: 't',
+    serverUrl: "http://media.local",
+    token: "t",
     profile: null,
     selectedProfile: null,
   });
-  jest.spyOn(api, 'getProbe').mockResolvedValue({ duration: 1800, audioTracks: [
-    { index: 0, codec: 'aac', channels: 2, channelLayout: 'stereo', language: 'eng', title: 'English' },
-    { index: 1, codec: 'aac', channels: 2, channelLayout: 'stereo', language: 'jpn', title: 'Japanese' },
-  ] });
-  jest.spyOn(api, 'getTimings').mockResolvedValue({
-    video_src: 'foo',
+  jest.spyOn(api, "getProbe").mockResolvedValue({
+    duration: 1800,
+    audioTracks: [
+      { index: 0, codec: "aac", channels: 2, channelLayout: "stereo", language: "eng", title: "English" },
+      { index: 1, codec: "aac", channels: 2, channelLayout: "stereo", language: "jpn", title: "Japanese" },
+    ],
+  });
+  jest.spyOn(api, "getTimings").mockResolvedValue({
+    video_src: "foo",
     intro_start: 30,
     intro_end: 60,
     outro_start: 1700,
     outro_end: 1750,
   });
-  jest.spyOn(api, 'saveProgress').mockResolvedValue({ ok: true });
+  jest.spyOn(api, "saveProgress").mockResolvedValue({ ok: true });
 });
 
 afterEach(async () => {
@@ -158,35 +163,35 @@ afterEach(async () => {
   jest.restoreAllMocks();
 });
 
-describe('PlayerScreen — render and Video wiring', () => {
-  it('renders the mock Video with the computed stream URL and headers', async () => {
+describe("PlayerScreen — render and Video wiring", () => {
+  it("renders the mock Video with the computed stream URL and headers", async () => {
     renderPlayer();
     await waitFor(() => expect((Video as any).lastProps).toBeDefined());
     const props = (Video as any).lastProps;
-    expect(props.source.uri).toContain('/api/stream?src=shows%2FFoo%2Ffoo_s1_ep1.mkv&audio=0');
-    expect(props.source.headers).toEqual({ Authorization: 'Bearer t' });
-    expect(props.textTracks[0].uri).toContain('/api/subtitles?src=s.vtt');
+    expect(props.source.uri).toContain("/api/stream?src=shows%2FFoo%2Ffoo_s1_ep1.mkv&audio=0");
+    expect(props.source.headers).toEqual({ Authorization: "Bearer t" });
+    expect(props.textTracks[0].uri).toContain("/api/subtitles?src=s.vtt");
   });
 
-  it('reads the system music volume on mount', async () => {
+  it("reads the system music volume on mount", async () => {
     renderPlayer();
     await waitFor(() => expect(mockGetVolumeInfo).toHaveBeenCalled());
   });
 
-  it('configures the player to use the music stream on mount', async () => {
+  it("configures the player to use the music stream on mount", async () => {
     renderPlayer();
     await waitFor(() => expect(mockSetPlayerStream).toHaveBeenCalled());
   });
 
-  it('renders the show title in the top bar and the episode label in the controls', async () => {
+  it("renders the show title in the top bar and the episode label in the controls", async () => {
     const { findByText } = renderPlayer();
-    expect(await findByText('Foo')).toBeTruthy();
-    expect(await findByText('Episode 1: Foo')).toBeTruthy();
+    expect(await findByText("Foo")).toBeTruthy();
+    expect(await findByText("Episode 1: Foo")).toBeTruthy();
   });
 });
 
-describe('PlayerScreen — volume gestures', () => {
-  it('raises the volume when dragging upward from the right-side lane', async () => {
+describe("PlayerScreen — volume gestures", () => {
+  it("raises the volume when dragging upward from the right-side lane", async () => {
     const screen = renderPlayer();
     layoutPlayerScreen(screen);
     await waitFor(() => expect(mockGetVolumeInfo).toHaveBeenCalled());
@@ -198,7 +203,7 @@ describe('PlayerScreen — volume gestures', () => {
     expect(mockSeek).not.toHaveBeenCalled();
   });
 
-  it('lowers the volume when dragging downward from the right-side lane', async () => {
+  it("lowers the volume when dragging downward from the right-side lane", async () => {
     mockGetVolumeInfo.mockResolvedValueOnce({ volume: 0.8, maxVolume: 15 });
     const screen = renderPlayer();
     layoutPlayerScreen(screen);
@@ -212,7 +217,7 @@ describe('PlayerScreen — volume gestures', () => {
     expect((Video as any).lastProps.volume).toBe(1);
   });
 
-  it('does not change volume when the drag starts outside the right-side lane', async () => {
+  it("does not change volume when the drag starts outside the right-side lane", async () => {
     const screen = renderPlayer();
     layoutPlayerScreen(screen);
     await waitFor(() => expect(mockGetVolumeInfo).toHaveBeenCalled());
@@ -223,7 +228,7 @@ describe('PlayerScreen — volume gestures', () => {
     expect((Video as any).lastProps.volume).toBe(1);
   });
 
-  it('does not change volume for a small movement on the right side', async () => {
+  it("does not change volume for a small movement on the right side", async () => {
     const screen = renderPlayer();
     layoutPlayerScreen(screen);
     await waitFor(() => expect(mockGetVolumeInfo).toHaveBeenCalled());
@@ -235,8 +240,8 @@ describe('PlayerScreen — volume gestures', () => {
   });
 });
 
-describe('PlayerScreen — Video lifecycle callbacks', () => {
-  it('onLoad seeks to the pending time when initialTime > 0', async () => {
+describe("PlayerScreen — Video lifecycle callbacks", () => {
+  it("onLoad seeks to the pending time when initialTime > 0", async () => {
     renderPlayer(makeRoute({ initialTime: 42 }));
     await waitFor(() => expect((Video as any).lastProps).toBeDefined());
     await act(async () => {
@@ -245,17 +250,17 @@ describe('PlayerScreen — Video lifecycle callbacks', () => {
     expect(mockSeek).toHaveBeenCalledWith(42);
   });
 
-  it('onProgress updates the displayed time', async () => {
+  it("onProgress updates the displayed time", async () => {
     const { findByText } = renderPlayer();
     await waitFor(() => expect((Video as any).lastProps).toBeDefined());
     await act(async () => {
       (Video as any).lastProps.onLoad({ duration: 1800 });
       (Video as any).lastProps.onProgress({ currentTime: 75 });
     });
-    expect(await findByText('1:15')).toBeTruthy();
+    expect(await findByText("1:15")).toBeTruthy();
   });
 
-  it('onEnd advances to the next video when there is one', async () => {
+  it("onEnd advances to the next video when there is one", async () => {
     renderPlayer();
     await waitFor(() => expect((Video as any).lastProps).toBeDefined());
     await act(async () => {
@@ -264,12 +269,12 @@ describe('PlayerScreen — Video lifecycle callbacks', () => {
     });
     await waitFor(() => {
       const props = (Video as any).lastProps;
-      expect(props.source.uri).toContain('foo_s1_ep2.mkv');
+      expect(props.source.uri).toContain("foo_s1_ep2.mkv");
     });
   });
 
-  it('onEnd calls navigation.goBack when there is no next video', async () => {
-    renderPlayer(makeRoute({ videos: ['shows/Foo/only.mkv'], startIndex: 0 }));
+  it("onEnd calls navigation.goBack when there is no next video", async () => {
+    renderPlayer(makeRoute({ videos: ["shows/Foo/only.mkv"], startIndex: 0 }));
     await waitFor(() => expect((Video as any).lastProps).toBeDefined());
     await act(async () => {
       (Video as any).lastProps.onLoad({ duration: 1800 });
@@ -286,46 +291,46 @@ function pressIconButton(root: any, iconLabel: string) {
   fireEvent.press(parent);
 }
 
-describe('PlayerScreen — control buttons', () => {
-  it('back arrow calls navigation.goBack', async () => {
+describe("PlayerScreen — control buttons", () => {
+  it("back arrow calls navigation.goBack", async () => {
     const { UNSAFE_root } = renderPlayer();
     await waitFor(() => expect((Video as any).lastProps).toBeDefined());
-    pressIconButton(UNSAFE_root, 'Feather-arrow-left');
+    pressIconButton(UNSAFE_root, "Feather-arrow-left");
     expect(navigation.goBack).toHaveBeenCalled();
   });
 
-  it('toggles play/pause', async () => {
+  it("toggles play/pause", async () => {
     const { UNSAFE_root } = renderPlayer();
     await waitFor(() => expect((Video as any).lastProps).toBeDefined());
-    pressIconButton(UNSAFE_root, 'Feather-pause');
+    pressIconButton(UNSAFE_root, "Feather-pause");
     await waitFor(() => {
       expect((Video as any).lastProps.paused).toBe(true);
     });
   });
 
-  it('skip-back button rewinds 10 seconds', async () => {
+  it("skip-back button rewinds 10 seconds", async () => {
     const { UNSAFE_root } = renderPlayer();
     await waitFor(() => expect((Video as any).lastProps).toBeDefined());
     await act(async () => {
       (Video as any).lastProps.onLoad({ duration: 1800 });
       (Video as any).lastProps.onProgress({ currentTime: 50 });
     });
-    pressIconButton(UNSAFE_root, 'Feather-rotate-ccw');
+    pressIconButton(UNSAFE_root, "Feather-rotate-ccw");
     await waitFor(() => expect(mockSeek).toHaveBeenCalledWith(40));
   });
 
-  it('skip-forward button advances 10 seconds', async () => {
+  it("skip-forward button advances 10 seconds", async () => {
     const { UNSAFE_root } = renderPlayer();
     await waitFor(() => expect((Video as any).lastProps).toBeDefined());
     await act(async () => {
       (Video as any).lastProps.onLoad({ duration: 1800 });
       (Video as any).lastProps.onProgress({ currentTime: 50 });
     });
-    pressIconButton(UNSAFE_root, 'Feather-rotate-cw');
+    pressIconButton(UNSAFE_root, "Feather-rotate-cw");
     await waitFor(() => expect(mockSeek).toHaveBeenCalledWith(60));
   });
 
-  it('skip-forward seeks within 0..duration even if it would overshoot', async () => {
+  it("skip-forward seeks within 0..duration even if it would overshoot", async () => {
     renderPlayer();
     await waitFor(() => expect((Video as any).lastProps).toBeDefined());
     await act(async () => {
@@ -333,94 +338,94 @@ describe('PlayerScreen — control buttons', () => {
       (Video as any).lastProps.onProgress({ currentTime: 95 });
     });
     // The skip-by-10 from 95 should clamp to 100.
-    const node = (Video as any);
+    const node = Video as any;
     expect(node.lastProps).toBeDefined();
   });
 
-  it('skip-forward (next episode button) advances when there is a next video', async () => {
+  it("skip-forward (next episode button) advances when there is a next video", async () => {
     const { UNSAFE_root } = renderPlayer();
     await waitFor(() => expect((Video as any).lastProps).toBeDefined());
-    pressIconButton(UNSAFE_root, 'Feather-skip-forward');
+    pressIconButton(UNSAFE_root, "Feather-skip-forward");
     await waitFor(() => {
-      expect((Video as any).lastProps.source.uri).toContain('foo_s1_ep2.mkv');
+      expect((Video as any).lastProps.source.uri).toContain("foo_s1_ep2.mkv");
     });
   });
 
-  it('skip-back (previous episode) goes back when not on the first', async () => {
+  it("skip-back (previous episode) goes back when not on the first", async () => {
     const { UNSAFE_root } = renderPlayer(makeRoute({ startIndex: 1 }));
     await waitFor(() => expect((Video as any).lastProps).toBeDefined());
-    pressIconButton(UNSAFE_root, 'Feather-skip-back');
+    pressIconButton(UNSAFE_root, "Feather-skip-back");
     await waitFor(() => {
-      expect((Video as any).lastProps.source.uri).toContain('foo_s1_ep1.mkv');
+      expect((Video as any).lastProps.source.uri).toContain("foo_s1_ep1.mkv");
     });
   });
 });
 
-describe('PlayerScreen — menus', () => {
-  it('toggles the audio menu and selects a track', async () => {
+describe("PlayerScreen — menus", () => {
+  it("toggles the audio menu and selects a track", async () => {
     const { UNSAFE_root, findByText } = renderPlayer();
     await waitFor(() => expect((Video as any).lastProps).toBeDefined());
-    pressIconButton(UNSAFE_root, 'Feather-music');
-    const japaneseRow = await findByText('Japanese');
+    pressIconButton(UNSAFE_root, "Feather-music");
+    const japaneseRow = await findByText("Japanese");
     fireEvent.press(japaneseRow);
     await waitFor(() => {
-      expect((Video as any).lastProps.source.uri).toContain('audio=1');
+      expect((Video as any).lastProps.source.uri).toContain("audio=1");
     });
   });
 
-  it('toggles the subtitle menu, picks a track, then turns it off', async () => {
+  it("toggles the subtitle menu, picks a track, then turns it off", async () => {
     const { UNSAFE_root, findByText } = renderPlayer();
     await waitFor(() => expect((Video as any).lastProps).toBeDefined());
-    pressIconButton(UNSAFE_root, 'Feather-message-square');
-    fireEvent.press(await findByText('EN'));
+    pressIconButton(UNSAFE_root, "Feather-message-square");
+    fireEvent.press(await findByText("EN"));
     await waitFor(() => {
-      expect((Video as any).lastProps.selectedTextTrack).toEqual({ type: 'index', value: 0 });
+      expect((Video as any).lastProps.selectedTextTrack).toEqual({ type: "index", value: 0 });
     });
-    pressIconButton(UNSAFE_root, 'Feather-message-square');
-    fireEvent.press(await findByText('Subtitles Off'));
+    pressIconButton(UNSAFE_root, "Feather-message-square");
+    fireEvent.press(await findByText("Subtitles Off"));
     await waitFor(() => {
-      expect((Video as any).lastProps.selectedTextTrack).toEqual({ type: 'disabled' });
+      expect((Video as any).lastProps.selectedTextTrack).toEqual({ type: "disabled" });
     });
   });
 
-  it('toggles the speed menu and selects a non-default rate', async () => {
+  it("toggles the speed menu and selects a non-default rate", async () => {
     const { UNSAFE_root, findByText } = renderPlayer();
     await waitFor(() => expect((Video as any).lastProps).toBeDefined());
-    pressIconButton(UNSAFE_root, 'Feather-settings');
-    fireEvent.press(await findByText('1.5x'));
+    pressIconButton(UNSAFE_root, "Feather-settings");
+    fireEvent.press(await findByText("1.5x"));
     await waitFor(() => {
       expect((Video as any).lastProps.rate).toBe(1.5);
     });
   });
 });
 
-describe('PlayerScreen — skip-intro / skip-credits banner', () => {
-  it('renders Skip Intro when current time is inside the intro window', async () => {
+describe("PlayerScreen — skip-intro / skip-credits banner", () => {
+  it("renders Skip Intro when current time is inside the intro window", async () => {
     const { findByText } = renderPlayer();
     await waitFor(() => expect((Video as any).lastProps).toBeDefined());
     await act(async () => {
       (Video as any).lastProps.onLoad({ duration: 1800 });
       (Video as any).lastProps.onProgress({ currentTime: 45 });
     });
-    const skip = await findByText('Skip Intro');
+    const skip = await findByText("Skip Intro");
     fireEvent.press(skip);
     await waitFor(() => expect(mockSeek).toHaveBeenCalledWith(60));
   });
 
-  it('renders Skip Credits when current time is inside the outro window', async () => {
+  it("renders Skip Credits when current time is inside the outro window", async () => {
     const { findByText } = renderPlayer();
     await waitFor(() => expect((Video as any).lastProps).toBeDefined());
     await act(async () => {
       (Video as any).lastProps.onLoad({ duration: 1800 });
       (Video as any).lastProps.onProgress({ currentTime: 1720 });
     });
-    const skip = await findByText('Skip Credits');
+    const skip = await findByText("Skip Credits");
     fireEvent.press(skip);
     await waitFor(() => expect(mockSeek).toHaveBeenCalledWith(1750));
   });
 });
 
-describe('PlayerScreen — next-episode countdown', () => {
+describe("PlayerScreen — next-episode countdown", () => {
   async function advanceIntoOutro() {
     await waitFor(() => expect((Video as any).lastProps).toBeDefined());
     await waitFor(() => expect(api.getTimings).toHaveBeenCalled());
@@ -430,36 +435,40 @@ describe('PlayerScreen — next-episode countdown', () => {
     });
   }
 
-  it('shows the Up Next overlay with the next episode label when in outro window', async () => {
+  it("shows the Up Next overlay with the next episode label when in outro window", async () => {
     const { findByText } = renderPlayer();
     await advanceIntoOutro();
-    expect(await findByText('Up Next')).toBeTruthy();
+    expect(await findByText("Up Next")).toBeTruthy();
     // Parsed episode label for foo_s1_ep2.mkv is "S1 E2 - Foo"
     expect(await findByText(/S1 E2/)).toBeTruthy();
   });
 
-  it('dismisses the overlay when Cancel is pressed and keeps the current episode', async () => {
+  it("dismisses the overlay when Cancel is pressed and keeps the current episode", async () => {
     const { findByText, queryByText } = renderPlayer();
     await advanceIntoOutro();
-    const cancel = await findByText('Cancel');
+    const cancel = await findByText("Cancel");
     fireEvent.press(cancel);
-    await waitFor(() => expect(queryByText('Up Next')).toBeNull());
-    expect((Video as any).lastProps.source.uri).toContain('foo_s1_ep1.mkv');
+    await waitFor(() => expect(queryByText("Up Next")).toBeNull());
+    expect((Video as any).lastProps.source.uri).toContain("foo_s1_ep1.mkv");
   });
 
-  it('advances immediately when Play Now is pressed', async () => {
+  it("advances immediately when Play Now is pressed", async () => {
     const { findByText } = renderPlayer();
     await advanceIntoOutro();
-    const playNow = await findByText('Play Now');
+    const playNow = await findByText("Play Now");
     fireEvent.press(playNow);
     await waitFor(() => {
-      expect((Video as any).lastProps.source.uri).toContain('foo_s1_ep2.mkv');
+      expect((Video as any).lastProps.source.uri).toContain("foo_s1_ep2.mkv");
     });
   });
 
-  it('falls back to 15 seconds before end when outro timings are null', async () => {
+  it("falls back to 15 seconds before end when outro timings are null", async () => {
     (api.getTimings as jest.Mock).mockResolvedValue({
-      video_src: 'foo', intro_start: null, intro_end: null, outro_start: null, outro_end: null,
+      video_src: "foo",
+      intro_start: null,
+      intro_end: null,
+      outro_start: null,
+      outro_end: null,
     });
     const { findByText } = renderPlayer();
     await waitFor(() => expect((Video as any).lastProps).toBeDefined());
@@ -468,38 +477,38 @@ describe('PlayerScreen — next-episode countdown', () => {
       (Video as any).lastProps.onLoad({ duration: 100 });
       (Video as any).lastProps.onProgress({ currentTime: 86 });
     });
-    expect(await findByText('Up Next')).toBeTruthy();
+    expect(await findByText("Up Next")).toBeTruthy();
   });
 
-  it('does not re-trigger the countdown after Cancel when still in the outro window', async () => {
+  it("does not re-trigger the countdown after Cancel when still in the outro window", async () => {
     const { findByText, queryByText } = renderPlayer();
     await advanceIntoOutro();
-    fireEvent.press(await findByText('Cancel'));
-    await waitFor(() => expect(queryByText('Up Next')).toBeNull());
+    fireEvent.press(await findByText("Cancel"));
+    await waitFor(() => expect(queryByText("Up Next")).toBeNull());
     // Move a bit further within the outro window — should not restart
     await act(async () => {
       (Video as any).lastProps.onProgress({ currentTime: 1710 });
     });
-    expect(queryByText('Up Next')).toBeNull();
+    expect(queryByText("Up Next")).toBeNull();
   });
 
-  it('does not show the overlay when there is no next episode', async () => {
-    const { queryByText } = renderPlayer(makeRoute({ videos: ['shows/Foo/only.mkv'], startIndex: 0 }));
+  it("does not show the overlay when there is no next episode", async () => {
+    const { queryByText } = renderPlayer(makeRoute({ videos: ["shows/Foo/only.mkv"], startIndex: 0 }));
     await waitFor(() => expect((Video as any).lastProps).toBeDefined());
     await waitFor(() => expect(api.getTimings).toHaveBeenCalled());
     await act(async () => {
       (Video as any).lastProps.onLoad({ duration: 1800 });
       (Video as any).lastProps.onProgress({ currentTime: 1705 });
     });
-    expect(queryByText('Up Next')).toBeNull();
+    expect(queryByText("Up Next")).toBeNull();
   });
 });
 
-describe('PlayerScreen — persistence lifecycle', () => {
-  it('persists progress when AppState transitions away from active', async () => {
+describe("PlayerScreen — persistence lifecycle", () => {
+  it("persists progress when AppState transitions away from active", async () => {
     const listeners: Array<(s: string) => void> = [];
-    const AppState = require('react-native').AppState;
-    const addSpy = jest.spyOn(AppState, 'addEventListener').mockImplementation((...args: unknown[]) => {
+    const AppState = require("react-native").AppState;
+    const addSpy = jest.spyOn(AppState, "addEventListener").mockImplementation((...args: unknown[]) => {
       const cb = args[1] as (s: string) => void;
       listeners.push(cb);
       return { remove: () => {} } as any;
@@ -511,10 +520,11 @@ describe('PlayerScreen — persistence lifecycle', () => {
       (Video as any).lastProps.onProgress({ currentTime: 50 });
     });
     await act(async () => {
-      listeners.forEach((cb) => cb('background'));
+      listeners.forEach((cb) => {
+        cb("background");
+      });
     });
     await waitFor(() => expect(api.saveProgress).toHaveBeenCalled());
     addSpy.mockRestore();
   });
-
 });

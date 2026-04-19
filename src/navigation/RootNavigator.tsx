@@ -113,11 +113,7 @@ export function RootNavigator() {
       ) : !token || !profile ? (
         <>
           <Stack.Screen name="ProfileLookup" component={ProfileLookupScreen} options={{ title: "Find Profile" }} />
-          <Stack.Screen
-            name="ProfileSelect"
-            component={ProfileSelectScreen}
-            options={{ title: "Choose Profile" }}
-          />
+          <Stack.Screen name="ProfileSelect" component={ProfileSelectScreen} options={{ title: "Choose Profile" }} />
           <Stack.Screen name="SignIn" component={SignInScreen} options={{ title: "Sign In" }} />
           <Stack.Screen name="Register" component={RegisterScreen} options={{ title: "Create Profile" }} />
         </>
@@ -125,11 +121,7 @@ export function RootNavigator() {
         <>
           <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
           <Stack.Screen name="TitleDetails" component={TitleDetailsScreen} options={{ title: "Details" }} />
-          <Stack.Screen
-            name="Genre"
-            component={GenreScreen}
-            options={({ route }) => ({ title: route.params.genre })}
-          />
+          <Stack.Screen name="Genre" component={GenreScreen} options={({ route }) => ({ title: route.params.genre })} />
           <Stack.Screen name="Player" component={PlayerScreen} options={{ headerShown: false }} />
         </>
       )}

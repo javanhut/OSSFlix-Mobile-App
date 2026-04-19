@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 import { ActivityIndicator, FlatList, StyleSheet, View } from "react-native";
 import { useQuery } from "@tanstack/react-query";
-import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { type RouteProp, useNavigation, useRoute } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { api } from "../api/client";
 import { AppHeader } from "../components/AppHeader";

@@ -44,18 +44,27 @@ export function RegisterScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.flex}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
-      <ScrollView
-        style={styles.screen}
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-      >
-        <AppHeader title="Create profile" subtitle="Register a new mobile-capable Reelscape profile on the connected server." />
-        <TextInput value={name} onChangeText={setName} placeholder="Profile name" placeholderTextColor="#64748b" style={styles.input} />
-        <TextInput value={email} onChangeText={setEmail} placeholder="Email" placeholderTextColor="#64748b" autoCapitalize="none" style={styles.input} />
+    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+      <ScrollView style={styles.screen} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <AppHeader
+          title="Create profile"
+          subtitle="Register a new mobile-capable Reelscape profile on the connected server."
+        />
+        <TextInput
+          value={name}
+          onChangeText={setName}
+          placeholder="Profile name"
+          placeholderTextColor="#64748b"
+          style={styles.input}
+        />
+        <TextInput
+          value={email}
+          onChangeText={setEmail}
+          placeholder="Email"
+          placeholderTextColor="#64748b"
+          autoCapitalize="none"
+          style={styles.input}
+        />
         <PasswordField value={password} onChangeText={setPassword} placeholder="Password" />
         <Pressable onPress={submit} disabled={submitting} style={styles.button}>
           <View style={styles.buttonContent}>

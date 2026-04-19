@@ -10,7 +10,13 @@
     "ios": "expo run:ios",
     "test": "jest",
     "test:coverage": "jest --coverage",
-    "test:ci": "jest --ci --coverage --maxWorkers=2"
+    "test:ci": "jest --ci --coverage --maxWorkers=2",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "lint": "biome lint .",
+    "lint:fix": "biome lint --write .",
+    "check": "biome check .",
+    "check:fix": "biome check --write ."
   },
   "dependencies": {
     "@react-navigation/bottom-tabs": "^7.2.0",
@@ -32,6 +38,7 @@
     "zustand": "^5.0.3"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.4.12",
     "@testing-library/react-native": "^13.0.0",
     "@types/jest": "^29.5.12",
     "@types/react": "~19.0.10",

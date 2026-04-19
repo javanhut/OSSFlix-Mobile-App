@@ -1,17 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  AppState,
-  LayoutChangeEvent,
-  PanResponder,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { AppState, type LayoutChangeEvent, PanResponder, Pressable, StyleSheet, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import * as ScreenOrientation from "expo-screen-orientation";
 import { useQuery } from "@tanstack/react-query";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import Video, { SelectedTrackType, TextTrackType } from "react-native-video";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -36,7 +28,7 @@ const COUNTDOWN_SECONDS = 10;
 const COUNTDOWN_FALLBACK_BUFFER = 15;
 
 function formatTime(seconds: number): string {
-  if (!isFinite(seconds) || seconds < 0) return "0:00";
+  if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
   const total = Math.floor(seconds);
   const hours = Math.floor(total / 3600);
   const minutes = Math.floor((total % 3600) / 60);
@@ -137,7 +129,7 @@ export function PlayerScreen({ route, navigation }: Props) {
         type: TextTrackType.VTT,
         uri: api.buildSubtitleUrl(track.src),
       })),
-    [subtitles]
+    [subtitles],
   );
 
   const totalDuration = duration || probeQuery.data?.duration || 0;
@@ -147,14 +139,16 @@ export function PlayerScreen({ route, navigation }: Props) {
   const persistProgress = useCallback(
     async (time: number, knownDuration: number) => {
       if (!currentVideo) return;
-      await api.saveProgress({
-        video_src: currentVideo,
-        dir_path: dirPath,
-        current_time: time,
-        duration: knownDuration,
-      }).catch(() => {});
+      await api
+        .saveProgress({
+          video_src: currentVideo,
+          dir_path: dirPath,
+          current_time: time,
+          duration: knownDuration,
+        })
+        .catch(() => {});
     },
-    [currentVideo, dirPath]
+    [currentVideo, dirPath],
   );
 
   const clearMenus = useCallback(() => {
@@ -182,13 +176,16 @@ export function PlayerScreen({ route, navigation }: Props) {
     hideControlsSoon();
   }, [hideControlsSoon]);
 
-  const seekTo = useCallback((time: number) => {
-    const bounded = clamp(time, 0, totalDuration || time);
-    playerRef.current?.seek(bounded);
-    setCurrentTime(bounded);
-    setScrubTime(bounded);
-    setPendingSeekTime(0);
-  }, [totalDuration]);
+  const seekTo = useCallback(
+    (time: number) => {
+      const bounded = clamp(time, 0, totalDuration || time);
+      playerRef.current?.seek(bounded);
+      setCurrentTime(bounded);
+      setScrubTime(bounded);
+      setPendingSeekTime(0);
+    },
+    [totalDuration],
+  );
 
   const showSkip = useCallback((text: string) => {
     setSkipFeedback({ text, key: Date.now() });
@@ -197,11 +194,14 @@ export function PlayerScreen({ route, navigation }: Props) {
     }, 650);
   }, []);
 
-  const skipBy = useCallback((seconds: number) => {
-    seekTo(displayTime + seconds);
-    showSkip(seconds > 0 ? `+${seconds}s` : `${seconds}s`);
-    showControlsTemporarily();
-  }, [displayTime, seekTo, showControlsTemporarily, showSkip]);
+  const skipBy = useCallback(
+    (seconds: number) => {
+      seekTo(displayTime + seconds);
+      showSkip(seconds > 0 ? `+${seconds}s` : `${seconds}s`);
+      showControlsTemporarily();
+    },
+    [displayTime, seekTo, showControlsTemporarily, showSkip],
+  );
 
   const togglePlayPause = useCallback(() => {
     hideVolumeHud();
@@ -335,6 +335,7 @@ export function PlayerScreen({ route, navigation }: Props) {
     };
   }, [currentTime, persistProgress, totalDuration]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: currentVideo is the identity trigger that re-runs this reset when playback switches.
   useEffect(() => {
     setShowControls(true);
     hideControlsSoon();
@@ -381,11 +382,14 @@ export function PlayerScreen({ route, navigation }: Props) {
     hideControlsSoon();
   }, [hideControlsSoon, paused]);
 
-  const progressToTime = useCallback((locationX: number) => {
-    if (progressWidth <= 0 || totalDuration <= 0) return 0;
-    const ratio = clamp(locationX / progressWidth, 0, 1);
-    return ratio * totalDuration;
-  }, [progressWidth, totalDuration]);
+  const progressToTime = useCallback(
+    (locationX: number) => {
+      if (progressWidth <= 0 || totalDuration <= 0) return 0;
+      const ratio = clamp(locationX / progressWidth, 0, 1);
+      return ratio * totalDuration;
+    },
+    [progressWidth, totalDuration],
+  );
 
   const handleProgressLayout = useCallback((event: LayoutChangeEvent) => {
     setProgressWidth(event.nativeEvent.layout.width);
@@ -396,18 +400,24 @@ export function PlayerScreen({ route, navigation }: Props) {
     setSurfaceHeight(event.nativeEvent.layout.height);
   }, []);
 
-  const getZoneForX = useCallback((x: number): GestureZone => {
-    if (surfaceWidth <= 0) return "center";
-    const third = surfaceWidth / 3;
-    if (x < third) return "left";
-    if (x > third * 2) return "right";
-    return "center";
-  }, [surfaceWidth]);
+  const getZoneForX = useCallback(
+    (x: number): GestureZone => {
+      if (surfaceWidth <= 0) return "center";
+      const third = surfaceWidth / 3;
+      if (x < third) return "left";
+      if (x > third * 2) return "right";
+      return "center";
+    },
+    [surfaceWidth],
+  );
 
-  const isVolumeTouchZone = useCallback((x: number) => {
-    if (surfaceWidth <= 0) return false;
-    return x >= surfaceWidth * (1 - VOLUME_TOUCH_ZONE_WIDTH);
-  }, [surfaceWidth]);
+  const isVolumeTouchZone = useCallback(
+    (x: number) => {
+      if (surfaceWidth <= 0) return false;
+      return x >= surfaceWidth * (1 - VOLUME_TOUCH_ZONE_WIDTH);
+    },
+    [surfaceWidth],
+  );
 
   const handleSingleTap = useCallback(() => {
     if (showControls) {
@@ -418,56 +428,71 @@ export function PlayerScreen({ route, navigation }: Props) {
     }
   }, [clearMenus, showControls, showControlsTemporarily]);
 
-  const handleDoubleTap = useCallback((zone: GestureZone) => {
-    if (zone === "left") {
-      skipBy(-SEEK_STEP);
-      return;
-    }
-    if (zone === "right") {
-      skipBy(SEEK_STEP);
-      return;
-    }
-    togglePlayPause();
-    showControlsTemporarily();
-  }, [showControlsTemporarily, skipBy, togglePlayPause]);
+  const handleDoubleTap = useCallback(
+    (zone: GestureZone) => {
+      if (zone === "left") {
+        skipBy(-SEEK_STEP);
+        return;
+      }
+      if (zone === "right") {
+        skipBy(SEEK_STEP);
+        return;
+      }
+      togglePlayPause();
+      showControlsTemporarily();
+    },
+    [showControlsTemporarily, skipBy, togglePlayPause],
+  );
 
-  const getGestureTouchY = useCallback((event: { nativeEvent: { pageY?: number; locationY?: number } }, gestureState?: { moveY?: number }) => {
-    if (gestureState?.moveY != null && Number.isFinite(gestureState.moveY)) {
-      return gestureState.moveY;
-    }
-    if (event.nativeEvent.pageY != null && Number.isFinite(event.nativeEvent.pageY)) {
-      return event.nativeEvent.pageY;
-    }
-    return event.nativeEvent.locationY ?? 0;
-  }, []);
+  const getGestureTouchY = useCallback(
+    (event: { nativeEvent: { pageY?: number; locationY?: number } }, gestureState?: { moveY?: number }) => {
+      if (gestureState?.moveY != null && Number.isFinite(gestureState.moveY)) {
+        return gestureState.moveY;
+      }
+      if (event.nativeEvent.pageY != null && Number.isFinite(event.nativeEvent.pageY)) {
+        return event.nativeEvent.pageY;
+      }
+      return event.nativeEvent.locationY ?? 0;
+    },
+    [],
+  );
 
-  const getVolumeForTouchY = useCallback((touchY: number) => {
-    const trackHeight = Math.max(surfaceHeight - VOLUME_TOUCH_PADDING * 2, 1);
-    const normalizedY = clamp((touchY - VOLUME_TOUCH_PADDING) / trackHeight, 0, 1);
-    return 1 - normalizedY;
-  }, [surfaceHeight]);
+  const getVolumeForTouchY = useCallback(
+    (touchY: number) => {
+      const trackHeight = Math.max(surfaceHeight - VOLUME_TOUCH_PADDING * 2, 1);
+      const normalizedY = clamp((touchY - VOLUME_TOUCH_PADDING) / trackHeight, 0, 1);
+      return 1 - normalizedY;
+    },
+    [surfaceHeight],
+  );
 
-  const applySystemVolume = useCallback((nextVolume: number) => {
-    const clamped = quantizeVolumeToSystemStep(nextVolume, systemVolumeMax);
-    if (lastAppliedSystemVolumeRef.current != null && Math.abs(lastAppliedSystemVolumeRef.current - clamped) < 0.0001) {
+  const applySystemVolume = useCallback(
+    (nextVolume: number) => {
+      const clamped = quantizeVolumeToSystemStep(nextVolume, systemVolumeMax);
+      if (
+        lastAppliedSystemVolumeRef.current != null &&
+        Math.abs(lastAppliedSystemVolumeRef.current - clamped) < 0.0001
+      ) {
+        setVolumeHud(clamped);
+        return;
+      }
+
+      lastAppliedSystemVolumeRef.current = clamped;
+      setSystemVolume(clamped);
       setVolumeHud(clamped);
-      return;
-    }
-
-    lastAppliedSystemVolumeRef.current = clamped;
-    setSystemVolume(clamped);
-    setVolumeHud(clamped);
-    const token = volumeUpdateTokenRef.current + 1;
-    volumeUpdateTokenRef.current = token;
-    void setSystemMusicVolume(clamped)
-      .then((appliedVolume) => {
-        if (volumeUpdateTokenRef.current !== token) return;
-        setSystemVolume(appliedVolume);
-        setVolumeHud(appliedVolume);
-        lastAppliedSystemVolumeRef.current = appliedVolume;
-      })
-      .catch(() => {});
-  }, [systemVolumeMax]);
+      const token = volumeUpdateTokenRef.current + 1;
+      volumeUpdateTokenRef.current = token;
+      void setSystemMusicVolume(clamped)
+        .then((appliedVolume) => {
+          if (volumeUpdateTokenRef.current !== token) return;
+          setSystemVolume(appliedVolume);
+          setVolumeHud(appliedVolume);
+          lastAppliedSystemVolumeRef.current = appliedVolume;
+        })
+        .catch(() => {});
+    },
+    [systemVolumeMax],
+  );
 
   const gestureResponder = useMemo(
     () =>
@@ -485,7 +510,7 @@ export function PlayerScreen({ route, navigation }: Props) {
         },
         onPanResponderMove: (event, gestureState) => {
           const state = gestureStartRef.current;
-          if (!state || !state.volumeEligible || surfaceHeight <= 0) return;
+          if (!state?.volumeEligible || surfaceHeight <= 0) return;
 
           const verticalDistance = Math.abs(gestureState.dy);
           const horizontalDistance = Math.abs(gestureState.dx);
@@ -536,7 +561,17 @@ export function PlayerScreen({ route, navigation }: Props) {
           setVolumeHud(null);
         },
       }),
-    [applySystemVolume, getGestureTouchY, getVolumeForTouchY, getZoneForX, handleDoubleTap, handleSingleTap, isVolumeTouchZone, showControlsTemporarily, surfaceHeight]
+    [
+      applySystemVolume,
+      getGestureTouchY,
+      getVolumeForTouchY,
+      getZoneForX,
+      handleDoubleTap,
+      handleSingleTap,
+      isVolumeTouchZone,
+      showControlsTemporarily,
+      surfaceHeight,
+    ],
   );
 
   const progressResponder = useMemo(
@@ -563,16 +598,26 @@ export function PlayerScreen({ route, navigation }: Props) {
           hideControlsSoon();
         },
       }),
-    [hideControlsSoon, progressToTime, scrubTime, seekTo]
+    [hideControlsSoon, progressToTime, scrubTime, seekTo],
   );
 
   const skipRange = useMemo(() => {
     const timings = timingsQuery.data;
     if (!timings) return null;
-    if (timings.intro_start != null && timings.intro_end != null && currentTime >= timings.intro_start && currentTime <= timings.intro_end) {
+    if (
+      timings.intro_start != null &&
+      timings.intro_end != null &&
+      currentTime >= timings.intro_start &&
+      currentTime <= timings.intro_end
+    ) {
       return { label: "Skip Intro", target: timings.intro_end };
     }
-    if (timings.outro_start != null && timings.outro_end != null && currentTime >= timings.outro_start && currentTime <= timings.outro_end) {
+    if (
+      timings.outro_start != null &&
+      timings.outro_end != null &&
+      currentTime >= timings.outro_start &&
+      currentTime <= timings.outro_end
+    ) {
       return { label: "Skip Credits", target: timings.outro_end };
     }
     return null;
@@ -641,7 +686,9 @@ export function PlayerScreen({ route, navigation }: Props) {
           <View style={styles.countdownCard}>
             <Text style={styles.countdownEyebrow}>Up Next</Text>
             {nextEpisodeLabel ? (
-              <Text style={styles.countdownTitle} numberOfLines={2}>{nextEpisodeLabel}</Text>
+              <Text style={styles.countdownTitle} numberOfLines={2}>
+                {nextEpisodeLabel}
+              </Text>
             ) : null}
             <Text style={styles.countdownNumber}>{countdown}</Text>
             <View style={styles.countdownButtons}>
@@ -664,7 +711,9 @@ export function PlayerScreen({ route, navigation }: Props) {
               <Feather name="arrow-left" size={22} color={colors.text} />
             </Pressable>
             <View style={styles.titleWrap}>
-              <Text style={styles.title} numberOfLines={1}>{title}</Text>
+              <Text style={styles.title} numberOfLines={1}>
+                {title}
+              </Text>
             </View>
           </View>
 
@@ -702,7 +751,12 @@ export function PlayerScreen({ route, navigation }: Props) {
               <Text style={styles.timeLabel}>{formatTime(totalDuration)}</Text>
             </View>
 
-            <View testID="progress-track" style={styles.progressTrack} onLayout={handleProgressLayout} {...progressResponder.panHandlers}>
+            <View
+              testID="progress-track"
+              style={styles.progressTrack}
+              onLayout={handleProgressLayout}
+              {...progressResponder.panHandlers}
+            >
               <View style={styles.progressTrackBg} />
               <View style={[styles.progressFill, { width: `${playedPercent}%` }]} />
               <View style={[styles.progressThumb, { left: `${playedPercent}%` }]} />
@@ -793,10 +847,10 @@ export function PlayerScreen({ route, navigation }: Props) {
                   <Pressable
                     key={track.title}
                     onPress={() => {
-                    setSelectedSubtitle(index);
-                    setShowSubtitleMenu(false);
-                    hideControlsSoon();
-                  }}
+                      setSelectedSubtitle(index);
+                      setShowSubtitleMenu(false);
+                      hideControlsSoon();
+                    }}
                     style={[styles.menuItem, selectedSubtitle === index && styles.menuItemActive]}
                   >
                     <Text style={styles.menuLabel}>{track.title}</Text>

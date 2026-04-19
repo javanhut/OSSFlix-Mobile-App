@@ -2,7 +2,7 @@ import { useDeferredValue, useState } from "react";
 import { ActivityIndicator, FlatList, StyleSheet, TextInput, View } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { api } from "../api/client";
 import { AppHeader } from "../components/AppHeader";
@@ -44,10 +44,19 @@ export function SearchScreen() {
           deferredQuery.length > 0 ? (
             <EmptyState title="No matching titles" subtitle="Try a broader title, genre, or keyword." />
           ) : (
-            <EmptyState title="Start typing to search" subtitle="Search queries hit the Reelscape media catalog directly." />
+            <EmptyState
+              title="Start typing to search"
+              subtitle="Search queries hit the Reelscape media catalog directly."
+            />
           )
         }
-        renderItem={({ item }) => <TitleCard item={item} width={160} onPress={() => navigation.navigate("TitleDetails", { dirPath: item.pathToDir })} />}
+        renderItem={({ item }) => (
+          <TitleCard
+            item={item}
+            width={160}
+            onPress={() => navigation.navigate("TitleDetails", { dirPath: item.pathToDir })}
+          />
+        )}
       />
     </View>
   );

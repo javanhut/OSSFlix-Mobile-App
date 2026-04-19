@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   FlatList,
   Image,
@@ -31,12 +31,12 @@ export function FeaturedCarousel({
   const listRef = useRef<FlatList<TitleSummary>>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const clearTimer = () => {
+  const clearTimer = useCallback(() => {
     if (timerRef.current) {
       clearTimeout(timerRef.current);
       timerRef.current = null;
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (items.length <= 1 || slideWidth === 0) {
@@ -50,7 +50,7 @@ export function FeaturedCarousel({
       setActiveIndex(next);
     }, AUTO_ADVANCE_MS);
     return clearTimer;
-  }, [activeIndex, items.length, slideWidth]);
+  }, [activeIndex, items.length, slideWidth, clearTimer]);
 
   const handleLayout = (event: LayoutChangeEvent) => {
     const w = event.nativeEvent.layout.width;
@@ -84,10 +84,7 @@ export function FeaturedCarousel({
         renderItem={({ item }) => {
           const imageUrl = resolveAssetUrl(item.imagePath);
           return (
-            <Pressable
-              onPress={() => onSelect(item)}
-              style={[styles.slide, { width: slideWidth }]}
-            >
+            <Pressable onPress={() => onSelect(item)} style={[styles.slide, { width: slideWidth }]}>
               {imageUrl ? (
                 <Image source={{ uri: imageUrl }} style={styles.image} resizeMode="cover" />
               ) : (
@@ -117,10 +114,7 @@ export function FeaturedCarousel({
       {items.length > 1 ? (
         <View style={styles.dots}>
           {items.map((item, idx) => (
-            <View
-              key={item.pathToDir}
-              style={[styles.dot, idx === activeIndex && styles.dotActive]}
-            />
+            <View key={item.pathToDir} style={[styles.dot, idx === activeIndex && styles.dotActive]} />
           ))}
         </View>
       ) : null}

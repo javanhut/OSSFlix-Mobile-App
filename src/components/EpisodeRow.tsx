@@ -37,17 +37,11 @@ export function EpisodeRow({
     !!progress &&
     progress.current_time > 0 &&
     (progress.duration === 0 || progress.current_time < progress.duration - 5);
-  const isWatched =
-    !!progress && progress.duration > 0 && progress.current_time >= progress.duration - 5;
-  const pct =
-    progress && progress.duration > 0
-      ? Math.min(100, (progress.current_time / progress.duration) * 100)
-      : 0;
+  const isWatched = !!progress && progress.duration > 0 && progress.current_time >= progress.duration - 5;
+  const pct = progress && progress.duration > 0 ? Math.min(100, (progress.current_time / progress.duration) * 100) : 0;
 
   const badgeText = parsed ? `Episode ${parsed.episode}` : "Movie";
-  const titleText = parsed
-    ? parsed.title || `Episode ${parsed.episode}`
-    : fallbackLabel;
+  const titleText = parsed ? parsed.title || `Episode ${parsed.episode}` : fallbackLabel;
 
   let metaText: string | null = null;
   if (progress && progress.duration > 0) {
@@ -66,13 +60,7 @@ export function EpisodeRow({
         accessibilityRole="button"
         accessibilityLabel={parsed ? `Play Episode ${parsed.episode}` : `Play ${titleText}`}
       >
-        <View
-          style={[
-            styles.badge,
-            isInProgress && styles.badgeInProgress,
-            isWatched && styles.badgeWatched,
-          ]}
-        >
+        <View style={[styles.badge, isInProgress && styles.badgeInProgress, isWatched && styles.badgeWatched]}>
           <Text style={styles.badgeLabel} numberOfLines={1}>
             {badgeText}
           </Text>
@@ -98,13 +86,7 @@ export function EpisodeRow({
       ) : null}
       {pct > 0 ? (
         <View style={styles.progressTrack} pointerEvents="none">
-          <View
-            style={[
-              styles.progressFill,
-              { width: `${pct}%` },
-              isWatched && styles.progressFillComplete,
-            ]}
-          />
+          <View style={[styles.progressFill, { width: `${pct}%` }, isWatched && styles.progressFillComplete]} />
         </View>
       ) : null}
     </View>

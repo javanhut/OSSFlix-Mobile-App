@@ -51,9 +51,7 @@ export async function saveSessionSnapshot(snapshot: SessionSnapshot): Promise<vo
     snapshot.serverUrl
       ? SecureStore.setItemAsync(KEYS.serverUrl, snapshot.serverUrl)
       : SecureStore.deleteItemAsync(KEYS.serverUrl),
-    snapshot.token
-      ? SecureStore.setItemAsync(KEYS.token, snapshot.token)
-      : SecureStore.deleteItemAsync(KEYS.token),
+    snapshot.token ? SecureStore.setItemAsync(KEYS.token, snapshot.token) : SecureStore.deleteItemAsync(KEYS.token),
     writeJson(KEYS.profile, snapshot.profile),
     writeJson(KEYS.selectedProfile, snapshot.selectedProfile),
   ]);

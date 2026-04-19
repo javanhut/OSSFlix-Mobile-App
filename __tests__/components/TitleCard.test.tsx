@@ -1,10 +1,10 @@
-import React from 'react';
-import { fireEvent, render } from '@testing-library/react-native';
-import { TitleCard } from '../../src/components/TitleCard';
-import { useSessionStore } from '../../src/state/session';
-import type { TitleSummary } from '../../src/types/api';
+import React from "react";
+import { fireEvent, render } from "@testing-library/react-native";
+import { TitleCard } from "../../src/components/TitleCard";
+import { useSessionStore } from "../../src/state/session";
+import type { TitleSummary } from "../../src/types/api";
 
-const SERVER = 'http://media.local:9000';
+const SERVER = "http://media.local:9000";
 
 beforeEach(() => {
   useSessionStore.setState({
@@ -16,78 +16,78 @@ beforeEach(() => {
   });
 });
 
-describe('TitleCard', () => {
+describe("TitleCard", () => {
   const baseItem: TitleSummary = {
-    name: 'Inception',
-    imagePath: '/api/assets/inception.jpg',
-    pathToDir: 'movies/Inception',
+    name: "Inception",
+    imagePath: "/api/assets/inception.jpg",
+    pathToDir: "movies/Inception",
   };
 
-  it('renders an image when imagePath is set, resolved against the server URL', () => {
+  it("renders an image when imagePath is set, resolved against the server URL", () => {
     const { UNSAFE_getByType } = render(<TitleCard item={baseItem} onPress={() => {}} />);
-    const Image = require('react-native').Image;
+    const Image = require("react-native").Image;
     const image = UNSAFE_getByType(Image);
     expect(image.props.source).toEqual({ uri: `${SERVER}/api/assets/inception.jpg` });
   });
 
-  it('falls back to a placeholder with the title text when imagePath is null', () => {
+  it("falls back to a placeholder with the title text when imagePath is null", () => {
     const item = { ...baseItem, imagePath: null };
     const { getAllByText } = render(<TitleCard item={item} onPress={() => {}} />);
     // The title appears twice: once in the placeholder, once below the image area.
-    expect(getAllByText('Inception').length).toBeGreaterThanOrEqual(1);
+    expect(getAllByText("Inception").length).toBeGreaterThanOrEqual(1);
   });
 
-  it('renders the title text', () => {
+  it("renders the title text", () => {
     const { getByText } = render(<TitleCard item={baseItem} onPress={() => {}} />);
-    expect(getByText('Inception')).toBeTruthy();
+    expect(getByText("Inception")).toBeTruthy();
   });
 
-  it('renders a type badge when item.type is set', () => {
-    const item = { ...baseItem, type: 'Movie' };
+  it("renders a type badge when item.type is set", () => {
+    const item = { ...baseItem, type: "Movie" };
     const { getByText } = render(<TitleCard item={item} onPress={() => {}} />);
-    expect(getByText('Movie')).toBeTruthy();
+    expect(getByText("Movie")).toBeTruthy();
   });
 
-  it('does not render a badge when item.type is missing', () => {
+  it("does not render a badge when item.type is missing", () => {
     const { queryByText } = render(<TitleCard item={baseItem} onPress={() => {}} />);
-    expect(queryByText('Movie')).toBeNull();
+    expect(queryByText("Movie")).toBeNull();
   });
 
-  it('fires onPress when pressed', () => {
+  it("fires onPress when pressed", () => {
     const onPress = jest.fn();
     const { getByText } = render(<TitleCard item={baseItem} onPress={onPress} />);
-    fireEvent.press(getByText('Inception'));
+    fireEvent.press(getByText("Inception"));
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 
-  it('does not render a progress bar when progressPct is zero or missing', () => {
+  it("does not render a progress bar when progressPct is zero or missing", () => {
     const { queryByTestId } = render(<TitleCard item={baseItem} onPress={() => {}} />);
-    expect(queryByTestId('title-card-progress')).toBeNull();
+    expect(queryByTestId("title-card-progress")).toBeNull();
 
     const zero = { ...baseItem, progressPct: 0 };
     const { queryByTestId: queryZero } = render(<TitleCard item={zero} onPress={() => {}} />);
-    expect(queryZero('title-card-progress')).toBeNull();
+    expect(queryZero("title-card-progress")).toBeNull();
   });
 
-  it('renders a progress fill sized to progressPct when set', () => {
+  it("renders a progress fill sized to progressPct when set", () => {
     const item = { ...baseItem, progressPct: 42 };
     const { getByTestId } = render(<TitleCard item={item} onPress={() => {}} />);
-    const fill = getByTestId('title-card-progress-fill');
+    const fill = getByTestId("title-card-progress-fill");
     const flat = Array.isArray(fill.props.style) ? fill.props.style : [fill.props.style];
     const width = flat
       .map((s: { width?: string | number } | null | undefined) => s?.width)
       .find((w: string | number | undefined) => w !== undefined);
-    expect(width).toBe('42%');
+    expect(width).toBe("42%");
   });
 
-  it('clamps progressPct above 100 to 100%', () => {
+  it("clamps progressPct above 100 to 100%", () => {
     const item = { ...baseItem, progressPct: 200 };
     const { getByTestId } = render(<TitleCard item={item} onPress={() => {}} />);
-    const fill = getByTestId('title-card-progress-fill');
+    const fill = getByTestId("title-card-progress-fill");
     const flat = Array.isArray(fill.props.style) ? fill.props.style : [fill.props.style];
     const width = flat
       .map((s: { width?: string | number } | null | undefined) => s?.width)
       .find((w: string | number | undefined) => w !== undefined);
-    expect(width).toBe('100%');
+    expect(width).toBe("100%");
   });
 });

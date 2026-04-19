@@ -52,10 +52,7 @@ function buildHeaders(authenticated = true, extra?: HeadersInit): Headers {
 
 async function parseResponse<T>(response: Response): Promise<T> {
   const payload = await response.json().catch(() => ({}));
-  const error =
-    payload && typeof payload === "object"
-      ? (payload as { error?: string }).error
-      : undefined;
+  const error = payload && typeof payload === "object" ? (payload as { error?: string }).error : undefined;
   if (!response.ok || error) {
     const message = error || `Request failed with status ${response.status}`;
     if (response.status === 401 && useSessionStore.getState().token) {
@@ -84,7 +81,7 @@ async function postJson<T>(path: string, body: unknown, authenticated = true): P
       },
       body: JSON.stringify(body),
     },
-    authenticated
+    authenticated,
   );
 }
 
@@ -165,22 +162,14 @@ export const api = {
     return requestJson<PlaybackProgress | null>(`/api/playback/progress?src=${encodeURIComponent(src)}`);
   },
 
-  saveProgress(body: {
-    video_src: string;
-    dir_path: string;
-    current_time: number;
-    duration: number;
-  }) {
-    return requestJson<{ ok: boolean }>(
-      "/api/playback/progress",
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(body),
-      }
-    );
+  saveProgress(body: { video_src: string; dir_path: string; current_time: number; duration: number }) {
+    return requestJson<{ ok: boolean }>("/api/playback/progress", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
   },
 
   watchlistCheck(dirPath: string) {
@@ -188,29 +177,23 @@ export const api = {
   },
 
   addToWatchlist(dirPath: string) {
-    return requestJson<{ ok: boolean }>(
-      "/api/watchlist",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ dir_path: dirPath }),
-      }
-    );
+    return requestJson<{ ok: boolean }>("/api/watchlist", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ dir_path: dirPath }),
+    });
   },
 
   removeFromWatchlist(dirPath: string) {
-    return requestJson<{ ok: boolean }>(
-      "/api/watchlist",
-      {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ dir_path: dirPath }),
-      }
-    );
+    return requestJson<{ ok: boolean }>("/api/watchlist", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ dir_path: dirPath }),
+    });
   },
 
   getProbe(src: string) {
@@ -218,9 +201,13 @@ export const api = {
   },
 
   getTimings(src: string) {
-    return requestJson<{ video_src: string; intro_start: number | null; intro_end: number | null; outro_start: number | null; outro_end: number | null }>(
-      `/api/episode/timings?src=${encodeURIComponent(src)}`
-    );
+    return requestJson<{
+      video_src: string;
+      intro_start: number | null;
+      intro_end: number | null;
+      outro_start: number | null;
+      outro_end: number | null;
+    }>(`/api/episode/timings?src=${encodeURIComponent(src)}`);
   },
 
   buildStreamUrl(src: string, audioIndex = 0) {

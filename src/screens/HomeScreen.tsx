@@ -1,16 +1,7 @@
 import { useState } from "react";
-import {
-  ActivityIndicator,
-  Modal,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useNavigation } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
 
@@ -66,23 +57,16 @@ export function HomeScreen() {
   };
 
   const loading = categoriesQuery.isLoading || continueWatchingQuery.isLoading || watchlistQuery.isLoading;
-  const refreshing =
-    categoriesQuery.isRefetching || continueWatchingQuery.isRefetching || watchlistQuery.isRefetching;
+  const refreshing = categoriesQuery.isRefetching || continueWatchingQuery.isRefetching || watchlistQuery.isRefetching;
   const handleRefresh = () => {
-    void Promise.all([
-      categoriesQuery.refetch(),
-      continueWatchingQuery.refetch(),
-      watchlistQuery.refetch(),
-    ]);
+    void Promise.all([categoriesQuery.refetch(), continueWatchingQuery.refetch(), watchlistQuery.refetch()]);
   };
   const allCategoryRows = categoriesQuery.data || [];
   const categoryRows = allCategoryRows.filter((row) => BASIC_GENRES.has(row.genre));
 
   const featured = (() => {
     const newlyAdded = allCategoryRows.find((row) => row.genre === "Newly Added");
-    const source: TitleSummary[] = newlyAdded
-      ? newlyAdded.titles
-      : allCategoryRows.flatMap((row) => row.titles);
+    const source: TitleSummary[] = newlyAdded ? newlyAdded.titles : allCategoryRows.flatMap((row) => row.titles);
     const seen = new Set<string>();
     const picked: TitleSummary[] = [];
     for (const t of source) {
@@ -96,7 +80,7 @@ export function HomeScreen() {
   })();
 
   if (loading) {
-      return (
+    return (
       <View style={styles.loading}>
         <ActivityIndicator color={colors.primary} />
       </View>
@@ -108,9 +92,7 @@ export function HomeScreen() {
       <ScrollView
         style={styles.screen}
         contentContainerStyle={styles.content}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} />}
       >
         <Text style={styles.brand}>Reelscape</Text>
         <AppHeader title={`Welcome back${profile?.name ? `, ${profile.name}` : ""}`} />
@@ -131,7 +113,10 @@ export function HomeScreen() {
           onSelect={(item) => navigation.navigate("TitleDetails", { dirPath: item.pathToDir })}
         />
         {!categoryRows.length && !allCategoryRows.length ? (
-          <EmptyState title="No library data yet" subtitle="Once the server has scanned media, your categories will appear here." />
+          <EmptyState
+            title="No library data yet"
+            subtitle="Once the server has scanned media, your categories will appear here."
+          />
         ) : null}
         {categoryRows.map((row) => (
           <TitleRail
@@ -149,12 +134,7 @@ export function HomeScreen() {
           <Text style={styles.signOutLabel}>Sign Out</Text>
         </Pressable>
       </ScrollView>
-      <Modal
-        visible={signOutOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setSignOutOpen(false)}
-      >
+      <Modal visible={signOutOpen} transparent animationType="fade" onRequestClose={() => setSignOutOpen(false)}>
         <Pressable style={styles.modalBackdrop} onPress={() => setSignOutOpen(false)}>
           <Pressable style={styles.modalCard} onPress={() => {}}>
             <Text style={styles.modalTitle}>Sign out?</Text>

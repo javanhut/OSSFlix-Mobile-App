@@ -42,15 +42,8 @@ export function ServerConnectScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.flex}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
-      <ScrollView
-        style={styles.screen}
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-      >
+    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+      <ScrollView style={styles.screen} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <AppHeader
           eyebrow="Android Setup"
           title="Connect to Reelscape"
@@ -65,7 +58,11 @@ export function ServerConnectScreen() {
           placeholderTextColor="#64748b"
           style={styles.input}
         />
-        <Pressable onPress={handleConnect} disabled={submitting} style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}>
+        <Pressable
+          onPress={handleConnect}
+          disabled={submitting}
+          style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
+        >
           <View style={styles.buttonContent}>
             <Feather name="wifi" size={18} color={colors.primaryText} />
             <Text style={styles.buttonLabel}>{submitting ? "Testing..." : "Connect"}</Text>
