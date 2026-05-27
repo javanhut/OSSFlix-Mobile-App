@@ -16,10 +16,10 @@ import { api, normalizeServerUrl } from "../api/client";
 import { AppHeader } from "../components/AppHeader";
 import { useSessionStore } from "../state/session";
 import { colors } from "../theme/colors";
-import { useLockPortrait } from "../hooks/useLockPortrait";
+import { useAllowRotation } from "../hooks/useAllowRotation";
 
 export function ServerConnectScreen() {
-  useLockPortrait();
+  useAllowRotation();
 
   const [serverUrl, setServerUrl] = useState("");
   const [submitting, setSubmitting] = useState(false);

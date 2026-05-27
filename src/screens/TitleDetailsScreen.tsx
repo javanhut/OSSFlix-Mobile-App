@@ -1,5 +1,15 @@
 import { useMemo, useState } from "react";
-import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
@@ -17,7 +27,7 @@ import {
   type ParsedEpisode,
 } from "../utils/episodeNaming";
 import { formatTitleType } from "../utils/titleType";
-import { useLockPortrait } from "../hooks/useLockPortrait";
+import { useAllowRotation } from "../hooks/useAllowRotation";
 
 type Props = NativeStackScreenProps<RootStackParamList, "TitleDetails">;
 
@@ -49,7 +59,9 @@ function buildEntry(video: string, dirPath: string): EpisodeEntry {
 }
 
 export function TitleDetailsScreen({ route, navigation }: Props) {
-  useLockPortrait();
+  useAllowRotation();
+  const { width, height } = useWindowDimensions();
+  const isLandscape = width > height;
 
   const queryClient = useQueryClient();
   const { dirPath } = route.params;
@@ -169,8 +181,8 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
 
   const showDropdown = seasonKeys.length >= 2;
 
-  return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+  const detailsPanel = (
+    <>
       {imageUrl ? <Image source={{ uri: imageUrl }} style={styles.poster} /> : <View style={styles.posterFallback} />}
       <Text style={styles.title}>{details.name}</Text>
       <Text style={styles.meta}>{formatTitleType(details.type)}</Text>
@@ -219,7 +231,11 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
           </View>
         </Pressable>
       </View>
+    </>
+  );
 
+  const episodesPanel = (
+    <>
       {showDropdown ? (
         <View style={styles.seasonSection}>
           <Pressable onPress={() => setSeasonMenuOpen((open) => !open)} style={styles.seasonTrigger}>
@@ -288,6 +304,35 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
           subtitle="This title does not currently expose any videos from the server."
         />
       )}
+    </>
+  );
+
+  if (isLandscape) {
+    return (
+      <View style={styles.landscapeRoot}>
+        <ScrollView
+          style={styles.landscapeColumn}
+          contentContainerStyle={styles.landscapeColumnContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {detailsPanel}
+        </ScrollView>
+        <View style={styles.landscapeDivider} />
+        <ScrollView
+          style={styles.landscapeColumn}
+          contentContainerStyle={styles.landscapeColumnContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {episodesPanel}
+        </ScrollView>
+      </View>
+    );
+  }
+
+  return (
+    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+      {detailsPanel}
+      {episodesPanel}
     </ScrollView>
   );
 }
@@ -300,6 +345,23 @@ const styles = StyleSheet.create({
   content: {
     padding: 20,
     paddingBottom: 36,
+  },
+  landscapeRoot: {
+    flex: 1,
+    flexDirection: "row",
+    backgroundColor: colors.background,
+  },
+  landscapeColumn: {
+    flex: 1,
+  },
+  landscapeColumnContent: {
+    padding: 20,
+    paddingBottom: 36,
+  },
+  landscapeDivider: {
+    width: 1,
+    backgroundColor: colors.border,
+    opacity: 0.4,
   },
   poster: {
     width: "100%",

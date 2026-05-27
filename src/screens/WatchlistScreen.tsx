@@ -9,10 +9,10 @@ import { EmptyState } from "../components/EmptyState";
 import { TitleCard } from "../components/TitleCard";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors } from "../theme/colors";
-import { useLockPortrait } from "../hooks/useLockPortrait";
+import { useAllowRotation } from "../hooks/useAllowRotation";
 
 export function WatchlistScreen() {
-  useLockPortrait();
+  useAllowRotation();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const query = useQuery({ queryKey: ["watchlist"], queryFn: api.getWatchlist });
 

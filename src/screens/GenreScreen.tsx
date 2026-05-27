@@ -10,12 +10,12 @@ import { EmptyState } from "../components/EmptyState";
 import { TitleCard } from "../components/TitleCard";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors } from "../theme/colors";
-import { useLockPortrait } from "../hooks/useLockPortrait";
+import { useAllowRotation } from "../hooks/useAllowRotation";
 
 const ANIME_ALIASES = new Set(["anime", "animation"]);
 
 export function GenreScreen() {
-  useLockPortrait();
+  useAllowRotation();
   const route = useRoute<RouteProp<RootStackParamList, "Genre">>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { genre } = route.params;

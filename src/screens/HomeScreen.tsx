@@ -13,7 +13,7 @@ import { TitleRail } from "../components/TitleRail";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { useSessionStore } from "../state/session";
 import { colors } from "../theme/colors";
-import { useLockPortrait } from "../hooks/useLockPortrait";
+import { useAllowRotation } from "../hooks/useAllowRotation";
 import type { TitleSummary } from "../types/api";
 
 const BASIC_GENRES = new Set([
@@ -35,7 +35,7 @@ const BASIC_GENRES = new Set([
 const FEATURED_LIMIT = 6;
 
 export function HomeScreen() {
-  useLockPortrait();
+  useAllowRotation();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const queryClient = useQueryClient();
   const profile = useSessionStore((state) => state.profile);

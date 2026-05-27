@@ -9,12 +9,12 @@ import { PasswordField } from "../components/PasswordField";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { useSessionStore } from "../state/session";
 import { colors } from "../theme/colors";
-import { useLockPortrait } from "../hooks/useLockPortrait";
+import { useAllowRotation } from "../hooks/useAllowRotation";
 
 type Props = NativeStackScreenProps<RootStackParamList, "SignIn">;
 
 export function SignInScreen({ navigation }: Props) {
-  useLockPortrait();
+  useAllowRotation();
 
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);

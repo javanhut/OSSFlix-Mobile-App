@@ -17,10 +17,10 @@ import { AppHeader } from "../components/AppHeader";
 import { PasswordField } from "../components/PasswordField";
 import { useSessionStore } from "../state/session";
 import { colors } from "../theme/colors";
-import { useLockPortrait } from "../hooks/useLockPortrait";
+import { useAllowRotation } from "../hooks/useAllowRotation";
 
 export function RegisterScreen() {
-  useLockPortrait();
+  useAllowRotation();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");

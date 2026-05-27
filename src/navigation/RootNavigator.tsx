@@ -1,6 +1,7 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useSessionStore } from "../state/session";
 import { colors } from "../theme/colors";
@@ -48,26 +49,37 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 function MainTabs() {
+  const insets = useSafeAreaInsets();
+  const extraBottom = 28;
+  const iconSize = 26;
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
-        tabBarStyle: { backgroundColor: colors.surfaceElevated, borderTopColor: colors.border },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: "700" },
+        tabBarStyle: {
+          backgroundColor: colors.surfaceElevated,
+          borderTopColor: colors.border,
+          paddingTop: 14,
+          paddingBottom: insets.bottom + extraBottom,
+          paddingHorizontal: 18,
+          height: 70 + insets.bottom + extraBottom,
+        },
+        tabBarItemStyle: { paddingVertical: 4 },
+        tabBarLabelStyle: { fontSize: 12, fontWeight: "700", marginTop: 6 },
       }}
     >
       <Tab.Screen
         name="Home"
         component={HomeScreen}
-        options={{ tabBarIcon: ({ color, size }) => <Feather name="home" size={size} color={color} /> }}
+        options={{ tabBarIcon: ({ color }) => <Feather name="home" size={iconSize} color={color} /> }}
       />
       <Tab.Screen
         name="Movies"
         component={LibraryScreen}
         initialParams={{ type: "Movie", title: "Movies" } as never}
-        options={{ tabBarIcon: ({ color, size }) => <Feather name="film" size={size} color={color} /> }}
+        options={{ tabBarIcon: ({ color }) => <Feather name="film" size={iconSize} color={color} /> }}
       />
       <Tab.Screen
         name="TVShows"
@@ -75,20 +87,20 @@ function MainTabs() {
         initialParams={{ type: "tv show", title: "TV Shows" } as never}
         options={{
           title: "TV Shows",
-          tabBarIcon: ({ color, size }) => <Feather name="monitor" size={size} color={color} />,
+          tabBarIcon: ({ color }) => <Feather name="monitor" size={iconSize} color={color} />,
         }}
       />
       <Tab.Screen
         name="Search"
         component={SearchScreen}
-        options={{ tabBarIcon: ({ color, size }) => <Feather name="search" size={size} color={color} /> }}
+        options={{ tabBarIcon: ({ color }) => <Feather name="search" size={iconSize} color={color} /> }}
       />
       <Tab.Screen
         name="MyList"
         component={WatchlistScreen}
         options={{
           title: "My List",
-          tabBarIcon: ({ color, size }) => <Feather name="bookmark" size={size} color={color} />,
+          tabBarIcon: ({ color }) => <Feather name="bookmark" size={iconSize} color={color} />,
         }}
       />
     </Tab.Navigator>

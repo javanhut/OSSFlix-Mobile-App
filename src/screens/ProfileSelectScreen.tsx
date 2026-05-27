@@ -9,12 +9,12 @@ import type { RootStackParamList } from "../navigation/RootNavigator";
 import { useSessionStore } from "../state/session";
 import { colors } from "../theme/colors";
 import type { PublicProfile } from "../types/api";
-import { useLockPortrait } from "../hooks/useLockPortrait";
+import { useAllowRotation } from "../hooks/useAllowRotation";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ProfileSelect">;
 
 export function ProfileSelectScreen({ navigation, route }: Props) {
-  useLockPortrait();
+  useAllowRotation();
   const { profiles, source } = route.params;
   const setSelectedProfile = useSessionStore((state) => state.setSelectedProfile);
 

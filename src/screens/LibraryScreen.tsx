@@ -9,10 +9,10 @@ import { EmptyState } from "../components/EmptyState";
 import { TitleCard } from "../components/TitleCard";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors } from "../theme/colors";
-import { useLockPortrait } from "../hooks/useLockPortrait";
+import { useAllowRotation } from "../hooks/useAllowRotation";
 
 export function LibraryScreen() {
-  useLockPortrait();
+  useAllowRotation();
   const route = useRoute<RouteProp<Record<string, { type: string; title: string }>, string>>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { type, title } = route.params;

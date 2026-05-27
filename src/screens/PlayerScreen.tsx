@@ -82,6 +82,9 @@ export function PlayerScreen({ route, navigation }: Props) {
     volumeEligible: boolean;
     volumeActive: boolean;
   } | null>(null);
+  const progressTrackRef = useRef<View>(null);
+  const progressTrackPageXRef = useRef(0);
+  const scrubTimeRef = useRef(initialTime);
 
   const [surfaceWidth, setSurfaceWidth] = useState(0);
   const [surfaceHeight, setSurfaceHeight] = useState(0);
@@ -296,7 +299,14 @@ export function PlayerScreen({ route, navigation }: Props) {
   }, [currentIndex, initialTime, startIndex]);
 
   useEffect(() => {
-    void ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE).catch(() => {});
+    let cancelled = false;
+    void (async () => {
+      try {
+        await ScreenOrientation.unlockAsync();
+        if (cancelled) return;
+        await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
+      } catch {}
+    })();
     setPlayerVolumeStream();
     void getSystemMusicVolumeInfo()
       .then(({ volume, maxVolume }) => {
@@ -306,6 +316,7 @@ export function PlayerScreen({ route, navigation }: Props) {
       })
       .catch(() => {});
     return () => {
+      cancelled = true;
       void ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(() => {});
       if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
       if (tapTimeoutRef.current) clearTimeout(tapTimeoutRef.current);
@@ -393,6 +404,9 @@ export function PlayerScreen({ route, navigation }: Props) {
 
   const handleProgressLayout = useCallback((event: LayoutChangeEvent) => {
     setProgressWidth(event.nativeEvent.layout.width);
+    progressTrackRef.current?.measureInWindow((x) => {
+      if (Number.isFinite(x)) progressTrackPageXRef.current = x;
+    });
   }, []);
 
   const handleSurfaceLayout = useCallback((event: LayoutChangeEvent) => {
@@ -579,26 +593,37 @@ export function PlayerScreen({ route, navigation }: Props) {
       PanResponder.create({
         onStartShouldSetPanResponder: () => true,
         onMoveShouldSetPanResponder: () => true,
-        onPanResponderGrant: (event) => {
-          const nextTime = progressToTime(event.nativeEvent.locationX);
+        onPanResponderTerminationRequest: () => false,
+        onShouldBlockNativeResponder: () => true,
+        onPanResponderGrant: (event, gestureState) => {
+          progressTrackRef.current?.measureInWindow((x) => {
+            if (Number.isFinite(x)) progressTrackPageXRef.current = x;
+          });
+          const pageX = gestureState.x0 || event.nativeEvent.pageX || 0;
+          const relX = pageX - progressTrackPageXRef.current;
+          const nextTime = progressToTime(relX);
+          scrubTimeRef.current = nextTime;
           setIsScrubbing(true);
           setScrubTime(nextTime);
         },
-        onPanResponderMove: (event) => {
-          setScrubTime(progressToTime(event.nativeEvent.locationX));
+        onPanResponderMove: (event, gestureState) => {
+          const pageX = gestureState.moveX || event.nativeEvent.pageX || 0;
+          const relX = pageX - progressTrackPageXRef.current;
+          const nextTime = progressToTime(relX);
+          scrubTimeRef.current = nextTime;
+          setScrubTime(nextTime);
         },
         onPanResponderRelease: () => {
           setIsScrubbing(false);
-          seekTo(scrubTime);
+          seekTo(scrubTimeRef.current);
           hideControlsSoon();
         },
         onPanResponderTerminate: () => {
           setIsScrubbing(false);
-          seekTo(scrubTime);
           hideControlsSoon();
         },
       }),
-    [hideControlsSoon, progressToTime, scrubTime, seekTo],
+    [hideControlsSoon, progressToTime, seekTo],
   );
 
   const skipRange = useMemo(() => {
@@ -752,8 +777,10 @@ export function PlayerScreen({ route, navigation }: Props) {
             </View>
 
             <View
+              ref={progressTrackRef}
               testID="progress-track"
               style={styles.progressTrack}
+              hitSlop={{ top: 12, bottom: 12, left: 0, right: 0 }}
               onLayout={handleProgressLayout}
               {...progressResponder.panHandlers}
             >

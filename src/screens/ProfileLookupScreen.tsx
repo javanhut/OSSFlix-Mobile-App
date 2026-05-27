@@ -17,12 +17,12 @@ import { AppHeader } from "../components/AppHeader";
 import { useSessionStore } from "../state/session";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors } from "../theme/colors";
-import { useLockPortrait } from "../hooks/useLockPortrait";
+import { useAllowRotation } from "../hooks/useAllowRotation";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ProfileLookup">;
 
 export function ProfileLookupScreen({ navigation }: Props) {
-  useLockPortrait();
+  useAllowRotation();
 
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
