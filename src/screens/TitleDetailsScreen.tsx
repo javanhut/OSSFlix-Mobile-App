@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -20,12 +20,16 @@ import { EpisodeRow } from "../components/EpisodeRow";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors } from "../theme/colors";
 import {
+  type AudioVariant,
   compareVideoSrc,
   formatEpisodeLabel,
+  inferEpisodeVariants,
   parseEpisodePath,
   titleFromStem,
   type ParsedEpisode,
 } from "../utils/episodeNaming";
+
+type AudioSelection = AudioVariant | "both";
 import { formatTitleType } from "../utils/titleType";
 import { useAllowRotation } from "../hooks/useAllowRotation";
 
@@ -105,11 +109,79 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
 
   const details = detailsQuery.data;
 
+  const variantMap = useMemo(() => inferEpisodeVariants(details?.videos || []), [details?.videos]);
+  const availableVariants = useMemo(() => {
+    const set = new Set<AudioVariant>();
+    for (const v of variantMap.values()) {
+      if (v) set.add(v);
+    }
+    return set;
+  }, [variantMap]);
+  const hasBothVariants = availableVariants.has("sub") && availableVariants.has("dub");
+
+  const [selectedVariant, setSelectedVariant] = useState<AudioSelection | null>(null);
+
+  useEffect(() => {
+    if (hasBothVariants && selectedVariant === null) {
+      setSelectedVariant("sub");
+    } else if (!hasBothVariants && selectedVariant !== null) {
+      setSelectedVariant(null);
+    }
+  }, [hasBothVariants, selectedVariant]);
+
+  const filteredVideos = useMemo(() => {
+    const videos = details?.videos || [];
+    if (selectedVariant === "both" || !hasBothVariants || selectedVariant === null) {
+      return videos;
+    }
+    const variantFiltered = videos.filter((v) => {
+      const variant = variantMap.get(v) ?? null;
+      return variant === null || variant === selectedVariant;
+    });
+    const pickRank = (src: string): number => {
+      const v = variantMap.get(src) ?? null;
+      if (v === selectedVariant) return 0;
+      if (v === null) return 1;
+      return 2;
+    };
+    const groups = new Map<string, string[]>();
+    for (const src of variantFiltered) {
+      const filename = src.split("/").pop() || src;
+      const parsed = parseEpisodePath(filename);
+      if (!parsed) continue;
+      const key = `s${parsed.season}e${parsed.episode}`;
+      const list = groups.get(key);
+      if (list) list.push(src);
+      else groups.set(key, [src]);
+    }
+    const winnerByKey = new Map<string, string>();
+    for (const [key, candidates] of groups) {
+      const winner =
+        candidates.length > 1 ? [...candidates].sort((a, b) => pickRank(a) - pickRank(b))[0]! : candidates[0]!;
+      winnerByKey.set(key, winner);
+    }
+    const emitted = new Set<string>();
+    const result: string[] = [];
+    for (const src of variantFiltered) {
+      const filename = src.split("/").pop() || src;
+      const parsed = parseEpisodePath(filename);
+      if (!parsed) {
+        result.push(src);
+        continue;
+      }
+      const key = `s${parsed.season}e${parsed.episode}`;
+      if (emitted.has(key)) continue;
+      emitted.add(key);
+      result.push(winnerByKey.get(key) ?? src);
+    }
+    return result;
+  }, [details?.videos, hasBothVariants, selectedVariant, variantMap]);
+
   const grouped = useMemo(() => {
     if (!details) return { bySeason: new Map<number, EpisodeEntry[]>(), other: [] as EpisodeEntry[] };
     const bySeason = new Map<number, EpisodeEntry[]>();
     const other: EpisodeEntry[] = [];
-    const sorted = [...details.videos].sort(compareVideoSrc);
+    const sorted = [...filteredVideos].sort(compareVideoSrc);
     for (const video of sorted) {
       const entry = buildEntry(video, details.dirPath);
       if (entry.parsed) {
@@ -121,7 +193,7 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
       }
     }
     return { bySeason, other };
-  }, [details]);
+  }, [details, filteredVideos]);
 
   const seasonKeys = useMemo(() => [...grouped.bySeason.keys()].sort((a, b) => a - b), [grouped.bySeason]);
 
@@ -143,23 +215,19 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
   );
 
   const playTarget = useMemo(() => {
-    if (!details?.videos?.length) return null;
+    if (!filteredVideos.length) return null;
     const progressEntries = progressQuery.data || [];
     const resumeEntry = progressEntries.find(
       (entry) => entry.current_time > 0 && (entry.duration === 0 || entry.current_time < entry.duration - 5),
     );
     if (resumeEntry) {
-      const startIndex = details.videos.indexOf(resumeEntry.video_src);
-      return {
-        startIndex: startIndex >= 0 ? startIndex : 0,
-        initialTime: resumeEntry.current_time,
-      };
+      const startIndex = filteredVideos.indexOf(resumeEntry.video_src);
+      if (startIndex >= 0) {
+        return { startIndex, initialTime: resumeEntry.current_time };
+      }
     }
-    return {
-      startIndex: 0,
-      initialTime: 0,
-    };
-  }, [details, progressQuery.data]);
+    return { startIndex: 0, initialTime: 0 };
+  }, [filteredVideos, progressQuery.data]);
 
   if (detailsQuery.isLoading) {
     return (
@@ -208,7 +276,7 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
             navigation.navigate("Player", {
               dirPath: details.dirPath,
               title: details.name,
-              videos: details.videos,
+              videos: filteredVideos,
               startIndex: playTarget.startIndex,
               initialTime: playTarget.initialTime,
               subtitles: details.subtitles,
@@ -264,10 +332,28 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
         </View>
       ) : null}
 
+      {hasBothVariants ? (
+        <View style={styles.variantRow}>
+          {(["sub", "dub", "both"] as AudioSelection[]).map((option) => {
+            const active = (selectedVariant ?? "sub") === option;
+            const label = option === "both" ? "Sub + Dub" : option === "sub" ? "Sub" : "Dub";
+            return (
+              <Pressable
+                key={option}
+                onPress={() => setSelectedVariant(option)}
+                style={[styles.variantOption, active && styles.variantOptionActive]}
+              >
+                <Text style={[styles.variantLabel, active && styles.variantLabelActive]}>{label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      ) : null}
+
       {seasonKeys.length > 0 ? <Text style={styles.sectionTitle}>Episodes</Text> : null}
       {visibleEntries.length ? (
         visibleEntries.map((entry) => {
-          const startIndex = details.videos.indexOf(entry.video);
+          const startIndex = filteredVideos.indexOf(entry.video);
           const progress = progressByVideo.get(entry.video) ?? null;
           return (
             <EpisodeRow
@@ -279,7 +365,7 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
                 navigation.navigate("Player", {
                   dirPath: details.dirPath,
                   title: details.name,
-                  videos: details.videos,
+                  videos: filteredVideos,
                   startIndex: startIndex >= 0 ? startIndex : 0,
                   initialTime: progress?.current_time ?? 0,
                   subtitles: details.subtitles,
@@ -289,7 +375,7 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
                 navigation.navigate("Player", {
                   dirPath: details.dirPath,
                   title: details.name,
-                  videos: details.videos,
+                  videos: filteredVideos,
                   startIndex: startIndex >= 0 ? startIndex : 0,
                   initialTime: 0,
                   subtitles: details.subtitles,
@@ -511,5 +597,32 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     marginTop: 24,
     marginBottom: 14,
+  },
+  variantRow: {
+    flexDirection: "row",
+    marginTop: 18,
+    backgroundColor: colors.surfaceAccent,
+    borderRadius: 12,
+    padding: 4,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  variantOption: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  variantOptionActive: {
+    backgroundColor: colors.primary,
+  },
+  variantLabel: {
+    color: colors.textSoft,
+    fontWeight: "700",
+    fontSize: 13,
+  },
+  variantLabelActive: {
+    color: colors.primaryText,
   },
 });

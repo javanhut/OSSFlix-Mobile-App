@@ -5,7 +5,7 @@ import { colors } from "../theme/colors";
 import type { TitleSummary } from "../types/api";
 import { formatTitleType } from "../utils/titleType";
 
-export function TitleCard({ item, onPress, width = 148 }: { item: TitleSummary; onPress: () => void; width?: number }) {
+export function TitleCard({ item, onPress, width = 170 }: { item: TitleSummary; onPress: () => void; width?: number }) {
   const imageUrl = resolveAssetUrl(item.imagePath);
   const progress = typeof item.progressPct === "number" ? Math.max(0, Math.min(100, item.progressPct)) : 0;
 
@@ -39,7 +39,7 @@ export function TitleCard({ item, onPress, width = 148 }: { item: TitleSummary; 
 
 const styles = StyleSheet.create({
   card: {
-    width: 148,
+    width: 170,
     marginRight: 14,
   },
   imageWrapper: {

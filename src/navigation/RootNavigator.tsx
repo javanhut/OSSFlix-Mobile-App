@@ -1,6 +1,7 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
+import { useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useSessionStore } from "../state/session";
@@ -50,23 +51,59 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 
 function MainTabs() {
   const insets = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
+  const isLandscape = width > height;
   const extraBottom = 28;
-  const iconSize = 26;
+  const iconSize = isLandscape ? 24 : 26;
+  const railWidth = 56;
+
+  const tabBarStyle = isLandscape
+    ? {
+        backgroundColor: colors.surfaceElevated,
+        borderRightColor: colors.border,
+        borderRightWidth: 1,
+        borderTopWidth: 0,
+        paddingTop: insets.top + 14,
+        paddingBottom: insets.bottom + 14,
+        paddingStart: 0,
+        paddingEnd: 0,
+        paddingLeft: 0,
+        paddingHorizontal: 0,
+        width: railWidth,
+        minWidth: 0,
+        maxWidth: railWidth,
+      }
+    : {
+        backgroundColor: colors.surfaceElevated,
+        borderTopColor: colors.border,
+        paddingTop: 14,
+        paddingBottom: insets.bottom + extraBottom,
+        paddingHorizontal: 18,
+        height: 70 + insets.bottom + extraBottom,
+      };
+
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
+        tabBarPosition: isLandscape ? "left" : "bottom",
+        tabBarVariant: "uikit",
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
-        tabBarStyle: {
-          backgroundColor: colors.surfaceElevated,
-          borderTopColor: colors.border,
-          paddingTop: 14,
-          paddingBottom: insets.bottom + extraBottom,
-          paddingHorizontal: 18,
-          height: 70 + insets.bottom + extraBottom,
-        },
-        tabBarItemStyle: { paddingVertical: 4 },
+        tabBarActiveBackgroundColor: "transparent",
+        tabBarInactiveBackgroundColor: "transparent",
+        tabBarShowLabel: !isLandscape,
+        tabBarStyle,
+        tabBarItemStyle: isLandscape
+          ? {
+              paddingVertical: 10,
+              height: 56,
+              width: railWidth,
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: "transparent",
+            }
+          : { paddingVertical: 4 },
         tabBarLabelStyle: { fontSize: 12, fontWeight: "700", marginTop: 6 },
       }}
     >

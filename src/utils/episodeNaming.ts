@@ -1,3 +1,5 @@
+export type AudioVariant = "sub" | "dub";
+
 export interface ParsedEpisode {
   season: number;
   episode: number;
@@ -8,7 +10,49 @@ export interface ParsedEpisode {
 export const SEASON_TOKEN = /^(?:s|season\s?)0*(\d+)$/i;
 export const EPISODE_TOKEN = /^(?:e|ep|episode\s?)0*(\d+)$/i;
 export const COMBINED_SE_TOKEN = /(?:^|[._\s-])(?:s|season\s?)0*(\d+)[._\s-]*(?:e|ep|episode\s?)0*(\d+)(?=$|[._\s-])/i;
-export const CANONICAL_SUFFIX = /_s(\d+)_ep(\d+)\.[^.]+$/i;
+export const CANONICAL_SUFFIX = /_s(\d+)_ep(\d+)(?:_(?:sub|dub))?\.[^.]+$/i;
+export const VARIANT_SUFFIX = /_(sub|dub)\.[^.]+$/i;
+
+export function detectVariant(videoSrc: string): AudioVariant | null {
+  const filename = videoSrc.split("/").pop() || videoSrc;
+  const match = filename.match(VARIANT_SUFFIX);
+  return match ? (match[1].toLowerCase() as AudioVariant) : null;
+}
+
+export function inferEpisodeVariants(videos: string[]): Map<string, AudioVariant | null> {
+  const result = new Map<string, AudioVariant | null>();
+  const byEpisode = new Map<string, string[]>();
+
+  for (const src of videos) {
+    result.set(src, detectVariant(src));
+    const filename = src.split("/").pop() || src;
+    const parsed = parseEpisodePath(filename);
+    if (!parsed) continue;
+    const key = `s${parsed.season}e${parsed.episode}`;
+    const list = byEpisode.get(key);
+    if (list) list.push(src);
+    else byEpisode.set(key, [src]);
+  }
+
+  for (const group of byEpisode.values()) {
+    if (group.length < 2) continue;
+    const tagged = new Set<AudioVariant>();
+    const untagged: string[] = [];
+    for (const src of group) {
+      const v = result.get(src) ?? null;
+      if (v) tagged.add(v);
+      else untagged.push(src);
+    }
+    if (untagged.length === 0) continue;
+    let inferred: AudioVariant | null = null;
+    if (tagged.has("sub") && !tagged.has("dub")) inferred = "dub";
+    else if (tagged.has("dub") && !tagged.has("sub")) inferred = "sub";
+    if (!inferred) continue;
+    for (const src of untagged) result.set(src, inferred);
+  }
+
+  return result;
+}
 
 export function titleFromStem(stem: string): string {
   const cleaned = stem.replace(/_/g, " ").replace(/\s+/g, " ").trim();
@@ -98,14 +142,15 @@ export function parseEpisodePath(relPath: string): ParsedEpisode | null {
 }
 
 export function compareVideoSrc(a: string, b: string): number {
-  const fa = a.split("/").pop() || a;
-  const fb = b.split("/").pop() || b;
-  const ma = fa.match(CANONICAL_SUFFIX);
-  const mb = fb.match(CANONICAL_SUFFIX);
-  if (ma && mb) {
-    const seasonDiff = Number(ma[1]) - Number(mb[1]);
-    if (seasonDiff !== 0) return seasonDiff;
-    return Number(ma[2]) - Number(mb[2]);
+  const pa = parseEpisodePath(a);
+  const pb = parseEpisodePath(b);
+  if (pa && pb) {
+    if (pa.season !== pb.season) return pa.season - pb.season;
+    if (pa.episode !== pb.episode) return pa.episode - pb.episode;
+  } else if (pa) {
+    return -1;
+  } else if (pb) {
+    return 1;
   }
   return a.localeCompare(b, undefined, { numeric: true });
 }

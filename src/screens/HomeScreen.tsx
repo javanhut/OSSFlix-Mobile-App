@@ -1,5 +1,15 @@
 import { useState } from "react";
-import { ActivityIndicator, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useNavigation } from "@react-navigation/native";
@@ -36,6 +46,8 @@ const FEATURED_LIMIT = 6;
 
 export function HomeScreen() {
   useAllowRotation();
+  const { width, height } = useWindowDimensions();
+  const isLandscape = width > height;
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const queryClient = useQueryClient();
   const profile = useSessionStore((state) => state.profile);
@@ -95,8 +107,8 @@ export function HomeScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} />}
       >
         <Text style={styles.brand}>Reelscape</Text>
-        <AppHeader title={`Welcome back${profile?.name ? `, ${profile.name}` : ""}`} />
-        {featured.length ? (
+        {!isLandscape ? <AppHeader title={`Welcome back${profile?.name ? `, ${profile.name}` : ""}`} /> : null}
+        {featured.length && !isLandscape ? (
           <FeaturedCarousel
             items={featured}
             onSelect={(item) => navigation.navigate("TitleDetails", { dirPath: item.pathToDir })}
