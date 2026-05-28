@@ -47,5 +47,11 @@
     "jest-expo": "~53.0.0",
     "react-test-renderer": "19.0.0",
     "typescript": "~5.8.3"
+  },
+  "overrides": {
+    "@xmldom/xmldom": ">=0.8.13"
+  },
+  "resolutions": {
+    "@xmldom/xmldom": ">=0.8.13"
   }
 }
