@@ -20,6 +20,7 @@ import { RecommendationsScreen } from "../screens/RecommendationsScreen";
 import { RegisterScreen } from "../screens/RegisterScreen";
 import { ServerConnectScreen } from "../screens/ServerConnectScreen";
 import { SignInScreen } from "../screens/SignInScreen";
+import { SwitchProfileScreen } from "../screens/SwitchProfileScreen";
 import { TitleDetailsScreen } from "../screens/TitleDetailsScreen";
 import { SearchScreen } from "../screens/SearchScreen";
 import { WatchlistScreen } from "../screens/WatchlistScreen";
@@ -37,6 +38,7 @@ export type RootStackParamList = {
   Library: { type: string; title: string };
   Watchlist: undefined;
   Recommendations: undefined;
+  SwitchProfile: undefined;
   Player: {
     dirPath: string;
     title: string;
@@ -218,6 +220,7 @@ export function RootNavigator() {
             component={RecommendationsScreen}
             options={{ title: "Recommendations" }}
           />
+          <Stack.Screen name="SwitchProfile" component={SwitchProfileScreen} options={{ title: "Switch Profile" }} />
           <Stack.Screen
             name="Player"
             component={PlayerScreen}

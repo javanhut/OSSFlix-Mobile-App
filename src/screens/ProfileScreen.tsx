@@ -2,15 +2,19 @@ import { useState } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useQueryClient } from "@tanstack/react-query";
 import { Feather } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { api } from "../api/client";
 import { AppHeader } from "../components/AppHeader";
 import { colors } from "../theme/colors";
 import { useAllowRotation } from "../hooks/useAllowRotation";
 import { useSessionStore } from "../state/session";
+import type { RootStackParamList } from "../navigation/RootNavigator";
 
 export function ProfileScreen() {
   useAllowRotation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const queryClient = useQueryClient();
   const profile = useSessionStore((state) => state.profile);
   const serverUrl = useSessionStore((state) => state.serverUrl);
@@ -53,6 +57,16 @@ export function ProfileScreen() {
             ) : null}
           </View>
         </View>
+
+        {profile?.email ? (
+          <Pressable
+            style={({ pressed }) => [styles.switchButton, pressed && styles.switchButtonPressed]}
+            onPress={() => navigation.navigate("SwitchProfile")}
+          >
+            <Feather name="users" size={18} color={colors.primaryText} />
+            <Text style={styles.switchLabel}>Switch Profile</Text>
+          </Pressable>
+        ) : null}
 
         <Pressable
           style={({ pressed }) => [styles.signOut, pressed && styles.signOutPressed]}
@@ -138,6 +152,26 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: 12,
     marginTop: 6,
+  },
+  switchButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    paddingHorizontal: 22,
+    paddingVertical: 14,
+    borderRadius: 14,
+    backgroundColor: colors.primary,
+    marginBottom: 12,
+  },
+  switchButtonPressed: {
+    backgroundColor: colors.primaryPressed,
+  },
+  switchLabel: {
+    color: colors.primaryText,
+    fontWeight: "800",
+    fontSize: 15,
+    letterSpacing: 0.3,
   },
   signOut: {
     flexDirection: "row",
