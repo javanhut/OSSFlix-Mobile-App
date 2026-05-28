@@ -1,23 +1,29 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
-import { useWindowDimensions } from "react-native";
+import { useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useSessionStore } from "../state/session";
 import { colors } from "../theme/colors";
+import { ExploreScreen } from "../screens/ExploreScreen";
 import { GenreScreen } from "../screens/GenreScreen";
 import { HomeScreen } from "../screens/HomeScreen";
 import { LibraryScreen } from "../screens/LibraryScreen";
 import { PlayerScreen } from "../screens/PlayerScreen";
 import { ProfileLookupScreen } from "../screens/ProfileLookupScreen";
+import { ProfileScreen } from "../screens/ProfileScreen";
 import { ProfileSelectScreen } from "../screens/ProfileSelectScreen";
+import { RecommendationsScreen } from "../screens/RecommendationsScreen";
 import { RegisterScreen } from "../screens/RegisterScreen";
 import { ServerConnectScreen } from "../screens/ServerConnectScreen";
 import { SignInScreen } from "../screens/SignInScreen";
 import { TitleDetailsScreen } from "../screens/TitleDetailsScreen";
 import { SearchScreen } from "../screens/SearchScreen";
 import { WatchlistScreen } from "../screens/WatchlistScreen";
+import { SidebarOverlay, type SidebarItem } from "../components/SidebarOverlay";
 
 export type RootStackParamList = {
   ServerConnect: undefined;
@@ -28,6 +34,9 @@ export type RootStackParamList = {
   MainTabs: undefined;
   TitleDetails: { dirPath: string };
   Genre: { genre: string };
+  Library: { type: string; title: string };
+  Watchlist: undefined;
+  Recommendations: undefined;
   Player: {
     dirPath: string;
     title: string;
@@ -40,10 +49,9 @@ export type RootStackParamList = {
 
 export type MainTabParamList = {
   Home: undefined;
-  Movies: undefined;
-  TVShows: undefined;
   Search: undefined;
-  MyList: undefined;
+  Explore: undefined;
+  Profile: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -113,34 +121,62 @@ function MainTabs() {
         options={{ tabBarIcon: ({ color }) => <Feather name="home" size={iconSize} color={color} /> }}
       />
       <Tab.Screen
-        name="Movies"
-        component={LibraryScreen}
-        initialParams={{ type: "Movie", title: "Movies" } as never}
-        options={{ tabBarIcon: ({ color }) => <Feather name="film" size={iconSize} color={color} /> }}
-      />
-      <Tab.Screen
-        name="TVShows"
-        component={LibraryScreen}
-        initialParams={{ type: "tv show", title: "TV Shows" } as never}
-        options={{
-          title: "TV Shows",
-          tabBarIcon: ({ color }) => <Feather name="monitor" size={iconSize} color={color} />,
-        }}
-      />
-      <Tab.Screen
         name="Search"
         component={SearchScreen}
         options={{ tabBarIcon: ({ color }) => <Feather name="search" size={iconSize} color={color} /> }}
       />
       <Tab.Screen
-        name="MyList"
-        component={WatchlistScreen}
-        options={{
-          title: "My List",
-          tabBarIcon: ({ color }) => <Feather name="bookmark" size={iconSize} color={color} />,
-        }}
+        name="Explore"
+        component={ExploreScreen}
+        options={{ tabBarIcon: ({ color }) => <Feather name="compass" size={iconSize} color={color} /> }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{ tabBarIcon: ({ color }) => <Feather name="user" size={iconSize} color={color} /> }}
       />
     </Tab.Navigator>
+  );
+}
+
+function MainTabsWithSidebar() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { width, height } = useWindowDimensions();
+  const isLandscape = width > height;
+
+  const items: SidebarItem[] = [
+    {
+      icon: "play-circle",
+      label: "Anime",
+      onPress: () => navigation.navigate("Genre", { genre: "Anime" }),
+    },
+    {
+      icon: "star",
+      label: "Recommendations",
+      onPress: () => navigation.navigate("Recommendations"),
+    },
+    {
+      icon: "bookmark",
+      label: "My List",
+      onPress: () => navigation.navigate("Watchlist"),
+    },
+    {
+      icon: "monitor",
+      label: "TV Shows",
+      onPress: () => navigation.navigate("Library", { type: "tv show", title: "TV Shows" }),
+    },
+    {
+      icon: "film",
+      label: "Movies",
+      onPress: () => navigation.navigate("Library", { type: "Movie", title: "Movies" }),
+    },
+  ];
+
+  return (
+    <View style={{ flex: 1 }}>
+      <MainTabs />
+      <SidebarOverlay items={items} enabled={!isLandscape} />
+    </View>
   );
 }
 
@@ -168,10 +204,25 @@ export function RootNavigator() {
         </>
       ) : (
         <>
-          <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
+          <Stack.Screen name="MainTabs" component={MainTabsWithSidebar} options={{ headerShown: false }} />
           <Stack.Screen name="TitleDetails" component={TitleDetailsScreen} options={{ title: "Details" }} />
           <Stack.Screen name="Genre" component={GenreScreen} options={({ route }) => ({ title: route.params.genre })} />
-          <Stack.Screen name="Player" component={PlayerScreen} options={{ headerShown: false }} />
+          <Stack.Screen
+            name="Library"
+            component={LibraryScreen}
+            options={({ route }) => ({ title: route.params.title })}
+          />
+          <Stack.Screen name="Watchlist" component={WatchlistScreen} options={{ title: "My List" }} />
+          <Stack.Screen
+            name="Recommendations"
+            component={RecommendationsScreen}
+            options={{ title: "Recommendations" }}
+          />
+          <Stack.Screen
+            name="Player"
+            component={PlayerScreen}
+            options={{ headerShown: false, contentStyle: { backgroundColor: "#000" } }}
+          />
         </>
       )}
     </Stack.Navigator>

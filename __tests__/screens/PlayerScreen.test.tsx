@@ -362,32 +362,6 @@ describe("PlayerScreen — control buttons", () => {
 });
 
 describe("PlayerScreen — menus", () => {
-  it("toggles the audio menu and selects a track", async () => {
-    const { UNSAFE_root, findByText } = renderPlayer();
-    await waitFor(() => expect((Video as any).lastProps).toBeDefined());
-    pressIconButton(UNSAFE_root, "Feather-music");
-    const japaneseRow = await findByText("Japanese");
-    fireEvent.press(japaneseRow);
-    await waitFor(() => {
-      expect((Video as any).lastProps.source.uri).toContain("audio=1");
-    });
-  });
-
-  it("toggles the subtitle menu, picks a track, then turns it off", async () => {
-    const { UNSAFE_root, findByText } = renderPlayer();
-    await waitFor(() => expect((Video as any).lastProps).toBeDefined());
-    pressIconButton(UNSAFE_root, "Feather-message-square");
-    fireEvent.press(await findByText("EN"));
-    await waitFor(() => {
-      expect((Video as any).lastProps.selectedTextTrack).toEqual({ type: "index", value: 0 });
-    });
-    pressIconButton(UNSAFE_root, "Feather-message-square");
-    fireEvent.press(await findByText("Subtitles Off"));
-    await waitFor(() => {
-      expect((Video as any).lastProps.selectedTextTrack).toEqual({ type: "disabled" });
-    });
-  });
-
   it("toggles the speed menu and selects a non-default rate", async () => {
     const { UNSAFE_root, findByText } = renderPlayer();
     await waitFor(() => expect((Video as any).lastProps).toBeDefined());

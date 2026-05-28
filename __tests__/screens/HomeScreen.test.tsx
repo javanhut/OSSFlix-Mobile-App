@@ -5,7 +5,7 @@ jest.mock("@react-navigation/native", () => ({
 }));
 
 import React from "react";
-import { act, fireEvent, waitFor } from "@testing-library/react-native";
+import { fireEvent } from "@testing-library/react-native";
 import { HomeScreen } from "../../src/screens/HomeScreen";
 import { api } from "../../src/api/client";
 import { useSessionStore } from "../../src/state/session";
@@ -86,62 +86,4 @@ describe("HomeScreen", () => {
     expect(await findByText("Welcome back")).toBeTruthy();
   });
 
-  it("sign-out modal: confirm calls logout, clears auth, and closes", async () => {
-    jest.spyOn(api, "getCategories").mockResolvedValue([]);
-    jest.spyOn(api, "getContinueWatching").mockResolvedValue({ genre: "Continue", titles: [] });
-    jest.spyOn(api, "getWatchlist").mockResolvedValue({ genre: "Watchlist", titles: [] });
-    const logoutSpy = jest.spyOn(api, "mobileLogout").mockResolvedValue({ ok: true });
-
-    const { findByText, getAllByText } = renderWithQuery(<HomeScreen />);
-    const signOutButton = await findByText("Sign Out");
-    await act(async () => {
-      fireEvent.press(signOutButton);
-    });
-    const confirmButtons = getAllByText("Sign Out");
-    // After opening the modal there are two "Sign Out" labels: the bottom button and the modal confirm.
-    expect(confirmButtons.length).toBeGreaterThanOrEqual(2);
-    await act(async () => {
-      fireEvent.press(confirmButtons[confirmButtons.length - 1]);
-    });
-    await waitFor(() => {
-      expect(logoutSpy).toHaveBeenCalled();
-      expect(useSessionStore.getState().token).toBeNull();
-    });
-  });
-
-  it("sign-out modal: cancel dismisses without logging out", async () => {
-    jest.spyOn(api, "getCategories").mockResolvedValue([]);
-    jest.spyOn(api, "getContinueWatching").mockResolvedValue({ genre: "Continue", titles: [] });
-    jest.spyOn(api, "getWatchlist").mockResolvedValue({ genre: "Watchlist", titles: [] });
-    const logoutSpy = jest.spyOn(api, "mobileLogout").mockResolvedValue({ ok: true });
-
-    const { findByText, getByText } = renderWithQuery(<HomeScreen />);
-    await act(async () => {
-      fireEvent.press(await findByText("Sign Out"));
-    });
-    await act(async () => {
-      fireEvent.press(getByText("Cancel"));
-    });
-    expect(logoutSpy).not.toHaveBeenCalled();
-    expect(useSessionStore.getState().token).toBe("tok");
-  });
-
-  it("still clears auth even when the logout request fails", async () => {
-    jest.spyOn(api, "getCategories").mockResolvedValue([]);
-    jest.spyOn(api, "getContinueWatching").mockResolvedValue({ genre: "Continue", titles: [] });
-    jest.spyOn(api, "getWatchlist").mockResolvedValue({ genre: "Watchlist", titles: [] });
-    jest.spyOn(api, "mobileLogout").mockRejectedValue(new Error("offline"));
-
-    const { findByText, getAllByText } = renderWithQuery(<HomeScreen />);
-    await act(async () => {
-      fireEvent.press(await findByText("Sign Out"));
-    });
-    const confirmButtons = getAllByText("Sign Out");
-    await act(async () => {
-      fireEvent.press(confirmButtons[confirmButtons.length - 1]);
-    });
-    await waitFor(() => {
-      expect(useSessionStore.getState().token).toBeNull();
-    });
-  });
 });

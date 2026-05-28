@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppState, type LayoutChangeEvent, PanResponder, Pressable, StyleSheet, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import * as ScreenOrientation from "expo-screen-orientation";
 import { useQuery } from "@tanstack/react-query";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -99,8 +100,6 @@ export function PlayerScreen({ route, navigation }: Props) {
   const [paused, setPaused] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [playbackRate, setPlaybackRate] = useState(1);
-  const [showAudioMenu, setShowAudioMenu] = useState(false);
-  const [showSubtitleMenu, setShowSubtitleMenu] = useState(false);
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const [isScrubbing, setIsScrubbing] = useState(false);
   const [scrubTime, setScrubTime] = useState(initialTime);
@@ -155,8 +154,6 @@ export function PlayerScreen({ route, navigation }: Props) {
   );
 
   const clearMenus = useCallback(() => {
-    setShowAudioMenu(false);
-    setShowSubtitleMenu(false);
     setShowSpeedMenu(false);
   }, []);
 
@@ -731,16 +728,19 @@ export function PlayerScreen({ route, navigation }: Props) {
 
       {showControls ? (
         <>
-          <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 18) }]}>
+          <LinearGradient
+            colors={["rgba(0,0,0,0.78)", "rgba(0,0,0,0)"]}
+            style={[styles.topBar, { paddingTop: Math.max(insets.top, 18) }]}
+          >
             <Pressable onPress={() => navigation.goBack()} style={styles.iconButton}>
               <Feather name="arrow-left" size={22} color={colors.text} />
             </Pressable>
             <View style={styles.titleWrap}>
-              <Text style={styles.title} numberOfLines={1}>
+              <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
                 {title}
               </Text>
             </View>
-          </View>
+          </LinearGradient>
 
           <View style={styles.centerControls} pointerEvents="box-none">
             {hasPrev ? (
@@ -770,7 +770,10 @@ export function PlayerScreen({ route, navigation }: Props) {
             </Pressable>
           ) : null}
 
-          <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 18) }]}>
+          <LinearGradient
+            colors={["rgba(0,0,0,0)", "rgba(0,0,0,0.82)"]}
+            style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 18) }]}
+          >
             <View style={styles.progressMeta}>
               <Text style={styles.timeLabel}>{formatTime(displayTime)}</Text>
               <Text style={styles.timeLabel}>{formatTime(totalDuration)}</Text>
@@ -800,7 +803,7 @@ export function PlayerScreen({ route, navigation }: Props) {
               </View>
 
               {currentEpisodeLabel ? (
-                <Text style={styles.episodeLabel} numberOfLines={1}>
+                <Text style={styles.episodeLabel} numberOfLines={1} ellipsizeMode="tail">
                   {currentEpisodeLabel}
                 </Text>
               ) : null}
@@ -808,83 +811,21 @@ export function PlayerScreen({ route, navigation }: Props) {
               <View style={styles.controlsCluster}>
                 <Pressable
                   onPress={() => {
-                    setShowAudioMenu((value) => !value);
-                    setShowSubtitleMenu(false);
-                    setShowSpeedMenu(false);
+                    seekTo(0);
+                    showControlsTemporarily();
                   }}
-                  style={[styles.iconButton, showAudioMenu && styles.iconButtonActive]}
+                  style={styles.iconButton}
                 >
-                  <Feather name="music" size={20} color={colors.text} />
+                  <Feather name="refresh-cw" size={20} color={colors.text} />
                 </Pressable>
                 <Pressable
-                  onPress={() => {
-                    setShowSubtitleMenu((value) => !value);
-                    setShowAudioMenu(false);
-                    setShowSpeedMenu(false);
-                  }}
-                  style={[styles.iconButton, showSubtitleMenu && styles.iconButtonActive]}
-                >
-                  <Feather name="message-square" size={20} color={colors.text} />
-                </Pressable>
-                <Pressable
-                  onPress={() => {
-                    setShowSpeedMenu((value) => !value);
-                    setShowAudioMenu(false);
-                    setShowSubtitleMenu(false);
-                  }}
+                  onPress={() => setShowSpeedMenu((value) => !value)}
                   style={[styles.iconButton, showSpeedMenu && styles.iconButtonActive]}
                 >
                   <Feather name="settings" size={20} color={colors.text} />
                 </Pressable>
               </View>
             </View>
-
-            {showAudioMenu ? (
-              <View style={styles.menuSheet}>
-                {(probeQuery.data?.audioTracks || []).map((track, index) => (
-                  <Pressable
-                    key={track.index}
-                    onPress={() => {
-                      setPendingSeekTime(currentTime);
-                      setAudioIndex(index);
-                      setShowAudioMenu(false);
-                      hideControlsSoon();
-                    }}
-                    style={[styles.menuItem, audioIndex === index && styles.menuItemActive]}
-                  >
-                    <Text style={styles.menuLabel}>{track.title || track.language || `Audio ${index + 1}`}</Text>
-                  </Pressable>
-                ))}
-              </View>
-            ) : null}
-
-            {showSubtitleMenu ? (
-              <View style={styles.menuSheet}>
-                <Pressable
-                  onPress={() => {
-                    setSelectedSubtitle(null);
-                    setShowSubtitleMenu(false);
-                    hideControlsSoon();
-                  }}
-                  style={[styles.menuItem, selectedSubtitle == null && styles.menuItemActive]}
-                >
-                  <Text style={styles.menuLabel}>Subtitles Off</Text>
-                </Pressable>
-                {subtitleTracks.map((track, index) => (
-                  <Pressable
-                    key={track.title}
-                    onPress={() => {
-                      setSelectedSubtitle(index);
-                      setShowSubtitleMenu(false);
-                      hideControlsSoon();
-                    }}
-                    style={[styles.menuItem, selectedSubtitle === index && styles.menuItemActive]}
-                  >
-                    <Text style={styles.menuLabel}>{track.title}</Text>
-                  </Pressable>
-                ))}
-              </View>
-            ) : null}
 
             {showSpeedMenu ? (
               <View style={styles.menuSheet}>
@@ -903,7 +844,7 @@ export function PlayerScreen({ route, navigation }: Props) {
                 ))}
               </View>
             ) : null}
-          </View>
+          </LinearGradient>
         </>
       ) : null}
     </View>
@@ -914,7 +855,6 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: "#000",
-    justifyContent: "center",
   },
   video: {
     ...StyleSheet.absoluteFillObject,
@@ -934,8 +874,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
     paddingHorizontal: 18,
-    paddingBottom: 18,
-    backgroundColor: "rgba(0,0,0,0.45)",
+    paddingBottom: 24,
   },
   titleWrap: {
     flex: 1,
@@ -948,7 +887,7 @@ const styles = StyleSheet.create({
   episodeLabel: {
     flex: 1,
     color: colors.text,
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "700",
     letterSpacing: 0.2,
     textAlign: "center",
@@ -961,17 +900,19 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 28,
+    gap: 18,
   },
   sideSpacer: {
     width: 54,
     height: 54,
   },
   playButton: {
-    width: 82,
-    height: 82,
-    borderRadius: 41,
-    backgroundColor: "rgba(37,99,235,0.92)",
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: "rgba(255,255,255,0.16)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.28)",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -979,7 +920,9 @@ const styles = StyleSheet.create({
     width: 54,
     height: 54,
     borderRadius: 27,
-    backgroundColor: "rgba(0,0,0,0.42)",
+    backgroundColor: "rgba(255,255,255,0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.18)",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1003,8 +946,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     zIndex: 20,
     paddingHorizontal: 18,
-    paddingTop: 18,
-    backgroundColor: "rgba(0,0,0,0.62)",
+    paddingTop: 28,
   },
   progressMeta: {
     flexDirection: "row",

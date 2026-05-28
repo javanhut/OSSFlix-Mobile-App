@@ -120,11 +120,12 @@ export function parseEpisodePath(relPath: string): ParsedEpisode | null {
   if (combined) {
     seasonFromFile = Number(combined[1]);
     epFromFile = Number(combined[2]);
-    const matchStart = combined.index ?? 0;
-    const matchEnd = matchStart + combined[0].length;
-    const before = stem.slice(0, matchStart);
-    const after = stem.slice(matchEnd);
-    titleRemnant = `${before} ${after}`.replace(/[._\s-]+/g, " ").trim();
+    const stripAllSE = /(?:^|[._\s-])(?:s|season\s?)0*\d+[._\s-]*(?:e|ep|episode\s?)0*\d+(?=$|[._\s-])/gi;
+    titleRemnant = stem
+      .replace(stripAllSE, " ")
+      .replace(/_(sub|dub)\b/gi, " ")
+      .replace(/[._\s-]+/g, " ")
+      .trim();
   }
 
   const season = seasonFromDir ?? seasonFromFile;
