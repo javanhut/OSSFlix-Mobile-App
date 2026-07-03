@@ -32,9 +32,7 @@ beforeEach(() => {
 
 describe("ProfileSelectScreen", () => {
   it("renders every profile as a card with status meta", () => {
-    const { getByText, getAllByText } = render(
-      <ProfileSelectScreen navigation={navigation} route={buildRoute()} />,
-    );
+    const { getByText, getAllByText } = render(<ProfileSelectScreen navigation={navigation} route={buildRoute()} />);
     expect(getByText("Your profiles")).toBeTruthy();
     expect(getByText("Ada")).toBeTruthy();
     expect(getByText("Lin")).toBeTruthy();
@@ -43,28 +41,19 @@ describe("ProfileSelectScreen", () => {
   });
 
   it('uses an "Unclaimed profiles" heading when source is unclaimed', () => {
-    const { getByText } = render(
-      <ProfileSelectScreen
-        navigation={navigation}
-        route={buildRoute("unclaimed")}
-      />,
-    );
+    const { getByText } = render(<ProfileSelectScreen navigation={navigation} route={buildRoute("unclaimed")} />);
     expect(getByText("Unclaimed profiles")).toBeTruthy();
   });
 
   it("selects a profile and navigates to SignIn on card press", () => {
-    const { getByLabelText } = render(
-      <ProfileSelectScreen navigation={navigation} route={buildRoute()} />,
-    );
+    const { getByLabelText } = render(<ProfileSelectScreen navigation={navigation} route={buildRoute()} />);
     fireEvent.press(getByLabelText("Choose Ada"));
     expect(useSessionStore.getState().selectedProfile?.id).toBe(1);
     expect(navigation.navigate).toHaveBeenCalledWith("SignIn");
   });
 
   it("Back goes back", () => {
-    const { getByText } = render(
-      <ProfileSelectScreen navigation={navigation} route={buildRoute()} />,
-    );
+    const { getByText } = render(<ProfileSelectScreen navigation={navigation} route={buildRoute()} />);
     fireEvent.press(getByText("Back"));
     expect(navigation.goBack).toHaveBeenCalled();
   });
@@ -75,9 +64,7 @@ describe("ProfileSelectScreen", () => {
       name: "ProfileSelect",
       params: { profiles: [], source: "email" },
     } as any;
-    const { getByText } = render(
-      <ProfileSelectScreen navigation={navigation} route={emptyRoute} />,
-    );
+    const { getByText } = render(<ProfileSelectScreen navigation={navigation} route={emptyRoute} />);
     expect(getByText("No profiles")).toBeTruthy();
   });
 });

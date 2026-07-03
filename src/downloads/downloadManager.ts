@@ -12,11 +12,7 @@ import {
   videoUri,
 } from "../storage/downloadsStorage";
 import type { SubtitleTrack } from "../types/api";
-import type {
-  DownloadItem,
-  OfflineProgress,
-  OfflineSubtitle,
-} from "../types/downloads";
+import type { DownloadItem, OfflineProgress, OfflineSubtitle } from "../types/downloads";
 
 const MAX_CONCURRENT = 2;
 
@@ -36,8 +32,7 @@ const active = new Set<string>();
 /** FIFO queue of download ids awaiting a free slot. */
 const queue: string[] = [];
 
-const delay = (ms: number) =>
-  new Promise<void>((resolve) => setTimeout(resolve, ms));
+const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 /** Deterministic id from src + audio track (FNV-1a → hex). */
 export function makeDownloadId(src: string, audioIndex: number): string {
@@ -65,9 +60,7 @@ export interface StartDownloadParams {
   profileId: number | null;
 }
 
-export async function startDownload(
-  params: StartDownloadParams,
-): Promise<string> {
+export async function startDownload(params: StartDownloadParams): Promise<string> {
   const audioIndex = params.audioIndex ?? 0;
   const id = makeDownloadId(params.src, audioIndex);
   const store = useDownloadsStore.getState();
@@ -76,9 +69,7 @@ export async function startDownload(
   // Already downloaded or in-flight — no-op.
   if (
     existing &&
-    (existing.status === "completed" ||
-      existing.status === "downloading" ||
-      existing.status === "queued")
+    (existing.status === "completed" || existing.status === "downloading" || existing.status === "queued")
   ) {
     return id;
   }
@@ -110,10 +101,7 @@ export async function startDownload(
 }
 
 /** Source metadata needed once a video download completes (not persisted). */
-const pendingSources = new Map<
-  string,
-  { poster: string | null; subtitles: SubtitleTrack[] }
->();
+const pendingSources = new Map<string, { poster: string | null; subtitles: SubtitleTrack[] }>();
 
 function pump(): void {
   while (active.size < MAX_CONCURRENT && queue.length > 0) {
@@ -141,8 +129,7 @@ async function ensureServerCache(id: string): Promise<boolean> {
   const item = useDownloadsStore.getState().items[id];
   if (!item) return false;
 
-  const check = () =>
-    api.getCacheStatus(item.src, item.audioIndex).catch(() => null);
+  const check = () => api.getCacheStatus(item.src, item.audioIndex).catch(() => null);
   let status = await check();
   if (status?.cached && !status.transcoding) return true;
 
@@ -183,8 +170,7 @@ async function runDownload(id: string): Promise<void> {
     // 1. Make sure the server has a complete file to hand us.
     const ready = await ensureServerCache(id);
     if (!ready) return; // paused/removed mid-wait — state already reflects it.
-    if (useDownloadsStore.getState().items[id]?.status !== "downloading")
-      return;
+    if (useDownloadsStore.getState().items[id]?.status !== "downloading") return;
 
     // 2. Download the (now cached / web-safe passthrough) file.
     await ensureDir().catch(() => {});
@@ -269,9 +255,7 @@ export async function pauseDownload(id: string): Promise<void> {
   try {
     const state = await handle.pauseAsync();
     activeHandles.delete(id);
-    useDownloadsStore
-      .getState()
-      .patch(id, { status: "paused", resumeData: state.resumeData });
+    useDownloadsStore.getState().patch(id, { status: "paused", resumeData: state.resumeData });
     await persist();
   } catch {
     // Ignore pause failures; leave state as-is.
@@ -281,8 +265,7 @@ export async function pauseDownload(id: string): Promise<void> {
 
 export async function resumeDownload(id: string): Promise<void> {
   const item = useDownloadsStore.getState().items[id];
-  if (!item || item.status === "downloading" || item.status === "completed")
-    return;
+  if (!item || item.status === "downloading" || item.status === "completed") return;
 
   // No resume token (killed mid-flight or failed) — re-run the full gated flow
   // so the server cache is re-checked before we download.
@@ -352,10 +335,7 @@ export async function deleteDownload(id: string): Promise<void> {
 }
 
 /** Persist offline playback position (called by the player while offline). */
-export async function saveOfflineProgress(
-  id: string,
-  progress: OfflineProgress,
-): Promise<void> {
+export async function saveOfflineProgress(id: string, progress: OfflineProgress): Promise<void> {
   useDownloadsStore.getState().setProgress(id, progress);
   await persist();
 }

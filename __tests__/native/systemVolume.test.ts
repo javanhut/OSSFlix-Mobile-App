@@ -8,9 +8,7 @@
 
 type SystemVolumeModule = typeof import("../../src/native/systemVolume");
 
-function loadWithReactNativeMock(
-  rnMock: Record<string, unknown>,
-): SystemVolumeModule {
+function loadWithReactNativeMock(rnMock: Record<string, unknown>): SystemVolumeModule {
   let mod!: SystemVolumeModule;
   jest.isolateModules(() => {
     jest.doMock("react-native", () => rnMock);
@@ -28,10 +26,7 @@ const platformMock = (os: "android" | "ios" | "web") => ({
   },
 });
 
-const androidWithModule = (impl: {
-  getMusicVolume: jest.Mock;
-  setMusicVolume: jest.Mock;
-}) => ({
+const androidWithModule = (impl: { getMusicVolume: jest.Mock; setMusicVolume: jest.Mock }) => ({
   NativeModules: { SystemVolume: impl },
   Platform: {
     OS: "android",
@@ -96,9 +91,7 @@ describe("systemVolume on Android with the native module", () => {
   it("getSystemMusicVolumeInfo reads volume metadata from the native module", async () => {
     const impl = {
       getMusicVolume: jest.fn(),
-      getMusicVolumeInfo: jest
-        .fn()
-        .mockResolvedValue({ volume: 0.42, maxVolume: 25 }),
+      getMusicVolumeInfo: jest.fn().mockResolvedValue({ volume: 0.42, maxVolume: 25 }),
       setMusicVolume: jest.fn(),
     };
     const mod = loadWithReactNativeMock(androidWithModule(impl));

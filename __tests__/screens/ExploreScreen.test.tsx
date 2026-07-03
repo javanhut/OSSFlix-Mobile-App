@@ -28,9 +28,7 @@ afterEach(() => {
 
 describe("ExploreScreen", () => {
   it("shows the loader while categories are pending", () => {
-    jest
-      .spyOn(api, "getCategories")
-      .mockReturnValue(new Promise(() => {}) as any);
+    jest.spyOn(api, "getCategories").mockReturnValue(new Promise(() => {}) as any);
     const { toJSON } = renderWithQuery(<ExploreScreen />);
     expect(toJSON()).toBeTruthy();
   });

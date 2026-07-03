@@ -31,9 +31,7 @@ export function SwitchProfileScreen({ navigation }: Props) {
   useAllowRotation();
   const queryClient = useQueryClient();
   const currentProfile = useSessionStore((state) => state.profile);
-  const setAuthenticatedSession = useSessionStore(
-    (state) => state.setAuthenticatedSession,
-  );
+  const setAuthenticatedSession = useSessionStore((state) => state.setAuthenticatedSession);
 
   const [profiles, setProfiles] = useState<PublicProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,10 +56,7 @@ export function SwitchProfileScreen({ navigation }: Props) {
       })
       .catch((err) => {
         if (cancelled) return;
-        Alert.alert(
-          "Lookup failed",
-          err instanceof Error ? err.message : "Unable to load profiles.",
-        );
+        Alert.alert("Lookup failed", err instanceof Error ? err.message : "Unable to load profiles.");
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -87,9 +82,7 @@ export function SwitchProfileScreen({ navigation }: Props) {
     if (!password) {
       Alert.alert(
         "Password required",
-        needsSetPassword
-          ? "Set a password for this profile."
-          : "Enter the profile password.",
+        needsSetPassword ? "Set a password for this profile." : "Enter the profile password.",
       );
       return;
     }
@@ -146,14 +139,8 @@ export function SwitchProfileScreen({ navigation }: Props) {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.screen}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
-      <ScrollView
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-      >
+    <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <AppHeader
           eyebrow="Same email"
           title="Switch Profile"
@@ -177,25 +164,14 @@ export function SwitchProfileScreen({ navigation }: Props) {
             <View key={profile.id} style={styles.cardWrap}>
               <Pressable
                 onPress={() => handleSelect(profile)}
-                style={({ pressed }) => [
-                  styles.card,
-                  isSelected && styles.cardActive,
-                  pressed && styles.cardPressed,
-                ]}
+                style={({ pressed }) => [styles.card, isSelected && styles.cardActive, pressed && styles.cardPressed]}
               >
                 <View style={styles.avatarWrap}>
                   {avatar ? (
-                    <Image
-                      source={{ uri: avatar }}
-                      style={styles.avatarImage}
-                    />
+                    <Image source={{ uri: avatar }} style={styles.avatarImage} />
                   ) : (
                     <View style={[styles.avatarImage, styles.avatarFallback]}>
-                      <Feather
-                        name="user"
-                        size={22}
-                        color={colors.primaryText}
-                      />
+                      <Feather name="user" size={22} color={colors.primaryText} />
                     </View>
                   )}
                 </View>
@@ -209,26 +185,14 @@ export function SwitchProfileScreen({ navigation }: Props) {
                         <Text style={styles.metaPillLabel}>Current</Text>
                       </View>
                     ) : null}
-                    <Feather
-                      name={profile.has_password ? "lock" : "unlock"}
-                      size={12}
-                      color={colors.textMuted}
-                    />
+                    <Feather name={profile.has_password ? "lock" : "unlock"} size={12} color={colors.textMuted} />
                     <Text style={styles.meta}>
-                      {profile.has_password
-                        ? "Password protected"
-                        : "Needs password setup"}
+                      {profile.has_password ? "Password protected" : "Needs password setup"}
                     </Text>
                   </View>
                 </View>
                 <Feather
-                  name={
-                    isCurrent
-                      ? "check"
-                      : isSelected
-                        ? "chevron-up"
-                        : "chevron-down"
-                  }
+                  name={isCurrent ? "check" : isSelected ? "chevron-up" : "chevron-down"}
                   size={18}
                   color={isCurrent ? colors.accentText : colors.textSoft}
                 />
@@ -237,29 +201,16 @@ export function SwitchProfileScreen({ navigation }: Props) {
               {isSelected ? (
                 <View style={styles.passwordWrap}>
                   <Text style={styles.passwordLabel}>
-                    {needsSetPassword
-                      ? "Set a password for this profile"
-                      : `Enter ${profile.name}'s password`}
+                    {needsSetPassword ? "Set a password for this profile" : `Enter ${profile.name}'s password`}
                   </Text>
-                  <PasswordField
-                    value={password}
-                    onChangeText={setPassword}
-                    placeholder="Password"
-                  />
+                  <PasswordField value={password} onChangeText={setPassword} placeholder="Password" />
                   <Pressable
                     onPress={handleSubmit}
                     disabled={submitting}
-                    style={[
-                      styles.primaryButton,
-                      submitting && styles.primaryButtonDisabled,
-                    ]}
+                    style={[styles.primaryButton, submitting && styles.primaryButtonDisabled]}
                   >
                     <View style={styles.primaryButtonContent}>
-                      <Feather
-                        name={needsSetPassword ? "lock" : "log-in"}
-                        size={16}
-                        color={colors.primaryText}
-                      />
+                      <Feather name={needsSetPassword ? "lock" : "log-in"} size={16} color={colors.primaryText} />
                       <Text style={styles.primaryLabel}>
                         {submitting
                           ? "Switching..."

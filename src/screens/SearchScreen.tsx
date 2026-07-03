@@ -1,11 +1,5 @@
 import { useDeferredValue, useState } from "react";
-import {
-  ActivityIndicator,
-  FlatList,
-  StyleSheet,
-  TextInput,
-  View,
-} from "react-native";
+import { ActivityIndicator, FlatList, StyleSheet, TextInput, View } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -22,8 +16,7 @@ export function SearchScreen() {
   useAllowRotation();
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query.trim());
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const results = useQuery({
     queryKey: ["search", deferredQuery],
     queryFn: () => api.search(deferredQuery),
@@ -32,10 +25,7 @@ export function SearchScreen() {
 
   return (
     <View style={styles.screen}>
-      <AppHeader
-        title="Search"
-        subtitle="Find movies and shows across the connected Reelscape server."
-      />
+      <AppHeader title="Search" subtitle="Find movies and shows across the connected Reelscape server." />
       <TextInput
         value={query}
         onChangeText={setQuery}
@@ -43,9 +33,7 @@ export function SearchScreen() {
         placeholderTextColor="#64748b"
         style={styles.input}
       />
-      {results.isFetching && (
-        <ActivityIndicator color={colors.primary} style={styles.spinner} />
-      )}
+      {results.isFetching && <ActivityIndicator color={colors.primary} style={styles.spinner} />}
       <FlatList
         data={results.data?.titles || []}
         keyExtractor={(item) => item.pathToDir}
@@ -54,10 +42,7 @@ export function SearchScreen() {
         contentContainerStyle={styles.list}
         ListEmptyComponent={
           deferredQuery.length > 0 ? (
-            <EmptyState
-              title="No matching titles"
-              subtitle="Try a broader title, genre, or keyword."
-            />
+            <EmptyState title="No matching titles" subtitle="Try a broader title, genre, or keyword." />
           ) : (
             <EmptyState
               title="Start typing to search"
@@ -69,9 +54,7 @@ export function SearchScreen() {
           <TitleCard
             item={item}
             width={160}
-            onPress={() =>
-              navigation.navigate("TitleDetails", { dirPath: item.pathToDir })
-            }
+            onPress={() => navigation.navigate("TitleDetails", { dirPath: item.pathToDir })}
           />
         )}
       />

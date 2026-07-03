@@ -39,9 +39,7 @@ describe("SearchScreen", () => {
       titles: [{ name: "Match", imagePath: null, pathToDir: "movies/Match" }],
       genres: [],
     });
-    const { getByPlaceholderText, findAllByText } = renderWithQuery(
-      <SearchScreen />,
-    );
+    const { getByPlaceholderText, findAllByText } = renderWithQuery(<SearchScreen />);
     await act(async () => {
       fireEvent.changeText(getByPlaceholderText("Search titles"), "foo");
     });
@@ -51,9 +49,7 @@ describe("SearchScreen", () => {
 
   it("shows the no-results empty state when search returns nothing", async () => {
     jest.spyOn(api, "search").mockResolvedValue({ titles: [], genres: [] });
-    const { getByPlaceholderText, findByText } = renderWithQuery(
-      <SearchScreen />,
-    );
+    const { getByPlaceholderText, findByText } = renderWithQuery(<SearchScreen />);
     await act(async () => {
       fireEvent.changeText(getByPlaceholderText("Search titles"), "nothing");
     });
@@ -65,9 +61,7 @@ describe("SearchScreen", () => {
       titles: [{ name: "Pick", imagePath: null, pathToDir: "movies/Pick" }],
       genres: [],
     });
-    const { getByPlaceholderText, findAllByText } = renderWithQuery(
-      <SearchScreen />,
-    );
+    const { getByPlaceholderText, findAllByText } = renderWithQuery(<SearchScreen />);
     await act(async () => {
       fireEvent.changeText(getByPlaceholderText("Search titles"), "foo");
     });

@@ -26,46 +26,26 @@ export function RegisterScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const setAuthenticatedSession = useSessionStore(
-    (state) => state.setAuthenticatedSession,
-  );
+  const setAuthenticatedSession = useSessionStore((state) => state.setAuthenticatedSession);
 
   const submit = async () => {
     try {
       setSubmitting(true);
-      const response = await api.mobileRegister(
-        name.trim(),
-        email.trim(),
-        password,
-      );
+      const response = await api.mobileRegister(name.trim(), email.trim(), password);
       if (!response?.token || !response?.profile) {
-        throw new Error(
-          "Server did not return a valid session. Please try again.",
-        );
+        throw new Error("Server did not return a valid session. Please try again.");
       }
       setAuthenticatedSession(response.token, response.profile);
     } catch (error) {
-      Alert.alert(
-        "Registration failed",
-        error instanceof Error
-          ? error.message
-          : "Unable to create the profile.",
-      );
+      Alert.alert("Registration failed", error instanceof Error ? error.message : "Unable to create the profile.");
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.flex}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
-      <ScrollView
-        style={styles.screen}
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-      >
+    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+      <ScrollView style={styles.screen} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <AppHeader
           title="Create profile"
           subtitle="Register a new mobile-capable Reelscape profile on the connected server."
@@ -85,17 +65,11 @@ export function RegisterScreen() {
           autoCapitalize="none"
           style={styles.input}
         />
-        <PasswordField
-          value={password}
-          onChangeText={setPassword}
-          placeholder="Password"
-        />
+        <PasswordField value={password} onChangeText={setPassword} placeholder="Password" />
         <Pressable onPress={submit} disabled={submitting} style={styles.button}>
           <View style={styles.buttonContent}>
             <Feather name="user-plus" size={18} color={colors.primaryText} />
-            <Text style={styles.buttonLabel}>
-              {submitting ? "Creating..." : "Create Account"}
-            </Text>
+            <Text style={styles.buttonLabel}>{submitting ? "Creating..." : "Create Account"}</Text>
           </View>
         </Pressable>
       </ScrollView>

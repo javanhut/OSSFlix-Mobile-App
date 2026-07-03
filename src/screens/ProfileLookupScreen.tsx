@@ -26,9 +26,7 @@ export function ProfileLookupScreen({ navigation }: Props) {
 
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const setSelectedProfile = useSessionStore(
-    (state) => state.setSelectedProfile,
-  );
+  const setSelectedProfile = useSessionStore((state) => state.setSelectedProfile);
   const setServerUrl = useSessionStore((state) => state.setServerUrl);
   const currentServerUrl = useSessionStore((state) => state.serverUrl);
 
@@ -37,10 +35,7 @@ export function ProfileLookupScreen({ navigation }: Props) {
       setSubmitting(true);
       const data = await api.lookupProfiles(email.trim());
       if (!data.profiles.length) {
-        Alert.alert(
-          "No profiles",
-          "No profiles were found for that email address.",
-        );
+        Alert.alert("No profiles", "No profiles were found for that email address.");
         return;
       }
       navigation.navigate("ProfileSelect", {
@@ -48,10 +43,7 @@ export function ProfileLookupScreen({ navigation }: Props) {
         source: "email",
       });
     } catch (error) {
-      Alert.alert(
-        "Lookup failed",
-        error instanceof Error ? error.message : "Unable to load profiles.",
-      );
+      Alert.alert("Lookup failed", error instanceof Error ? error.message : "Unable to load profiles.");
     } finally {
       setSubmitting(false);
     }
@@ -70,10 +62,7 @@ export function ProfileLookupScreen({ navigation }: Props) {
         source: "unclaimed",
       });
     } catch (error) {
-      Alert.alert(
-        "Lookup failed",
-        error instanceof Error ? error.message : "Unable to load profiles.",
-      );
+      Alert.alert("Lookup failed", error instanceof Error ? error.message : "Unable to load profiles.");
     } finally {
       setSubmitting(false);
     }
@@ -86,22 +75,14 @@ export function ProfileLookupScreen({ navigation }: Props) {
       setSelectedProfile(data.profile);
       navigation.navigate("SignIn");
     } catch (error) {
-      Alert.alert(
-        "Guest unavailable",
-        error instanceof Error
-          ? error.message
-          : "Unable to load guest profile.",
-      );
+      Alert.alert("Guest unavailable", error instanceof Error ? error.message : "Unable to load guest profile.");
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.screen}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
+    <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === "ios" ? "padding" : "height"}>
       <ScrollView
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
@@ -110,9 +91,7 @@ export function ProfileLookupScreen({ navigation }: Props) {
         <AppHeader
           eyebrow="Connected Server"
           title="Find a profile"
-          subtitle={
-            currentServerUrl ? currentServerUrl : "No server configured"
-          }
+          subtitle={currentServerUrl ? currentServerUrl : "No server configured"}
           actionLabel="Change"
           onAction={() => setServerUrl("")}
         />
@@ -125,33 +104,16 @@ export function ProfileLookupScreen({ navigation }: Props) {
           placeholderTextColor="#64748b"
           style={styles.input}
         />
-        <Pressable
-          onPress={handleLookup}
-          disabled={submitting}
-          style={styles.primaryButton}
-        >
-          <Text style={styles.primaryLabel}>
-            {submitting ? "Loading..." : "Find Profiles"}
-          </Text>
+        <Pressable onPress={handleLookup} disabled={submitting} style={styles.primaryButton}>
+          <Text style={styles.primaryLabel}>{submitting ? "Loading..." : "Find Profiles"}</Text>
         </Pressable>
-        <Pressable
-          onPress={handleUnclaimed}
-          disabled={submitting}
-          style={styles.secondaryButton}
-        >
+        <Pressable onPress={handleUnclaimed} disabled={submitting} style={styles.secondaryButton}>
           <Text style={styles.secondaryLabel}>Use Unclaimed Profile</Text>
         </Pressable>
-        <Pressable
-          onPress={handleGuest}
-          disabled={submitting}
-          style={styles.secondaryButton}
-        >
+        <Pressable onPress={handleGuest} disabled={submitting} style={styles.secondaryButton}>
           <Text style={styles.secondaryLabel}>Continue as Guest</Text>
         </Pressable>
-        <Pressable
-          onPress={() => navigation.navigate("Register")}
-          style={styles.linkButton}
-        >
+        <Pressable onPress={() => navigation.navigate("Register")} style={styles.linkButton}>
           <Text style={styles.linkLabel}>Create a new profile</Text>
         </Pressable>
       </ScrollView>

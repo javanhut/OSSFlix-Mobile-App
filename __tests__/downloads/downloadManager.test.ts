@@ -2,14 +2,9 @@ import * as FileSystem from "expo-file-system";
 
 jest.mock("../../src/api/client", () => ({
   api: {
-    buildStreamUrl: jest.fn(
-      (src: string, audio: number) =>
-        `http://server/api/stream?src=${src}&audio=${audio}`,
-    ),
+    buildStreamUrl: jest.fn((src: string, audio: number) => `http://server/api/stream?src=${src}&audio=${audio}`),
     buildStreamHeaders: jest.fn(() => ({ Authorization: "Bearer test" })),
-    buildSubtitleUrl: jest.fn(
-      (src: string) => `http://server/api/subtitles?src=${src}`,
-    ),
+    buildSubtitleUrl: jest.fn((src: string) => `http://server/api/subtitles?src=${src}`),
     getProbe: jest.fn(async () => ({ duration: 42, audioTracks: [] })),
     getTimings: jest.fn(async () => ({
       video_src: "x",
@@ -31,9 +26,7 @@ jest.mock("../../src/api/client", () => ({
       cacheKey: "k",
     })),
   },
-  resolveAssetUrl: jest.fn((path: string | null) =>
-    path ? `http://server/${path}` : null,
-  ),
+  resolveAssetUrl: jest.fn((path: string | null) => (path ? `http://server/${path}` : null)),
 }));
 
 import { api } from "../../src/api/client";
@@ -81,18 +74,12 @@ beforeEach(() => {
 
 describe("makeDownloadId", () => {
   it("is stable for the same src + audio", () => {
-    expect(makeDownloadId("/media/a.mkv", 0)).toBe(
-      makeDownloadId("/media/a.mkv", 0),
-    );
+    expect(makeDownloadId("/media/a.mkv", 0)).toBe(makeDownloadId("/media/a.mkv", 0));
   });
 
   it("differs by src and by audio track", () => {
-    expect(makeDownloadId("/media/a.mkv", 0)).not.toBe(
-      makeDownloadId("/media/b.mkv", 0),
-    );
-    expect(makeDownloadId("/media/a.mkv", 0)).not.toBe(
-      makeDownloadId("/media/a.mkv", 1),
-    );
+    expect(makeDownloadId("/media/a.mkv", 0)).not.toBe(makeDownloadId("/media/b.mkv", 0));
+    expect(makeDownloadId("/media/a.mkv", 0)).not.toBe(makeDownloadId("/media/a.mkv", 1));
   });
 });
 
@@ -123,15 +110,11 @@ describe("startDownload", () => {
     expect(item?.timings?.outro_start).toBe(30);
     expect(item?.fileUri).toBe(`file:///documents/downloads/${id}.mp4`);
     expect(item?.posterUri).toBe(`file:///documents/downloads/${id}.jpg`);
-    expect(item?.subtitles?.[0]?.uri).toBe(
-      `file:///documents/downloads/${id}.en.vtt`,
-    );
+    expect(item?.subtitles?.[0]?.uri).toBe(`file:///documents/downloads/${id}.en.vtt`);
 
     // The video file and manifest are persisted to the file system.
     expect(fsStore().has(`file:///documents/downloads/${id}.mp4`)).toBe(true);
-    expect(fsStore().has("file:///documents/downloads/manifest.json")).toBe(
-      true,
-    );
+    expect(fsStore().has("file:///documents/downloads/manifest.json")).toBe(true);
   });
 
   it("downloads directly (no prefetch) when the server already has a cached file", async () => {
@@ -173,20 +156,14 @@ describe("startDownload", () => {
       title: "Big",
       profileId: 1,
     });
-    for (
-      let i = 0;
-      i < 12 && useDownloadsStore.getState().items[id]?.status !== "completed";
-      i++
-    ) {
+    for (let i = 0; i < 12 && useDownloadsStore.getState().items[id]?.status !== "completed"; i++) {
       await sleep(10);
       await flush(10);
     }
 
     expect(mockApi.prefetchStream).toHaveBeenCalledWith("/media/big.mkv", 0);
     expect(useDownloadsStore.getState().items[id]?.status).toBe("completed");
-    expect(useDownloadsStore.getState().items[id]?.fileUri).toBe(
-      `file:///documents/downloads/${id}.mp4`,
-    );
+    expect(useDownloadsStore.getState().items[id]?.fileUri).toBe(`file:///documents/downloads/${id}.mp4`);
   });
 
   it("is a no-op when the item is already completed", async () => {
@@ -242,15 +219,10 @@ describe("bootstrapDownloads", () => {
     });
     await flush();
     // Simulate an app kill mid-download by rewriting the manifest.
-    const raw = fsStore().get(
-      "file:///documents/downloads/manifest.json",
-    ) as string;
+    const raw = fsStore().get("file:///documents/downloads/manifest.json") as string;
     const parsed = JSON.parse(raw);
     parsed.items[id].status = "downloading";
-    fsStore().set(
-      "file:///documents/downloads/manifest.json",
-      JSON.stringify(parsed),
-    );
+    fsStore().set("file:///documents/downloads/manifest.json", JSON.stringify(parsed));
 
     await bootstrapDownloads();
     expect(useDownloadsStore.getState().items[id]?.status).toBe("paused");

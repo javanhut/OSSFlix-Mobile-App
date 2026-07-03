@@ -8,8 +8,7 @@ jest.mock("../../src/screens/ServerConnectScreen", () => {
   const React = require("react");
   const { Text } = require("react-native");
   return {
-    ServerConnectScreen: () =>
-      React.createElement(Text, null, "screen:ServerConnect"),
+    ServerConnectScreen: () => React.createElement(Text, null, "screen:ServerConnect"),
   };
 });
 
@@ -17,8 +16,7 @@ jest.mock("../../src/screens/ProfileLookupScreen", () => {
   const React = require("react");
   const { Text } = require("react-native");
   return {
-    ProfileLookupScreen: () =>
-      React.createElement(Text, null, "screen:ProfileLookup"),
+    ProfileLookupScreen: () => React.createElement(Text, null, "screen:ProfileLookup"),
   };
 });
 
@@ -72,8 +70,7 @@ jest.mock("../../src/screens/TitleDetailsScreen", () => {
   const React = require("react");
   const { Text } = require("react-native");
   return {
-    TitleDetailsScreen: () =>
-      React.createElement(Text, null, "screen:TitleDetails"),
+    TitleDetailsScreen: () => React.createElement(Text, null, "screen:TitleDetails"),
   };
 });
 

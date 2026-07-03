@@ -34,15 +34,11 @@ describe("GenreScreen", () => {
     jest.spyOn(api, "getCategories").mockResolvedValue([
       {
         genre: "Drama",
-        titles: [
-          { name: "Ripple", imagePath: "/img.jpg", pathToDir: "movies/Ripple" },
-        ],
+        titles: [{ name: "Ripple", imagePath: "/img.jpg", pathToDir: "movies/Ripple" }],
       },
       {
         genre: "Action",
-        titles: [
-          { name: "Bang", imagePath: "/img2.jpg", pathToDir: "movies/Bang" },
-        ],
+        titles: [{ name: "Bang", imagePath: "/img2.jpg", pathToDir: "movies/Bang" }],
       },
     ]);
     const { findByText } = renderWithQuery(<GenreScreen />);

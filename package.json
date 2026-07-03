@@ -30,7 +30,6 @@
     "expo-screen-orientation": "~8.1.7",
     "expo-secure-store": "~14.2.1",
     "expo-status-bar": "~2.0.1",
-    "prettier": "^3.9.4",
     "react": "19.0.0",
     "react-native": "0.79.1",
     "react-native-gesture-handler": "~2.24.0",
@@ -51,9 +50,15 @@
     "typescript": "~5.8.3"
   },
   "overrides": {
-    "@xmldom/xmldom": ">=0.8.13"
+    "@xmldom/xmldom": ">=0.8.13",
+    "shell-quote": "^1.8.4",
+    "undici": "^6.27.0",
+    "ws": "^8.21.0"
   },
   "resolutions": {
-    "@xmldom/xmldom": ">=0.8.13"
+    "@xmldom/xmldom": ">=0.8.13",
+    "shell-quote": "^1.8.4",
+    "undici": "^6.27.0",
+    "ws": "^8.21.0"
   }
 }

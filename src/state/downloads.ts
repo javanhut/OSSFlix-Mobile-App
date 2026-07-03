@@ -1,10 +1,6 @@
 import { create } from "zustand";
 
-import type {
-  DownloadItem,
-  DownloadsSnapshot,
-  OfflineProgress,
-} from "../types/downloads";
+import type { DownloadItem, DownloadsSnapshot, OfflineProgress } from "../types/downloads";
 
 interface DownloadsState {
   bootstrapped: boolean;
@@ -27,8 +23,7 @@ export const useDownloadsStore = create<DownloadsState>((set) => ({
       progress: snapshot.progress ?? {},
       bootstrapped: true,
     }),
-  upsert: (item) =>
-    set((state) => ({ items: { ...state.items, [item.id]: item } })),
+  upsert: (item) => set((state) => ({ items: { ...state.items, [item.id]: item } })),
   patch: (id, partial) =>
     set((state) => {
       const existing = state.items[id];
@@ -41,8 +36,7 @@ export const useDownloadsStore = create<DownloadsState>((set) => ({
       delete items[id];
       return { items };
     }),
-  setProgress: (id, progress) =>
-    set((state) => ({ progress: { ...state.progress, [id]: progress } })),
+  setProgress: (id, progress) => set((state) => ({ progress: { ...state.progress, [id]: progress } })),
 }));
 
 export function buildDownloadsSnapshot(): DownloadsSnapshot {

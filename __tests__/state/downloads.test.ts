@@ -1,15 +1,9 @@
-import {
-  buildDownloadsSnapshot,
-  useDownloadsStore,
-} from "../../src/state/downloads";
+import { buildDownloadsSnapshot, useDownloadsStore } from "../../src/state/downloads";
 import type { DownloadItem } from "../../src/types/downloads";
 
 const FRESH = { bootstrapped: false, items: {}, progress: {} };
 
-function makeItem(
-  id: string,
-  overrides: Partial<DownloadItem> = {},
-): DownloadItem {
+function makeItem(id: string, overrides: Partial<DownloadItem> = {}): DownloadItem {
   return {
     id,
     src: `/media/${id}.mkv`,
@@ -41,9 +35,7 @@ describe("useDownloadsStore", () => {
   });
 
   it("upsert adds and patch merges without dropping fields", () => {
-    useDownloadsStore
-      .getState()
-      .upsert(makeItem("a", { status: "downloading" }));
+    useDownloadsStore.getState().upsert(makeItem("a", { status: "downloading" }));
     useDownloadsStore.getState().patch("a", { progress: 0.5 });
     const item = useDownloadsStore.getState().items.a;
     expect(item?.status).toBe("downloading");
@@ -63,9 +55,7 @@ describe("useDownloadsStore", () => {
 
   it("buildDownloadsSnapshot mirrors current state", () => {
     useDownloadsStore.getState().upsert(makeItem("a"));
-    useDownloadsStore
-      .getState()
-      .setProgress("a", { current_time: 3, duration: 9, updatedAt: 2 });
+    useDownloadsStore.getState().setProgress("a", { current_time: 3, duration: 9, updatedAt: 2 });
     const snapshot = buildDownloadsSnapshot();
     expect(Object.keys(snapshot.items)).toEqual(["a"]);
     expect(snapshot.progress.a?.current_time).toBe(3);

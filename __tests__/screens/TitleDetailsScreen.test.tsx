@@ -52,9 +52,7 @@ describe("TitleDetailsScreen", () => {
     jest.spyOn(api, "getTitleDetails").mockReturnValue(new Promise(() => {}));
     jest.spyOn(api, "watchlistCheck").mockReturnValue(new Promise(() => {}));
     jest.spyOn(api, "getProgressForDir").mockReturnValue(new Promise(() => {}));
-    const { UNSAFE_root } = renderWithQuery(
-      <TitleDetailsScreen navigation={navigation} route={route} />,
-    );
+    const { UNSAFE_root } = renderWithQuery(<TitleDetailsScreen navigation={navigation} route={route} />);
     expect(UNSAFE_root).toBeTruthy();
   });
 
@@ -63,9 +61,7 @@ describe("TitleDetailsScreen", () => {
     jest.spyOn(api, "watchlistCheck").mockResolvedValue({ inList: false });
     jest.spyOn(api, "getProgressForDir").mockResolvedValue([]);
 
-    const { findAllByText, getByText } = renderWithQuery(
-      <TitleDetailsScreen navigation={navigation} route={route} />,
-    );
+    const { findAllByText, getByText } = renderWithQuery(<TitleDetailsScreen navigation={navigation} route={route} />);
     expect((await findAllByText("Foo")).length).toBeGreaterThanOrEqual(1);
     expect(getByText("TV Show")).toBeTruthy();
     expect(getByText("Drama")).toBeTruthy();
@@ -86,9 +82,7 @@ describe("TitleDetailsScreen", () => {
       },
     ] as any);
 
-    const { findByText, getByText } = renderWithQuery(
-      <TitleDetailsScreen navigation={navigation} route={route} />,
-    );
+    const { findByText, getByText } = renderWithQuery(<TitleDetailsScreen navigation={navigation} route={route} />);
     expect(await findByText("Resume")).toBeTruthy();
     expect(getByText("Remove from My List")).toBeTruthy();
   });
@@ -105,9 +99,7 @@ describe("TitleDetailsScreen", () => {
       },
     ] as any);
 
-    const { findByText } = renderWithQuery(
-      <TitleDetailsScreen navigation={navigation} route={route} />,
-    );
+    const { findByText } = renderWithQuery(<TitleDetailsScreen navigation={navigation} route={route} />);
     fireEvent.press(await findByText("Resume"));
     expect(navigation.navigate).toHaveBeenCalledWith(
       "Player",
@@ -125,9 +117,7 @@ describe("TitleDetailsScreen", () => {
     jest.spyOn(api, "watchlistCheck").mockResolvedValue({ inList: false });
     jest.spyOn(api, "getProgressForDir").mockResolvedValue([]);
 
-    const { findByLabelText } = renderWithQuery(
-      <TitleDetailsScreen navigation={navigation} route={route} />,
-    );
+    const { findByLabelText } = renderWithQuery(<TitleDetailsScreen navigation={navigation} route={route} />);
     const row = await findByLabelText("Play Episode 2");
     fireEvent.press(row);
     expect(navigation.navigate).toHaveBeenCalledWith(
@@ -145,9 +135,7 @@ describe("TitleDetailsScreen", () => {
     jest.spyOn(api, "watchlistCheck").mockResolvedValue({ inList: false });
     jest.spyOn(api, "getProgressForDir").mockResolvedValue([]);
 
-    const { findByText } = renderWithQuery(
-      <TitleDetailsScreen navigation={navigation} route={route} />,
-    );
+    const { findByText } = renderWithQuery(<TitleDetailsScreen navigation={navigation} route={route} />);
     expect(await findByText("Random Clip")).toBeTruthy();
   });
 
@@ -157,9 +145,7 @@ describe("TitleDetailsScreen", () => {
     jest.spyOn(api, "watchlistCheck").mockResolvedValue({ inList: false });
     jest.spyOn(api, "getProgressForDir").mockResolvedValue([]);
 
-    const { findByText } = renderWithQuery(
-      <TitleDetailsScreen navigation={navigation} route={route} />,
-    );
+    const { findByText } = renderWithQuery(<TitleDetailsScreen navigation={navigation} route={route} />);
     expect(await findByText("No playable files found")).toBeTruthy();
   });
 
@@ -169,9 +155,7 @@ describe("TitleDetailsScreen", () => {
     jest.spyOn(api, "watchlistCheck").mockResolvedValue({ inList: false });
     jest.spyOn(api, "getProgressForDir").mockResolvedValue([]);
 
-    const { findAllByText } = renderWithQuery(
-      <TitleDetailsScreen navigation={navigation} route={route} />,
-    );
+    const { findAllByText } = renderWithQuery(<TitleDetailsScreen navigation={navigation} route={route} />);
     expect((await findAllByText("Foo")).length).toBeGreaterThanOrEqual(1);
   });
 
@@ -179,13 +163,9 @@ describe("TitleDetailsScreen", () => {
     jest.spyOn(api, "getTitleDetails").mockResolvedValue(baseDetails as any);
     jest.spyOn(api, "watchlistCheck").mockResolvedValue({ inList: false });
     jest.spyOn(api, "getProgressForDir").mockResolvedValue([]);
-    const addSpy = jest
-      .spyOn(api, "addToWatchlist")
-      .mockResolvedValue({ ok: true });
+    const addSpy = jest.spyOn(api, "addToWatchlist").mockResolvedValue({ ok: true });
 
-    const { findByText } = renderWithQuery(
-      <TitleDetailsScreen navigation={navigation} route={route} />,
-    );
+    const { findByText } = renderWithQuery(<TitleDetailsScreen navigation={navigation} route={route} />);
     const button = await findByText("Add to My List");
     await act(async () => {
       fireEvent.press(button);
@@ -197,13 +177,9 @@ describe("TitleDetailsScreen", () => {
     jest.spyOn(api, "getTitleDetails").mockResolvedValue(baseDetails as any);
     jest.spyOn(api, "watchlistCheck").mockResolvedValue({ inList: true });
     jest.spyOn(api, "getProgressForDir").mockResolvedValue([]);
-    const removeSpy = jest
-      .spyOn(api, "removeFromWatchlist")
-      .mockResolvedValue({ ok: true });
+    const removeSpy = jest.spyOn(api, "removeFromWatchlist").mockResolvedValue({ ok: true });
 
-    const { findByText } = renderWithQuery(
-      <TitleDetailsScreen navigation={navigation} route={route} />,
-    );
+    const { findByText } = renderWithQuery(<TitleDetailsScreen navigation={navigation} route={route} />);
     const button = await findByText("Remove from My List");
     await act(async () => {
       fireEvent.press(button);
@@ -217,18 +193,13 @@ describe("TitleDetailsScreen", () => {
     jest.spyOn(api, "getProgressForDir").mockResolvedValue([]);
     jest.spyOn(api, "addToWatchlist").mockRejectedValue(new Error("boom"));
 
-    const { findByText } = renderWithQuery(
-      <TitleDetailsScreen navigation={navigation} route={route} />,
-    );
+    const { findByText } = renderWithQuery(<TitleDetailsScreen navigation={navigation} route={route} />);
     const button = await findByText("Add to My List");
     await act(async () => {
       fireEvent.press(button);
     });
     await waitFor(() => {
-      expect(Alert.alert).toHaveBeenCalledWith(
-        "Unable to update My List",
-        "boom",
-      );
+      expect(Alert.alert).toHaveBeenCalledWith("Unable to update My List", "boom");
     });
   });
 
@@ -238,18 +209,13 @@ describe("TitleDetailsScreen", () => {
     jest.spyOn(api, "getProgressForDir").mockResolvedValue([]);
     jest.spyOn(api, "addToWatchlist").mockRejectedValue("weird");
 
-    const { findByText } = renderWithQuery(
-      <TitleDetailsScreen navigation={navigation} route={route} />,
-    );
+    const { findByText } = renderWithQuery(<TitleDetailsScreen navigation={navigation} route={route} />);
     const button = await findByText("Add to My List");
     await act(async () => {
       fireEvent.press(button);
     });
     await waitFor(() => {
-      expect(Alert.alert).toHaveBeenCalledWith(
-        "Unable to update My List",
-        "Request failed.",
-      );
+      expect(Alert.alert).toHaveBeenCalledWith("Unable to update My List", "Request failed.");
     });
   });
 
@@ -257,16 +223,12 @@ describe("TitleDetailsScreen", () => {
     jest.spyOn(api, "getTitleDetails").mockResolvedValue(undefined as any);
     jest.spyOn(api, "watchlistCheck").mockResolvedValue({ inList: false });
     jest.spyOn(api, "getProgressForDir").mockResolvedValue([]);
-    const { toJSON } = renderWithQuery(
-      <TitleDetailsScreen navigation={navigation} route={route} />,
-    );
+    const { toJSON } = renderWithQuery(<TitleDetailsScreen navigation={navigation} route={route} />);
     await waitFor(() => expect(toJSON()).toBeNull());
   });
 
   it("genre chip navigates to the Genre screen when tapped", async () => {
-    const { findByText } = renderWithQuery(
-      <TitleDetailsScreen navigation={navigation} route={route} />,
-    );
+    const { findByText } = renderWithQuery(<TitleDetailsScreen navigation={navigation} route={route} />);
     const chip = await findByText("Drama");
     fireEvent.press(chip);
     expect(navigation.navigate).toHaveBeenCalledWith("Genre", {
@@ -280,9 +242,7 @@ describe("TitleDetailsScreen", () => {
     jest.spyOn(api, "watchlistCheck").mockResolvedValue({ inList: false });
     jest.spyOn(api, "getProgressForDir").mockResolvedValue([]);
 
-    const { findByText } = renderWithQuery(
-      <TitleDetailsScreen navigation={navigation} route={route} />,
-    );
+    const { findByText } = renderWithQuery(<TitleDetailsScreen navigation={navigation} route={route} />);
     const playButton = await findByText("Play");
     fireEvent.press(playButton);
     expect(navigation.navigate).not.toHaveBeenCalled();

@@ -1,11 +1,4 @@
-import {
-  FlatList,
-  Image,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { FlatList, Image, Pressable, StyleSheet, Text, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 
@@ -23,14 +16,10 @@ type Props = NativeStackScreenProps<RootStackParamList, "ProfileSelect">;
 export function ProfileSelectScreen({ navigation, route }: Props) {
   useAllowRotation();
   const { profiles, source } = route.params;
-  const setSelectedProfile = useSessionStore(
-    (state) => state.setSelectedProfile,
-  );
+  const setSelectedProfile = useSessionStore((state) => state.setSelectedProfile);
 
   const subtitle =
-    source === "unclaimed"
-      ? "Unclaimed profiles available on this server."
-      : "Tap a profile to continue signing in.";
+    source === "unclaimed" ? "Unclaimed profiles available on this server." : "Tap a profile to continue signing in.";
 
   const handleSelect = (profile: PublicProfile) => {
     setSelectedProfile(profile);
@@ -48,9 +37,7 @@ export function ProfileSelectScreen({ navigation, route }: Props) {
         <View style={styles.headerWrap}>
           <AppHeader
             eyebrow="Choose profile"
-            title={
-              source === "unclaimed" ? "Unclaimed profiles" : "Your profiles"
-            }
+            title={source === "unclaimed" ? "Unclaimed profiles" : "Your profiles"}
             subtitle={subtitle}
             actionLabel="Back"
             onAction={() => navigation.goBack()}
@@ -58,20 +45,14 @@ export function ProfileSelectScreen({ navigation, route }: Props) {
         </View>
       }
       ListEmptyComponent={
-        <EmptyState
-          title="No profiles"
-          subtitle="Go back and try a different email or use an unclaimed profile."
-        />
+        <EmptyState title="No profiles" subtitle="Go back and try a different email or use an unclaimed profile." />
       }
       renderItem={({ item }) => {
         const avatar = resolveAssetUrl(item.image_path);
         return (
           <Pressable
             onPress={() => handleSelect(item)}
-            style={({ pressed }) => [
-              styles.card,
-              pressed && styles.cardPressed,
-            ]}
+            style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
             accessibilityRole="button"
             accessibilityLabel={`Choose ${item.name}`}
           >
@@ -84,14 +65,8 @@ export function ProfileSelectScreen({ navigation, route }: Props) {
                 </View>
               )}
               <View style={styles.badge}>
-                <Feather
-                  name={item.has_password ? "lock" : "unlock"}
-                  size={11}
-                  color={colors.text}
-                />
-                <Text style={styles.badgeLabel}>
-                  {item.has_password ? "Protected" : "Set up"}
-                </Text>
+                <Feather name={item.has_password ? "lock" : "unlock"} size={11} color={colors.text} />
+                <Text style={styles.badgeLabel}>{item.has_password ? "Protected" : "Set up"}</Text>
               </View>
             </View>
             <Text style={styles.name} numberOfLines={1}>

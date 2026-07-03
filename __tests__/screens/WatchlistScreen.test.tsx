@@ -44,9 +44,7 @@ describe("WatchlistScreen", () => {
   });
 
   it("renders the empty state when the watchlist is empty", async () => {
-    jest
-      .spyOn(api, "getWatchlist")
-      .mockResolvedValue({ genre: "watchlist", titles: [] });
+    jest.spyOn(api, "getWatchlist").mockResolvedValue({ genre: "watchlist", titles: [] });
     const { findByText } = renderWithQuery(<WatchlistScreen />);
     expect(await findByText("Your list is empty")).toBeTruthy();
   });

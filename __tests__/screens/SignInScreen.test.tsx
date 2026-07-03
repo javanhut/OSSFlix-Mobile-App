@@ -40,18 +40,14 @@ afterEach(() => {
 
 describe("SignInScreen", () => {
   it("renders Sign In button when the selected profile already has a password", () => {
-    const { getByText } = render(
-      <SignInScreen navigation={navigation} route={route} />,
-    );
+    const { getByText } = render(<SignInScreen navigation={navigation} route={route} />);
     expect(getByText("Sign In")).toBeTruthy();
     expect(getByText(/Enter the profile password/)).toBeTruthy();
   });
 
   it("renders Set Password when the selected profile has no password yet", () => {
     useSessionStore.setState({ selectedProfile: newProfile });
-    const { getByText } = render(
-      <SignInScreen navigation={navigation} route={route} />,
-    );
+    const { getByText } = render(<SignInScreen navigation={navigation} route={route} />);
     expect(getByText("Set Password")).toBeTruthy();
     expect(getByText(/Set a password/)).toBeTruthy();
   });
@@ -62,9 +58,7 @@ describe("SignInScreen", () => {
       profile: { id: 1, name: "Ada" } as any,
       expiresAt: "",
     });
-    const { getByPlaceholderText, getByText } = render(
-      <SignInScreen navigation={navigation} route={route} />,
-    );
+    const { getByPlaceholderText, getByText } = render(<SignInScreen navigation={navigation} route={route} />);
     fireEvent.changeText(getByPlaceholderText("Password"), "pw");
     await act(async () => {
       fireEvent.press(getByText("Sign In"));
@@ -82,9 +76,7 @@ describe("SignInScreen", () => {
       profile: { id: 2, name: "Lin" } as any,
       expiresAt: "",
     });
-    const { getByPlaceholderText, getByText } = render(
-      <SignInScreen navigation={navigation} route={route} />,
-    );
+    const { getByPlaceholderText, getByText } = render(<SignInScreen navigation={navigation} route={route} />);
     fireEvent.changeText(getByPlaceholderText("Password"), "newpw");
     await act(async () => {
       fireEvent.press(getByText("Set Password"));
@@ -97,9 +89,7 @@ describe("SignInScreen", () => {
 
   it("alerts when login throws", async () => {
     jest.spyOn(api, "mobileLogin").mockRejectedValue(new Error("bad"));
-    const { getByPlaceholderText, getByText } = render(
-      <SignInScreen navigation={navigation} route={route} />,
-    );
+    const { getByPlaceholderText, getByText } = render(<SignInScreen navigation={navigation} route={route} />);
     fireEvent.changeText(getByPlaceholderText("Password"), "pw");
     await act(async () => {
       fireEvent.press(getByText("Sign In"));
@@ -111,26 +101,19 @@ describe("SignInScreen", () => {
 
   it("uses a generic message when login rejects with a non-Error", async () => {
     jest.spyOn(api, "mobileLogin").mockRejectedValue("weird");
-    const { getByPlaceholderText, getByText } = render(
-      <SignInScreen navigation={navigation} route={route} />,
-    );
+    const { getByPlaceholderText, getByText } = render(<SignInScreen navigation={navigation} route={route} />);
     fireEvent.changeText(getByPlaceholderText("Password"), "pw");
     await act(async () => {
       fireEvent.press(getByText("Sign In"));
     });
     await waitFor(() => {
-      expect(Alert.alert).toHaveBeenCalledWith(
-        "Authentication failed",
-        "Unable to sign in.",
-      );
+      expect(Alert.alert).toHaveBeenCalledWith("Authentication failed", "Unable to sign in.");
     });
   });
 
   it("goes back when no profile is selected", async () => {
     useSessionStore.setState({ selectedProfile: null });
-    const { getByText } = render(
-      <SignInScreen navigation={navigation} route={route} />,
-    );
+    const { getByText } = render(<SignInScreen navigation={navigation} route={route} />);
     await act(async () => {
       fireEvent.press(getByText("Sign In"));
     });
@@ -138,9 +121,7 @@ describe("SignInScreen", () => {
   });
 
   it("Back action calls navigation.goBack", () => {
-    const { getByText } = render(
-      <SignInScreen navigation={navigation} route={route} />,
-    );
+    const { getByText } = render(<SignInScreen navigation={navigation} route={route} />);
     fireEvent.press(getByText("Back"));
     expect(navigation.goBack).toHaveBeenCalled();
   });

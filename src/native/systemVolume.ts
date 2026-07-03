@@ -12,8 +12,7 @@ export type SystemVolumeInfo = {
   maxVolume: number;
 };
 
-const nativeModule = NativeModules.SystemVolume as
-  SystemVolumeModuleShape | undefined;
+const nativeModule = NativeModules.SystemVolume as SystemVolumeModuleShape | undefined;
 
 function ensureAndroidModule(): SystemVolumeModuleShape | null {
   if (Platform.OS !== "android") return null;

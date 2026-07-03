@@ -27,9 +27,7 @@ export function normalizeServerUrl(input: string): string {
     throw new Error("Server URL is required.");
   }
 
-  const withProtocol = /^https?:\/\//i.test(trimmed)
-    ? trimmed
-    : `http://${trimmed}`;
+  const withProtocol = /^https?:\/\//i.test(trimmed) ? trimmed : `http://${trimmed}`;
   const url = new URL(withProtocol);
   url.pathname = "";
   url.search = "";
@@ -55,10 +53,7 @@ function buildHeaders(authenticated = true, extra?: HeadersInit): Headers {
 
 async function parseResponse<T>(response: Response): Promise<T> {
   const payload = await response.json().catch(() => ({}));
-  const error =
-    payload && typeof payload === "object"
-      ? (payload as { error?: string }).error
-      : undefined;
+  const error = payload && typeof payload === "object" ? (payload as { error?: string }).error : undefined;
   if (!response.ok || error) {
     const message = error || `Request failed with status ${response.status}`;
     if (response.status === 401 && useSessionStore.getState().token) {
@@ -69,11 +64,7 @@ async function parseResponse<T>(response: Response): Promise<T> {
   return payload as T;
 }
 
-async function requestJson<T>(
-  path: string,
-  init?: RequestInit,
-  authenticated = true,
-): Promise<T> {
+async function requestJson<T>(path: string, init?: RequestInit, authenticated = true): Promise<T> {
   const response = await fetch(buildUrl(path), {
     ...init,
     headers: buildHeaders(authenticated, init?.headers),
@@ -81,11 +72,7 @@ async function requestJson<T>(
   return parseResponse<T>(response);
 }
 
-async function postJson<T>(
-  path: string,
-  body: unknown,
-  authenticated = true,
-): Promise<T> {
+async function postJson<T>(path: string, body: unknown, authenticated = true): Promise<T> {
   return requestJson<T>(
     path,
     {
@@ -108,58 +95,32 @@ export function resolveAssetUrl(path?: string | null): string | null {
 export const api = {
   async getServerInfo(serverUrl: string): Promise<ServerInfo> {
     const normalized = normalizeServerUrl(serverUrl);
-    const response = await fetch(
-      new URL("/api/mobile/server-info", `${normalized}/`).toString(),
-    );
+    const response = await fetch(new URL("/api/mobile/server-info", `${normalized}/`).toString());
     return parseResponse<ServerInfo>(response);
   },
 
   lookupProfiles(email: string) {
-    return postJson<{ profiles: PublicProfile[]; hasUnclaimed: boolean }>(
-      "/api/auth/lookup",
-      { email },
-      false,
-    );
+    return postJson<{ profiles: PublicProfile[]; hasUnclaimed: boolean }>("/api/auth/lookup", { email }, false);
   },
 
   lookupUnclaimed() {
-    return postJson<{ profiles: PublicProfile[] }>(
-      "/api/auth/lookup-unclaimed",
-      {},
-      false,
-    );
+    return postJson<{ profiles: PublicProfile[] }>("/api/auth/lookup-unclaimed", {}, false);
   },
 
   getGuestProfile() {
-    return requestJson<{ profile: PublicProfile }>(
-      "/api/auth/guest-profile",
-      undefined,
-      false,
-    );
+    return requestJson<{ profile: PublicProfile }>("/api/auth/guest-profile", undefined, false);
   },
 
   mobileLogin(profileId: number, password: string) {
-    return postJson<MobileAuthResponse>(
-      "/api/mobile/auth/login",
-      { profileId, password },
-      false,
-    );
+    return postJson<MobileAuthResponse>("/api/mobile/auth/login", { profileId, password }, false);
   },
 
   mobileSetPassword(profileId: number, password: string) {
-    return postJson<MobileAuthResponse>(
-      "/api/mobile/auth/set-password",
-      { profileId, password },
-      false,
-    );
+    return postJson<MobileAuthResponse>("/api/mobile/auth/set-password", { profileId, password }, false);
   },
 
   mobileRegister(name: string, email: string, password: string) {
-    return postJson<MobileAuthResponse>(
-      "/api/mobile/auth/register",
-      { name, email, password },
-      false,
-    );
+    return postJson<MobileAuthResponse>("/api/mobile/auth/register", { name, email, password }, false);
   },
 
   mobileLogout() {
@@ -171,11 +132,7 @@ export const api = {
   },
 
   getCategories() {
-    return requestJson<CategoryRow[]>(
-      "/api/media/categories",
-      undefined,
-      false,
-    );
+    return requestJson<CategoryRow[]>("/api/media/categories", undefined, false);
   },
 
   getContinueWatching() {
@@ -187,41 +144,26 @@ export const api = {
   },
 
   getLibrary(type: string) {
-    return requestJson<TitleSummary[]>(
-      `/api/media/titles?type=${encodeURIComponent(type)}`,
-    );
+    return requestJson<TitleSummary[]>(`/api/media/titles?type=${encodeURIComponent(type)}`);
   },
 
   search(query: string) {
-    return requestJson<SearchResponse>(
-      `/api/media/search?q=${encodeURIComponent(query)}`,
-    );
+    return requestJson<SearchResponse>(`/api/media/search?q=${encodeURIComponent(query)}`);
   },
 
   getTitleDetails(dirPath: string) {
-    return requestJson<TitleDetails>(
-      `/api/media/info?dir=${encodeURIComponent(dirPath)}`,
-    );
+    return requestJson<TitleDetails>(`/api/media/info?dir=${encodeURIComponent(dirPath)}`);
   },
 
   getProgressForDir(dirPath: string) {
-    return requestJson<PlaybackProgress[]>(
-      `/api/playback/progress?dir=${encodeURIComponent(dirPath)}`,
-    );
+    return requestJson<PlaybackProgress[]>(`/api/playback/progress?dir=${encodeURIComponent(dirPath)}`);
   },
 
   getProgressForVideo(src: string) {
-    return requestJson<PlaybackProgress | null>(
-      `/api/playback/progress?src=${encodeURIComponent(src)}`,
-    );
+    return requestJson<PlaybackProgress | null>(`/api/playback/progress?src=${encodeURIComponent(src)}`);
   },
 
-  saveProgress(body: {
-    video_src: string;
-    dir_path: string;
-    current_time: number;
-    duration: number;
-  }) {
+  saveProgress(body: { video_src: string; dir_path: string; current_time: number; duration: number }) {
     return requestJson<{ ok: boolean }>("/api/playback/progress", {
       method: "PUT",
       headers: {
@@ -232,9 +174,7 @@ export const api = {
   },
 
   watchlistCheck(dirPath: string) {
-    return requestJson<{ inList: boolean }>(
-      `/api/watchlist/check?dir=${encodeURIComponent(dirPath)}`,
-    );
+    return requestJson<{ inList: boolean }>(`/api/watchlist/check?dir=${encodeURIComponent(dirPath)}`);
   },
 
   addToWatchlist(dirPath: string) {
@@ -258,9 +198,7 @@ export const api = {
   },
 
   getProbe(src: string) {
-    return requestJson<StreamProbeResponse>(
-      `/api/stream/probe?src=${encodeURIComponent(src)}`,
-    );
+    return requestJson<StreamProbeResponse>(`/api/stream/probe?src=${encodeURIComponent(src)}`);
   },
 
   // Asks the server to transcode/materialize a complete, byte-exact file so a
@@ -271,15 +209,11 @@ export const api = {
       prefetching: boolean;
       queued: boolean;
       cacheKey: string;
-    }>(
-      `/api/stream/prefetch?src=${encodeURIComponent(src)}&audio=${audioIndex}`,
-    );
+    }>(`/api/stream/prefetch?src=${encodeURIComponent(src)}&audio=${audioIndex}`);
   },
 
   getCacheStatus(src: string, audioIndex = 0) {
-    return requestJson<CacheStatus>(
-      `/api/stream/cache/status?src=${encodeURIComponent(src)}&audio=${audioIndex}`,
-    );
+    return requestJson<CacheStatus>(`/api/stream/cache/status?src=${encodeURIComponent(src)}&audio=${audioIndex}`);
   },
 
   getTimings(src: string) {
@@ -293,9 +227,7 @@ export const api = {
   },
 
   buildStreamUrl(src: string, audioIndex = 0) {
-    return buildUrl(
-      `/api/stream?src=${encodeURIComponent(src)}&audio=${audioIndex}`,
-    );
+    return buildUrl(`/api/stream?src=${encodeURIComponent(src)}&audio=${audioIndex}`);
   },
 
   buildSubtitleUrl(src: string) {

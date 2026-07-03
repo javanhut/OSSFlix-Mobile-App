@@ -38,12 +38,9 @@ const mockGetVolumeInfo = jest.fn(async () => ({ volume: 0.7, maxVolume: 15 }));
 const mockSetPlayerStream = jest.fn();
 jest.mock("../../src/native/systemVolume", () => ({
   getSystemMusicVolume: jest.fn(async () => 0.7),
-  getSystemMusicVolumeInfo: (...args: unknown[]) =>
-    mockGetVolumeInfo(...(args as [])),
-  setSystemMusicVolume: (...args: unknown[]) =>
-    mockSetVolume(...(args as [number])),
-  setPlayerVolumeStream: (...args: unknown[]) =>
-    mockSetPlayerStream(...(args as [])),
+  getSystemMusicVolumeInfo: (...args: unknown[]) => mockGetVolumeInfo(...(args as [])),
+  setSystemMusicVolume: (...args: unknown[]) => mockSetVolume(...(args as [number])),
+  setPlayerVolumeStream: (...args: unknown[]) => mockSetPlayerStream(...(args as [])),
 }));
 
 import React from "react";
@@ -71,15 +68,10 @@ function makeRoute(
     params: {
       dirPath: "shows/Foo",
       title: "Foo",
-      videos: overrides.videos ?? [
-        "shows/Foo/foo_s1_ep1.mkv",
-        "shows/Foo/foo_s1_ep2.mkv",
-      ],
+      videos: overrides.videos ?? ["shows/Foo/foo_s1_ep1.mkv", "shows/Foo/foo_s1_ep2.mkv"],
       startIndex: overrides.startIndex ?? 0,
       initialTime: overrides.initialTime ?? 0,
-      subtitles: overrides.subtitles ?? [
-        { label: "EN", language: "en", src: "s.vtt", format: "vtt" },
-      ],
+      subtitles: overrides.subtitles ?? [{ label: "EN", language: "en", src: "s.vtt", format: "vtt" }],
     },
   } as any;
 }
@@ -104,12 +96,7 @@ function layoutPlayerScreen(root: ReturnType<typeof renderPlayer>) {
 
 async function dragGesture(
   root: ReturnType<typeof renderPlayer>,
-  {
-    locationX,
-    locationY,
-    dx,
-    dy,
-  }: { locationX: number; locationY: number; dx: number; dy: number },
+  { locationX, locationY, dx, dy }: { locationX: number; locationY: number; dx: number; dy: number },
 ) {
   const surface = root.getByTestId("gesture-surface");
   await act(async () => {
@@ -145,16 +132,12 @@ beforeEach(() => {
     (config: any) =>
       ({
         panHandlers: {
-          onStartShouldSetResponder: (event: any) =>
-            config.onStartShouldSetPanResponder?.(event),
+          onStartShouldSetResponder: (event: any) => config.onStartShouldSetPanResponder?.(event),
           onMoveShouldSetResponder: (event: any, gestureState: any) =>
             config.onMoveShouldSetPanResponder?.(event, gestureState),
-          onResponderGrant: (event: any, gestureState: any) =>
-            config.onPanResponderGrant?.(event, gestureState),
-          onResponderMove: (event: any, gestureState: any) =>
-            config.onPanResponderMove?.(event, gestureState),
-          onResponderRelease: (event: any, gestureState: any) =>
-            config.onPanResponderRelease?.(event, gestureState),
+          onResponderGrant: (event: any, gestureState: any) => config.onPanResponderGrant?.(event, gestureState),
+          onResponderMove: (event: any, gestureState: any) => config.onPanResponderMove?.(event, gestureState),
+          onResponderRelease: (event: any, gestureState: any) => config.onPanResponderRelease?.(event, gestureState),
           onResponderTerminate: (event: any, gestureState: any) =>
             config.onPanResponderTerminate?.(event, gestureState),
         },
@@ -218,9 +201,7 @@ describe("PlayerScreen — render and Video wiring", () => {
     renderPlayer();
     await waitFor(() => expect((Video as any).lastProps).toBeDefined());
     const props = (Video as any).lastProps;
-    expect(props.source.uri).toContain(
-      "/api/stream?src=shows%2FFoo%2Ffoo_s1_ep1.mkv&audio=0",
-    );
+    expect(props.source.uri).toContain("/api/stream?src=shows%2FFoo%2Ffoo_s1_ep1.mkv&audio=0");
     expect(props.source.headers).toEqual({ Authorization: "Bearer t" });
     expect(props.textTracks[0].uri).toContain("/api/subtitles?src=s.vtt");
   });
@@ -539,9 +520,7 @@ describe("PlayerScreen — next-episode countdown", () => {
   });
 
   it("does not show the overlay when there is no next episode", async () => {
-    const { queryByText } = renderPlayer(
-      makeRoute({ videos: ["shows/Foo/only.mkv"], startIndex: 0 }),
-    );
+    const { queryByText } = renderPlayer(makeRoute({ videos: ["shows/Foo/only.mkv"], startIndex: 0 }));
     await waitFor(() => expect((Video as any).lastProps).toBeDefined());
     await waitFor(() => expect(api.getTimings).toHaveBeenCalled());
     await act(async () => {
@@ -556,13 +535,11 @@ describe("PlayerScreen — persistence lifecycle", () => {
   it("persists progress when AppState transitions away from active", async () => {
     const listeners: Array<(s: string) => void> = [];
     const AppState = require("react-native").AppState;
-    const addSpy = jest
-      .spyOn(AppState, "addEventListener")
-      .mockImplementation((...args: unknown[]) => {
-        const cb = args[1] as (s: string) => void;
-        listeners.push(cb);
-        return { remove: () => {} } as any;
-      });
+    const addSpy = jest.spyOn(AppState, "addEventListener").mockImplementation((...args: unknown[]) => {
+      const cb = args[1] as (s: string) => void;
+      listeners.push(cb);
+      return { remove: () => {} } as any;
+    });
     renderPlayer();
     await waitFor(() => expect((Video as any).lastProps).toBeDefined());
     await act(async () => {

@@ -1,12 +1,4 @@
-import {
-  ActivityIndicator,
-  FlatList,
-  Pressable,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -21,8 +13,7 @@ import { useAllowRotation } from "../hooks/useAllowRotation";
 
 export function ExploreScreen() {
   useAllowRotation();
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const query = useQuery({
     queryKey: ["categories"],
     queryFn: api.getCategories,
@@ -54,10 +45,7 @@ export function ExploreScreen() {
       }
       ListHeaderComponent={
         <View style={styles.header}>
-          <AppHeader
-            title="Explore"
-            subtitle="Browse every category on this server."
-          />
+          <AppHeader title="Explore" subtitle="Browse every category on this server." />
         </View>
       }
       ListEmptyComponent={

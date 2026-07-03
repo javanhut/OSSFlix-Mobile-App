@@ -27,9 +27,7 @@ afterEach(() => {
 
 describe("ProfileLookupScreen", () => {
   it("renders the form header and action buttons", () => {
-    const { getByText } = render(
-      <ProfileLookupScreen navigation={navigation} route={route} />,
-    );
+    const { getByText } = render(<ProfileLookupScreen navigation={navigation} route={route} />);
     expect(getByText("Find a profile")).toBeTruthy();
     expect(getByText("Find Profiles")).toBeTruthy();
     expect(getByText("Use Unclaimed Profile")).toBeTruthy();
@@ -46,9 +44,7 @@ describe("ProfileLookupScreen", () => {
       hasUnclaimed: false,
     });
 
-    const { getByPlaceholderText, getByText } = render(
-      <ProfileLookupScreen navigation={navigation} route={route} />,
-    );
+    const { getByPlaceholderText, getByText } = render(<ProfileLookupScreen navigation={navigation} route={route} />);
     fireEvent.changeText(getByPlaceholderText("Email"), "  user@example.com  ");
     await act(async () => {
       fireEvent.press(getByText("Find Profiles"));
@@ -64,32 +60,23 @@ describe("ProfileLookupScreen", () => {
   });
 
   it("alerts when lookup returns no profiles and does not navigate", async () => {
-    jest
-      .spyOn(api, "lookupProfiles")
-      .mockResolvedValue({ profiles: [], hasUnclaimed: false });
+    jest.spyOn(api, "lookupProfiles").mockResolvedValue({ profiles: [], hasUnclaimed: false });
 
-    const { getByPlaceholderText, getByText } = render(
-      <ProfileLookupScreen navigation={navigation} route={route} />,
-    );
+    const { getByPlaceholderText, getByText } = render(<ProfileLookupScreen navigation={navigation} route={route} />);
     fireEvent.changeText(getByPlaceholderText("Email"), "a@b.c");
     await act(async () => {
       fireEvent.press(getByText("Find Profiles"));
     });
 
     await waitFor(() => {
-      expect(Alert.alert).toHaveBeenCalledWith(
-        "No profiles",
-        expect.stringContaining("No profiles"),
-      );
+      expect(Alert.alert).toHaveBeenCalledWith("No profiles", expect.stringContaining("No profiles"));
     });
     expect(navigation.navigate).not.toHaveBeenCalled();
   });
 
   it("alerts when lookupProfiles throws", async () => {
     jest.spyOn(api, "lookupProfiles").mockRejectedValue(new Error("boom"));
-    const { getByPlaceholderText, getByText } = render(
-      <ProfileLookupScreen navigation={navigation} route={route} />,
-    );
+    const { getByPlaceholderText, getByText } = render(<ProfileLookupScreen navigation={navigation} route={route} />);
     fireEvent.changeText(getByPlaceholderText("Email"), "a@b.c");
     await act(async () => {
       fireEvent.press(getByText("Find Profiles"));
@@ -101,30 +88,21 @@ describe("ProfileLookupScreen", () => {
 
   it("alerts with a fallback when lookupProfiles rejects with a non-Error", async () => {
     jest.spyOn(api, "lookupProfiles").mockRejectedValue("weird");
-    const { getByPlaceholderText, getByText } = render(
-      <ProfileLookupScreen navigation={navigation} route={route} />,
-    );
+    const { getByPlaceholderText, getByText } = render(<ProfileLookupScreen navigation={navigation} route={route} />);
     fireEvent.changeText(getByPlaceholderText("Email"), "a@b.c");
     await act(async () => {
       fireEvent.press(getByText("Find Profiles"));
     });
     await waitFor(() => {
-      expect(Alert.alert).toHaveBeenCalledWith(
-        "Lookup failed",
-        "Unable to load profiles.",
-      );
+      expect(Alert.alert).toHaveBeenCalledWith("Lookup failed", "Unable to load profiles.");
     });
   });
 
   it("unclaimed: navigates to ProfileSelect when profiles are returned", async () => {
     jest.spyOn(api, "lookupUnclaimed").mockResolvedValue({
-      profiles: [
-        { id: 5, name: "Open", image_path: null, has_password: false },
-      ],
+      profiles: [{ id: 5, name: "Open", image_path: null, has_password: false }],
     });
-    const { getByText } = render(
-      <ProfileLookupScreen navigation={navigation} route={route} />,
-    );
+    const { getByText } = render(<ProfileLookupScreen navigation={navigation} route={route} />);
     await act(async () => {
       fireEvent.press(getByText("Use Unclaimed Profile"));
     });
@@ -138,42 +116,30 @@ describe("ProfileLookupScreen", () => {
 
   it("unclaimed: alerts on empty result", async () => {
     jest.spyOn(api, "lookupUnclaimed").mockResolvedValue({ profiles: [] });
-    const { getByText } = render(
-      <ProfileLookupScreen navigation={navigation} route={route} />,
-    );
+    const { getByText } = render(<ProfileLookupScreen navigation={navigation} route={route} />);
     await act(async () => {
       fireEvent.press(getByText("Use Unclaimed Profile"));
     });
     await waitFor(() => {
-      expect(Alert.alert).toHaveBeenCalledWith(
-        "No profiles",
-        expect.stringContaining("unclaimed"),
-      );
+      expect(Alert.alert).toHaveBeenCalledWith("No profiles", expect.stringContaining("unclaimed"));
     });
     expect(navigation.navigate).not.toHaveBeenCalled();
   });
 
   it("unclaimed: alerts with fallback on non-Error rejection", async () => {
     jest.spyOn(api, "lookupUnclaimed").mockRejectedValue("weird");
-    const { getByText } = render(
-      <ProfileLookupScreen navigation={navigation} route={route} />,
-    );
+    const { getByText } = render(<ProfileLookupScreen navigation={navigation} route={route} />);
     await act(async () => {
       fireEvent.press(getByText("Use Unclaimed Profile"));
     });
     await waitFor(() => {
-      expect(Alert.alert).toHaveBeenCalledWith(
-        "Lookup failed",
-        "Unable to load profiles.",
-      );
+      expect(Alert.alert).toHaveBeenCalledWith("Lookup failed", "Unable to load profiles.");
     });
   });
 
   it("unclaimed: alerts with the error message on Error rejection", async () => {
     jest.spyOn(api, "lookupUnclaimed").mockRejectedValue(new Error("nope"));
-    const { getByText } = render(
-      <ProfileLookupScreen navigation={navigation} route={route} />,
-    );
+    const { getByText } = render(<ProfileLookupScreen navigation={navigation} route={route} />);
     await act(async () => {
       fireEvent.press(getByText("Use Unclaimed Profile"));
     });
@@ -186,9 +152,7 @@ describe("ProfileLookupScreen", () => {
     jest.spyOn(api, "getGuestProfile").mockResolvedValue({
       profile: { id: 9, name: "Guest", image_path: null, has_password: true },
     });
-    const { getByText } = render(
-      <ProfileLookupScreen navigation={navigation} route={route} />,
-    );
+    const { getByText } = render(<ProfileLookupScreen navigation={navigation} route={route} />);
     await act(async () => {
       fireEvent.press(getByText("Continue as Guest"));
     });
@@ -199,35 +163,24 @@ describe("ProfileLookupScreen", () => {
   });
 
   it("Continue as Guest alerts when the server returns an error", async () => {
-    jest
-      .spyOn(api, "getGuestProfile")
-      .mockRejectedValue(new Error("Guest profile not available"));
-    const { getByText } = render(
-      <ProfileLookupScreen navigation={navigation} route={route} />,
-    );
+    jest.spyOn(api, "getGuestProfile").mockRejectedValue(new Error("Guest profile not available"));
+    const { getByText } = render(<ProfileLookupScreen navigation={navigation} route={route} />);
     await act(async () => {
       fireEvent.press(getByText("Continue as Guest"));
     });
     await waitFor(() => {
-      expect(Alert.alert).toHaveBeenCalledWith(
-        "Guest unavailable",
-        "Guest profile not available",
-      );
+      expect(Alert.alert).toHaveBeenCalledWith("Guest unavailable", "Guest profile not available");
     });
   });
 
   it("navigates to Register from the link", () => {
-    const { getByText } = render(
-      <ProfileLookupScreen navigation={navigation} route={route} />,
-    );
+    const { getByText } = render(<ProfileLookupScreen navigation={navigation} route={route} />);
     fireEvent.press(getByText("Create a new profile"));
     expect(navigation.navigate).toHaveBeenCalledWith("Register");
   });
 
   it("the Change action clears the configured server URL", () => {
-    const { getByText } = render(
-      <ProfileLookupScreen navigation={navigation} route={route} />,
-    );
+    const { getByText } = render(<ProfileLookupScreen navigation={navigation} route={route} />);
     fireEvent.press(getByText("Change"));
     expect(useSessionStore.getState().serverUrl).toBe("");
   });

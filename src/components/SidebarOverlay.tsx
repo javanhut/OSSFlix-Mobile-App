@@ -1,12 +1,5 @@
 import { useRef, useState } from "react";
-import {
-  Animated,
-  PanResponder,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Animated, PanResponder, Pressable, StyleSheet, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -22,13 +15,7 @@ const PANEL_WIDTH = 280;
 const EDGE_ZONE_WIDTH = 22;
 const OPEN_THRESHOLD = PANEL_WIDTH * 0.4;
 
-export function SidebarOverlay({
-  items,
-  enabled = true,
-}: {
-  items: SidebarItem[];
-  enabled?: boolean;
-}) {
+export function SidebarOverlay({ items, enabled = true }: { items: SidebarItem[]; enabled?: boolean }) {
   const insets = useSafeAreaInsets();
   const [mounted, setMounted] = useState(false);
   const translateX = useRef(new Animated.Value(-PANEL_WIDTH)).current;
@@ -57,8 +44,7 @@ export function SidebarOverlay({
   const edgeResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => enabled,
-      onMoveShouldSetPanResponder: (_, gs) =>
-        enabled && gs.dx > 6 && Math.abs(gs.dy) < Math.abs(gs.dx),
+      onMoveShouldSetPanResponder: (_, gs) => enabled && gs.dx > 6 && Math.abs(gs.dy) < Math.abs(gs.dx),
       onPanResponderGrant: () => {
         setMounted(true);
       },
@@ -77,8 +63,7 @@ export function SidebarOverlay({
   const panelResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => false,
-      onMoveShouldSetPanResponder: (_, gs) =>
-        gs.dx < -6 && Math.abs(gs.dy) < Math.abs(gs.dx),
+      onMoveShouldSetPanResponder: (_, gs) => gs.dx < -6 && Math.abs(gs.dy) < Math.abs(gs.dx),
       onPanResponderMove: (_, gs) => {
         const next = Math.max(-PANEL_WIDTH, Math.min(0, gs.dx));
         translateX.setValue(next);
@@ -108,9 +93,7 @@ export function SidebarOverlay({
 
       {mounted ? (
         <>
-          <Animated.View
-            style={[styles.backdrop, { opacity: backdropOpacity }]}
-          >
+          <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]}>
             <Pressable style={StyleSheet.absoluteFill} onPress={animateClose} />
           </Animated.View>
 
@@ -134,10 +117,7 @@ export function SidebarOverlay({
                   animateClose();
                   setTimeout(() => item.onPress(), 180);
                 }}
-                style={({ pressed }) => [
-                  styles.item,
-                  pressed && styles.itemPressed,
-                ]}
+                style={({ pressed }) => [styles.item, pressed && styles.itemPressed]}
               >
                 <Feather name={item.icon} size={22} color={colors.text} />
                 <Text style={styles.itemLabel}>{item.label}</Text>

@@ -33,32 +33,22 @@ describe("ServerConnectScreen", () => {
       .mockResolvedValue({ name: "srv", version: "1.0", mobileAuth: true });
     const { getByPlaceholderText, getByText } = render(<ServerConnectScreen />);
 
-    fireEvent.changeText(
-      getByPlaceholderText("http://192.168.1.20:3000"),
-      "  media.local:8080  ",
-    );
+    fireEvent.changeText(getByPlaceholderText("http://192.168.1.20:3000"), "  media.local:8080  ");
     await act(async () => {
       fireEvent.press(getByText("Connect"));
     });
 
     await waitFor(() => {
       expect(getServerInfo).toHaveBeenCalledWith("http://media.local:8080");
-      expect(useSessionStore.getState().serverUrl).toBe(
-        "http://media.local:8080",
-      );
+      expect(useSessionStore.getState().serverUrl).toBe("http://media.local:8080");
     });
   });
 
   it("shows an alert when the server does not advertise mobile auth", async () => {
-    jest
-      .spyOn(api, "getServerInfo")
-      .mockResolvedValue({ name: "srv", version: "1.0", mobileAuth: false });
+    jest.spyOn(api, "getServerInfo").mockResolvedValue({ name: "srv", version: "1.0", mobileAuth: false });
     const { getByPlaceholderText, getByText } = render(<ServerConnectScreen />);
 
-    fireEvent.changeText(
-      getByPlaceholderText("http://192.168.1.20:3000"),
-      "media.local",
-    );
+    fireEvent.changeText(getByPlaceholderText("http://192.168.1.20:3000"), "media.local");
     await act(async () => {
       fireEvent.press(getByText("Connect"));
     });
@@ -76,10 +66,7 @@ describe("ServerConnectScreen", () => {
     jest.spyOn(api, "getServerInfo").mockRejectedValue(new Error("boom"));
     const { getByPlaceholderText, getByText } = render(<ServerConnectScreen />);
 
-    fireEvent.changeText(
-      getByPlaceholderText("http://192.168.1.20:3000"),
-      "media.local",
-    );
+    fireEvent.changeText(getByPlaceholderText("http://192.168.1.20:3000"), "media.local");
     await act(async () => {
       fireEvent.press(getByText("Connect"));
     });
@@ -93,19 +80,13 @@ describe("ServerConnectScreen", () => {
     jest.spyOn(api, "getServerInfo").mockRejectedValue("weird");
     const { getByPlaceholderText, getByText } = render(<ServerConnectScreen />);
 
-    fireEvent.changeText(
-      getByPlaceholderText("http://192.168.1.20:3000"),
-      "media.local",
-    );
+    fireEvent.changeText(getByPlaceholderText("http://192.168.1.20:3000"), "media.local");
     await act(async () => {
       fireEvent.press(getByText("Connect"));
     });
 
     await waitFor(() => {
-      expect(Alert.alert).toHaveBeenCalledWith(
-        "Connection failed",
-        "Unable to reach the server.",
-      );
+      expect(Alert.alert).toHaveBeenCalledWith("Connection failed", "Unable to reach the server.");
     });
   });
 });

@@ -2,9 +2,7 @@ jest.mock("expo-secure-store", () => {
   const store = new Map<string, string>();
   return {
     __store: store,
-    getItemAsync: jest.fn(async (key: string) =>
-      store.has(key) ? store.get(key)! : null,
-    ),
+    getItemAsync: jest.fn(async (key: string) => (store.has(key) ? store.get(key)! : null)),
     setItemAsync: jest.fn(async (key: string, value: string) => {
       store.set(key, value);
     }),
@@ -15,14 +13,10 @@ jest.mock("expo-secure-store", () => {
 });
 
 import * as SecureStore from "expo-secure-store";
-import {
-  loadSessionSnapshot,
-  saveSessionSnapshot,
-} from "../../src/storage/sessionStorage";
+import { loadSessionSnapshot, saveSessionSnapshot } from "../../src/storage/sessionStorage";
 import type { ProfileData, PublicProfile } from "../../src/types/api";
 
-const mockedStore = (SecureStore as unknown as { __store: Map<string, string> })
-  .__store;
+const mockedStore = (SecureStore as unknown as { __store: Map<string, string> }).__store;
 
 const profile: ProfileData = {
   id: 1,
@@ -75,16 +69,10 @@ describe("sessionStorage", () => {
       selectedProfile: null,
     });
 
-    expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith(
-      "ossflix_mobile_token",
-    );
-    expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith(
-      "ossflix_mobile_profile",
-    );
+    expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith("ossflix_mobile_token");
+    expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith("ossflix_mobile_profile");
     expect(mockedStore.has("ossflix_mobile_token")).toBe(false);
     expect(mockedStore.has("ossflix_mobile_profile")).toBe(false);
-    expect(mockedStore.get("ossflix_mobile_server_url")).toBe(
-      "http://media.local",
-    );
+    expect(mockedStore.get("ossflix_mobile_server_url")).toBe("http://media.local");
   });
 });

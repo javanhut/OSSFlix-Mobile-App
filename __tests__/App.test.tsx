@@ -24,8 +24,7 @@ jest.mock("expo-status-bar", () => ({
 jest.mock("../src/providers/AppProviders", () => {
   const React = require("react");
   return {
-    AppProviders: ({ children }: any) =>
-      React.createElement(React.Fragment, null, children),
+    AppProviders: ({ children }: any) => React.createElement(React.Fragment, null, children),
   };
 });
 

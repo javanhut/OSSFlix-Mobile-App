@@ -1,11 +1,7 @@
 import { useMemo } from "react";
 import { ActivityIndicator, FlatList, StyleSheet, View } from "react-native";
 import { useQuery } from "@tanstack/react-query";
-import {
-  type RouteProp,
-  useNavigation,
-  useRoute,
-} from "@react-navigation/native";
+import { type RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { api } from "../api/client";
@@ -21,8 +17,7 @@ const ANIME_ALIASES = new Set(["anime", "animation"]);
 export function GenreScreen() {
   useAllowRotation();
   const route = useRoute<RouteProp<RootStackParamList, "Genre">>();
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { genre } = route.params;
   const query = useQuery({
     queryKey: ["categories"],
@@ -60,27 +55,18 @@ export function GenreScreen() {
           <AppHeader
             eyebrow="Genre"
             title={row?.genre || genre}
-            subtitle={
-              row
-                ? `Browse every title in ${row.genre}.`
-                : `No titles tagged "${genre}" yet.`
-            }
+            subtitle={row ? `Browse every title in ${row.genre}.` : `No titles tagged "${genre}" yet.`}
           />
         </View>
       }
       ListEmptyComponent={
-        <EmptyState
-          title={`No ${genre} titles`}
-          subtitle="Nothing in this genre is indexed on this server."
-        />
+        <EmptyState title={`No ${genre} titles`} subtitle="Nothing in this genre is indexed on this server." />
       }
       renderItem={({ item }) => (
         <TitleCard
           item={item}
           width={160}
-          onPress={() =>
-            navigation.navigate("TitleDetails", { dirPath: item.pathToDir })
-          }
+          onPress={() => navigation.navigate("TitleDetails", { dirPath: item.pathToDir })}
         />
       )}
     />

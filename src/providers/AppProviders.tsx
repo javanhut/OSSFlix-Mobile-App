@@ -6,10 +6,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { bootstrapDownloads } from "../downloads/downloadManager";
 import { buildSessionSnapshot, useSessionStore } from "../state/session";
-import {
-  loadSessionSnapshot,
-  saveSessionSnapshot,
-} from "../storage/sessionStorage";
+import { loadSessionSnapshot, saveSessionSnapshot } from "../storage/sessionStorage";
 import { colors } from "../theme/colors";
 
 const queryClient = new QueryClient();

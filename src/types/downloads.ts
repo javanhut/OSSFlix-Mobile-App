@@ -1,7 +1,6 @@
 import type { EpisodeTiming } from "./api";
 
-export type DownloadStatus =
-  "queued" | "downloading" | "paused" | "completed" | "failed";
+export type DownloadStatus = "queued" | "downloading" | "paused" | "completed" | "failed";
 
 export interface OfflineSubtitle {
   label: string;

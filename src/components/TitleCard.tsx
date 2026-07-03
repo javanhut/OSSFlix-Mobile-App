@@ -5,20 +5,9 @@ import { colors } from "../theme/colors";
 import type { TitleSummary } from "../types/api";
 import { formatTitleType } from "../utils/titleType";
 
-export function TitleCard({
-  item,
-  onPress,
-  width = 170,
-}: {
-  item: TitleSummary;
-  onPress: () => void;
-  width?: number;
-}) {
+export function TitleCard({ item, onPress, width = 170 }: { item: TitleSummary; onPress: () => void; width?: number }) {
   const imageUrl = resolveAssetUrl(item.imagePath);
-  const progress =
-    typeof item.progressPct === "number"
-      ? Math.max(0, Math.min(100, item.progressPct))
-      : 0;
+  const progress = typeof item.progressPct === "number" ? Math.max(0, Math.min(100, item.progressPct)) : 0;
 
   return (
     <Pressable onPress={onPress} style={[styles.card, { width }]}>
@@ -31,15 +20,8 @@ export function TitleCard({
           </View>
         )}
         {progress > 0 ? (
-          <View
-            style={styles.progressTrack}
-            pointerEvents="none"
-            testID="title-card-progress"
-          >
-            <View
-              style={[styles.progressFill, { width: `${progress}%` }]}
-              testID="title-card-progress-fill"
-            />
+          <View style={styles.progressTrack} pointerEvents="none" testID="title-card-progress">
+            <View style={[styles.progressFill, { width: `${progress}%` }]} testID="title-card-progress-fill" />
           </View>
         ) : null}
       </View>

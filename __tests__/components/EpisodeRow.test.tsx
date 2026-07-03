@@ -6,21 +6,13 @@ const parsed = { season: 1, episode: 2, title: "The Bank Job", ext: "mkv" };
 
 describe("EpisodeRow", () => {
   it("renders the Episode N badge and title for a parsed episode", () => {
-    const { getByText } = render(
-      <EpisodeRow parsed={parsed} fallbackLabel="ignored" onPlay={() => {}} />,
-    );
+    const { getByText } = render(<EpisodeRow parsed={parsed} fallbackLabel="ignored" onPlay={() => {}} />);
     expect(getByText("Episode 2")).toBeTruthy();
     expect(getByText("The Bank Job")).toBeTruthy();
   });
 
   it('renders "Movie" badge and fallback label when parsed is null', () => {
-    const { getByText } = render(
-      <EpisodeRow
-        parsed={null}
-        fallbackLabel="Random Clip"
-        onPlay={() => {}}
-      />,
-    );
+    const { getByText } = render(<EpisodeRow parsed={null} fallbackLabel="Random Clip" onPlay={() => {}} />);
     expect(getByText("Movie")).toBeTruthy();
     expect(getByText("Random Clip")).toBeTruthy();
   });
@@ -60,12 +52,7 @@ describe("EpisodeRow", () => {
 
   it("renders no meta and no restart when there is no progress data", () => {
     const { queryByLabelText, queryByText } = render(
-      <EpisodeRow
-        parsed={parsed}
-        fallbackLabel="-"
-        onPlay={() => {}}
-        onRestart={() => {}}
-      />,
+      <EpisodeRow parsed={parsed} fallbackLabel="-" onPlay={() => {}} onRestart={() => {}} />,
     );
     expect(queryByLabelText("Play from beginning")).toBeNull();
     expect(queryByText(/\d+:\d{2}/)).toBeNull();
@@ -73,9 +60,7 @@ describe("EpisodeRow", () => {
 
   it("fires onPlay when the row is pressed", () => {
     const onPlay = jest.fn();
-    const { getByLabelText } = render(
-      <EpisodeRow parsed={parsed} fallbackLabel="-" onPlay={onPlay} />,
-    );
+    const { getByLabelText } = render(<EpisodeRow parsed={parsed} fallbackLabel="-" onPlay={onPlay} />);
     fireEvent.press(getByLabelText("Play Episode 2"));
     expect(onPlay).toHaveBeenCalledTimes(1);
   });

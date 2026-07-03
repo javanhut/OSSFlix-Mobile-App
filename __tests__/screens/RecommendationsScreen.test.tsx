@@ -46,9 +46,7 @@ describe("RecommendationsScreen", () => {
     jest.spyOn(api, "getCategories").mockResolvedValue([
       {
         genre: "Newly Added",
-        titles: [
-          { pathToDir: "x", name: "Alpha", imagePath: null, type: "Movie" },
-        ],
+        titles: [{ pathToDir: "x", name: "Alpha", imagePath: null, type: "Movie" }],
       },
     ] as any);
     const { findAllByText } = renderWithQuery(<RecommendationsScreen />);

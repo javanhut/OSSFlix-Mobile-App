@@ -1,11 +1,5 @@
 import { useState } from "react";
-import {
-  Pressable,
-  StyleSheet,
-  TextInput,
-  type TextInputProps,
-  View,
-} from "react-native";
+import { Pressable, StyleSheet, TextInput, type TextInputProps, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
 import { colors } from "../theme/colors";
@@ -15,11 +9,7 @@ type Props = Omit<TextInputProps, "secureTextEntry"> & {
   placeholderTextColor?: string;
 };
 
-export function PasswordField({
-  style,
-  placeholderTextColor,
-  ...textProps
-}: Props) {
+export function PasswordField({ style, placeholderTextColor, ...textProps }: Props) {
   const [visible, setVisible] = useState(false);
 
   return (
@@ -36,17 +26,10 @@ export function PasswordField({
         onPress={() => setVisible((v) => !v)}
         accessibilityRole="button"
         accessibilityLabel={visible ? "Hide password" : "Show password"}
-        style={({ pressed }) => [
-          styles.toggle,
-          pressed && styles.togglePressed,
-        ]}
+        style={({ pressed }) => [styles.toggle, pressed && styles.togglePressed]}
         hitSlop={10}
       >
-        <Feather
-          name={visible ? "eye-off" : "eye"}
-          size={18}
-          color={colors.textMuted}
-        />
+        <Feather name={visible ? "eye-off" : "eye"} size={18} color={colors.textMuted} />
       </Pressable>
     </View>
   );

@@ -69,10 +69,7 @@ describe("RegisterScreen", () => {
       fireEvent.press(getByText("Create Account"));
     });
     await waitFor(() => {
-      expect(Alert.alert).toHaveBeenCalledWith(
-        "Registration failed",
-        "Unable to create the profile.",
-      );
+      expect(Alert.alert).toHaveBeenCalledWith("Registration failed", "Unable to create the profile.");
     });
   });
 });

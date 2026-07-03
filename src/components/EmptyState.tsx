@@ -1,13 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 import { colors } from "../theme/colors";
 
-export function EmptyState({
-  title,
-  subtitle,
-}: {
-  title: string;
-  subtitle: string;
-}) {
+export function EmptyState({ title, subtitle }: { title: string; subtitle: string }) {
   return (
     <View style={styles.wrap}>
       <Text style={styles.title}>{title}</Text>

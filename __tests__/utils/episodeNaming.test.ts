@@ -25,35 +25,25 @@ describe("titleFromStem", () => {
 
 describe("formatEpisodeLabel", () => {
   it("includes the title when present", () => {
-    expect(
-      formatEpisodeLabel({ season: 1, episode: 2, title: "Pilot", ext: "mkv" }),
-    ).toBe("S1 E2 - Pilot");
+    expect(formatEpisodeLabel({ season: 1, episode: 2, title: "Pilot", ext: "mkv" })).toBe("S1 E2 - Pilot");
   });
 
   it("omits the dash when title is empty", () => {
-    expect(
-      formatEpisodeLabel({ season: 3, episode: 4, title: "", ext: "mkv" }),
-    ).toBe("S3 E4");
+    expect(formatEpisodeLabel({ season: 3, episode: 4, title: "", ext: "mkv" })).toBe("S3 E4");
   });
 });
 
 describe("canonicalFilename", () => {
   it("pads season and episode to two digits", () => {
-    expect(
-      canonicalFilename({ season: 1, episode: 2, title: "Pilot", ext: "mkv" }),
-    ).toBe("pilot_s01_ep02.mkv");
+    expect(canonicalFilename({ season: 1, episode: 2, title: "Pilot", ext: "mkv" })).toBe("pilot_s01_ep02.mkv");
   });
 
   it("falls back to 'episode' when the title slugs to empty", () => {
-    expect(
-      canonicalFilename({ season: 1, episode: 2, title: "///", ext: "mkv" }),
-    ).toBe("episode_s01_ep02.mkv");
+    expect(canonicalFilename({ season: 1, episode: 2, title: "///", ext: "mkv" })).toBe("episode_s01_ep02.mkv");
   });
 
   it("uses the raw number when ≥10", () => {
-    expect(
-      canonicalFilename({ season: 12, episode: 23, title: "Big", ext: "mkv" }),
-    ).toBe("big_s12_ep23.mkv");
+    expect(canonicalFilename({ season: 12, episode: 23, title: "Big", ext: "mkv" })).toBe("big_s12_ep23.mkv");
   });
 });
 
@@ -82,9 +72,7 @@ describe("parseEpisodePath", () => {
   });
 
   it("strips duplicate s##_ep## tokens in the title remnant", () => {
-    const parsed = parseEpisodePath(
-      "something_s02_ep11_summer_of_growth_s02_ep11.mkv",
-    );
+    const parsed = parseEpisodePath("something_s02_ep11_summer_of_growth_s02_ep11.mkv");
     expect(parsed?.season).toBe(2);
     expect(parsed?.episode).toBe(11);
     expect(parsed?.title).toBe("Something Summer Of Growth");
@@ -118,10 +106,7 @@ describe("detectVariant", () => {
 
 describe("inferEpisodeVariants", () => {
   it("returns explicit variants and infers the missing partner", () => {
-    const map = inferEpisodeVariants([
-      "show/s01/ep01/foo_s01_ep01_sub.mkv",
-      "show/s01/ep01/foo_s01_ep01.mkv",
-    ]);
+    const map = inferEpisodeVariants(["show/s01/ep01/foo_s01_ep01_sub.mkv", "show/s01/ep01/foo_s01_ep01.mkv"]);
     expect(map.get("show/s01/ep01/foo_s01_ep01_sub.mkv")).toBe("sub");
     // Untagged sibling should be inferred as dub.
     expect(map.get("show/s01/ep01/foo_s01_ep01.mkv")).toBe("dub");
@@ -133,10 +118,7 @@ describe("inferEpisodeVariants", () => {
   });
 
   it("does not infer when both variants are explicitly present", () => {
-    const map = inferEpisodeVariants([
-      "show/s01/ep01/foo_s01_ep01_sub.mkv",
-      "show/s01/ep01/foo_s01_ep01_dub.mkv",
-    ]);
+    const map = inferEpisodeVariants(["show/s01/ep01/foo_s01_ep01_sub.mkv", "show/s01/ep01/foo_s01_ep01_dub.mkv"]);
     expect(map.get("show/s01/ep01/foo_s01_ep01_sub.mkv")).toBe("sub");
     expect(map.get("show/s01/ep01/foo_s01_ep01_dub.mkv")).toBe("dub");
   });
@@ -144,12 +126,7 @@ describe("inferEpisodeVariants", () => {
 
 describe("compareVideoSrc", () => {
   it("sorts by season then episode when both paths are parseable", () => {
-    const inputs = [
-      "show/s01/ep03/c.mkv",
-      "show/s02/ep01/d.mkv",
-      "show/s01/ep01/a.mkv",
-      "show/s01/ep02/b.mkv",
-    ];
+    const inputs = ["show/s01/ep03/c.mkv", "show/s02/ep01/d.mkv", "show/s01/ep01/a.mkv", "show/s01/ep02/b.mkv"];
     const sorted = [...inputs].sort(compareVideoSrc);
     expect(sorted).toEqual([
       "show/s01/ep01/a.mkv",
@@ -165,9 +142,7 @@ describe("compareVideoSrc", () => {
   });
 
   it("falls back to numeric localeCompare when neither side parses", () => {
-    const sorted = ["track 2.mkv", "track 10.mkv", "track 1.mkv"].sort(
-      compareVideoSrc,
-    );
+    const sorted = ["track 2.mkv", "track 10.mkv", "track 1.mkv"].sort(compareVideoSrc);
     expect(sorted).toEqual(["track 1.mkv", "track 2.mkv", "track 10.mkv"]);
   });
 });

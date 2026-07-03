@@ -1,25 +1,12 @@
 import { useMemo } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { AppHeader } from "../components/AppHeader";
 import { EmptyState } from "../components/EmptyState";
-import {
-  deleteDownload,
-  pauseDownload,
-  resumeDownload,
-} from "../downloads/downloadManager";
+import { deleteDownload, pauseDownload, resumeDownload } from "../downloads/downloadManager";
 import { useAllowRotation } from "../hooks/useAllowRotation";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { useDownloadsStore } from "../state/downloads";
@@ -35,11 +22,7 @@ type TitleGroup = {
 
 function sortItems(items: DownloadItem[]): DownloadItem[] {
   return [...items].sort((a, b) => {
-    const labelCmp = (a.episodeLabel ?? "").localeCompare(
-      b.episodeLabel ?? "",
-      undefined,
-      { numeric: true },
-    );
+    const labelCmp = (a.episodeLabel ?? "").localeCompare(b.episodeLabel ?? "", undefined, { numeric: true });
     if (labelCmp !== 0) return labelCmp;
     return a.createdAt - b.createdAt;
   });
@@ -47,8 +30,7 @@ function sortItems(items: DownloadItem[]): DownloadItem[] {
 
 export function DownloadsScreen() {
   useAllowRotation();
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const items = useDownloadsStore((state) => state.items);
   const progress = useDownloadsStore((state) => state.progress);
   const profileId = useSessionStore((state) => state.profile?.id ?? null);
@@ -56,12 +38,7 @@ export function DownloadsScreen() {
   const groups = useMemo<TitleGroup[]>(() => {
     const byDir = new Map<string, TitleGroup>();
     for (const item of Object.values(items)) {
-      if (
-        profileId != null &&
-        item.profileId != null &&
-        item.profileId !== profileId
-      )
-        continue;
+      if (profileId != null && item.profileId != null && item.profileId !== profileId) continue;
       const group = byDir.get(item.dirPath);
       if (group) {
         group.items.push(item);
@@ -79,9 +56,7 @@ export function DownloadsScreen() {
   }, [items, profileId]);
 
   const playOffline = (group: TitleGroup, item: DownloadItem) => {
-    const completed = group.items.filter(
-      (entry) => entry.status === "completed" && entry.fileUri,
-    );
+    const completed = group.items.filter((entry) => entry.status === "completed" && entry.fileUri);
     const startIndex = Math.max(
       0,
       completed.findIndex((entry) => entry.id === item.id),
@@ -103,18 +78,14 @@ export function DownloadsScreen() {
   };
 
   const confirmDelete = (item: DownloadItem) => {
-    Alert.alert(
-      "Remove download",
-      `Delete "${item.episodeLabel || item.title}" from this device?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => void deleteDownload(item.id),
-        },
-      ],
-    );
+    Alert.alert("Remove download", `Delete "${item.episodeLabel || item.title}" from this device?`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => void deleteDownload(item.id),
+      },
+    ]);
   };
 
   return (
@@ -174,10 +145,8 @@ function DownloadRow({
   const pct = Math.round(Math.max(0, Math.min(1, item.progress)) * 100);
 
   let statusLabel: string;
-  if (isCompleted)
-    statusLabel = resumeTime > 0 ? "Downloaded · Resume" : "Downloaded";
-  else if (isDownloading)
-    statusLabel = indeterminate ? "Downloading…" : `Downloading ${pct}%`;
+  if (isCompleted) statusLabel = resumeTime > 0 ? "Downloaded · Resume" : "Downloaded";
+  else if (isDownloading) statusLabel = indeterminate ? "Downloading…" : `Downloading ${pct}%`;
   else if (item.status === "paused") statusLabel = "Paused";
   else if (item.status === "failed") statusLabel = "Failed — tap to retry";
   else statusLabel = "Queued";
@@ -186,17 +155,9 @@ function DownloadRow({
     <View style={styles.row}>
       <Pressable
         style={styles.rowMain}
-        onPress={
-          isCompleted
-            ? onPlay
-            : item.status === "paused" || item.status === "failed"
-              ? onResume
-              : undefined
-        }
+        onPress={isCompleted ? onPlay : item.status === "paused" || item.status === "failed" ? onResume : undefined}
         accessibilityRole="button"
-        accessibilityLabel={
-          isCompleted ? `Play ${item.episodeLabel || item.title}` : statusLabel
-        }
+        accessibilityLabel={isCompleted ? `Play ${item.episodeLabel || item.title}` : statusLabel}
       >
         {item.posterUri ? (
           <Image source={{ uri: item.posterUri }} style={styles.poster} />
@@ -209,14 +170,7 @@ function DownloadRow({
           <Text style={styles.label} numberOfLines={1}>
             {item.episodeLabel || item.title}
           </Text>
-          <Text
-            style={[
-              styles.status,
-              item.status === "failed" && styles.statusFailed,
-            ]}
-          >
-            {statusLabel}
-          </Text>
+          <Text style={[styles.status, item.status === "failed" && styles.statusFailed]}>{statusLabel}</Text>
           {isDownloading && !indeterminate ? (
             <View style={styles.progressTrack}>
               <View style={[styles.progressFill, { width: `${pct}%` }]} />
@@ -228,28 +182,16 @@ function DownloadRow({
         ) : isDownloading ? (
           <ActivityIndicator size="small" color={colors.primary} />
         ) : (
-          <Feather
-            name={item.status === "failed" ? "refresh-cw" : "play"}
-            size={18}
-            color={colors.textMuted}
-          />
+          <Feather name={item.status === "failed" ? "refresh-cw" : "play"} size={18} color={colors.textMuted} />
         )}
       </Pressable>
       <View style={styles.actions}>
         {isDownloading ? (
-          <Pressable
-            onPress={onPause}
-            style={styles.actionButton}
-            accessibilityLabel="Pause download"
-          >
+          <Pressable onPress={onPause} style={styles.actionButton} accessibilityLabel="Pause download">
             <Feather name="pause" size={16} color={colors.text} />
           </Pressable>
         ) : null}
-        <Pressable
-          onPress={onDelete}
-          style={styles.actionButton}
-          accessibilityLabel="Delete download"
-        >
+        <Pressable onPress={onDelete} style={styles.actionButton} accessibilityLabel="Delete download">
           <Feather name="trash-2" size={16} color={colors.text} />
         </Pressable>
       </View>

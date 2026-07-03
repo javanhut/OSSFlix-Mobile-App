@@ -5,12 +5,8 @@
  * branches.
  */
 
-const mockGetItemAsync = jest.fn<Promise<string | null>, [string]>(
-  async () => null,
-);
-const mockSetItemAsync = jest.fn<Promise<void>, [string, string]>(
-  async () => {},
-);
+const mockGetItemAsync = jest.fn<Promise<string | null>, [string]>(async () => null);
+const mockSetItemAsync = jest.fn<Promise<void>, [string, string]>(async () => {});
 const mockDeleteItemAsync = jest.fn<Promise<void>, [string]>(async () => {});
 
 jest.mock("expo-secure-store", () => ({
@@ -101,9 +97,7 @@ describe("AppProviders", () => {
         <Text>child</Text>
       </AppProviders>,
     );
-    await waitFor(() =>
-      expect(useSessionStore.getState().bootstrapped).toBe(true),
-    );
+    await waitFor(() => expect(useSessionStore.getState().bootstrapped).toBe(true));
 
     await act(async () => {
       useSessionStore.getState().setServerUrl("http://new.local");
@@ -111,10 +105,7 @@ describe("AppProviders", () => {
       await Promise.resolve();
     });
     await waitFor(() => {
-      expect(mockSetItemAsync).toHaveBeenCalledWith(
-        "ossflix_mobile_server_url",
-        "http://new.local",
-      );
+      expect(mockSetItemAsync).toHaveBeenCalledWith("ossflix_mobile_server_url", "http://new.local");
     });
   });
 });

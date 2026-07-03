@@ -11,10 +11,7 @@ export function makeQueryClient(): QueryClient {
   });
 }
 
-export function renderWithQuery(
-  ui: React.ReactElement,
-  options: { client?: QueryClient } & RenderOptions = {},
-) {
+export function renderWithQuery(ui: React.ReactElement, options: { client?: QueryClient } & RenderOptions = {}) {
   const { client = makeQueryClient(), ...renderOptions } = options;
   const Wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
     <QueryClientProvider client={client}>{children}</QueryClientProvider>

@@ -17,11 +17,7 @@ import { Feather } from "@expo/vector-icons";
 import { api, resolveAssetUrl } from "../api/client";
 import { EmptyState } from "../components/EmptyState";
 import { EpisodeRow } from "../components/EpisodeRow";
-import {
-  deleteDownload,
-  makeDownloadId,
-  startDownload,
-} from "../downloads/downloadManager";
+import { deleteDownload, makeDownloadId, startDownload } from "../downloads/downloadManager";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { useDownloadsStore } from "../state/downloads";
 import { useSessionStore } from "../state/session";
@@ -105,15 +101,9 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
     },
     onError: (error, _vars, context) => {
       if (context?.previous !== undefined) {
-        queryClient.setQueryData(
-          ["watchlist-check", dirPath],
-          context.previous,
-        );
+        queryClient.setQueryData(["watchlist-check", dirPath], context.previous);
       }
-      Alert.alert(
-        "Unable to update My List",
-        error instanceof Error ? error.message : "Request failed.",
-      );
+      Alert.alert("Unable to update My List", error instanceof Error ? error.message : "Request failed.");
     },
     onSettled: async () => {
       await Promise.all([
@@ -130,10 +120,7 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
   const downloadItems = useDownloadsStore((state) => state.items);
   const profileId = useSessionStore((state) => state.profile?.id ?? null);
 
-  const variantMap = useMemo(
-    () => inferEpisodeVariants(details?.videos || []),
-    [details?.videos],
-  );
+  const variantMap = useMemo(() => inferEpisodeVariants(details?.videos || []), [details?.videos]);
   const availableVariants = useMemo(() => {
     const set = new Set<AudioVariant>();
     for (const v of variantMap.values()) {
@@ -141,12 +128,9 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
     }
     return set;
   }, [variantMap]);
-  const hasBothVariants =
-    availableVariants.has("sub") && availableVariants.has("dub");
+  const hasBothVariants = availableVariants.has("sub") && availableVariants.has("dub");
 
-  const [selectedVariant, setSelectedVariant] = useState<AudioSelection | null>(
-    null,
-  );
+  const [selectedVariant, setSelectedVariant] = useState<AudioSelection | null>(null);
 
   useEffect(() => {
     if (hasBothVariants && selectedVariant === null) {
@@ -158,11 +142,7 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
 
   const filteredVideos = useMemo(() => {
     const videos = details?.videos || [];
-    if (
-      selectedVariant === "both" ||
-      !hasBothVariants ||
-      selectedVariant === null
-    ) {
+    if (selectedVariant === "both" || !hasBothVariants || selectedVariant === null) {
       return videos;
     }
     const variantFiltered = videos.filter((v) => {
@@ -188,9 +168,7 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
     const winnerByKey = new Map<string, string>();
     for (const [key, candidates] of groups) {
       const winner =
-        candidates.length > 1
-          ? [...candidates].sort((a, b) => pickRank(a) - pickRank(b))[0]!
-          : candidates[0]!;
+        candidates.length > 1 ? [...candidates].sort((a, b) => pickRank(a) - pickRank(b))[0]! : candidates[0]!;
       winnerByKey.set(key, winner);
     }
     const emitted = new Set<string>();
@@ -232,10 +210,7 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
     return { bySeason, other };
   }, [details, filteredVideos]);
 
-  const seasonKeys = useMemo(
-    () => [...grouped.bySeason.keys()].sort((a, b) => a - b),
-    [grouped.bySeason],
-  );
+  const seasonKeys = useMemo(() => [...grouped.bySeason.keys()].sort((a, b) => a - b), [grouped.bySeason]);
 
   const progressByVideo = useMemo(() => {
     const map = new Map<string, { current_time: number; duration: number }>();
@@ -253,8 +228,7 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
 
   const effectiveSeason = selectedSeason ?? seasonKeys[0] ?? null;
   const seasonMeta = useMemo(
-    () =>
-      details?.seasonsMeta?.find((m) => m.season === effectiveSeason) ?? null,
+    () => details?.seasonsMeta?.find((m) => m.season === effectiveSeason) ?? null,
     [details?.seasonsMeta, effectiveSeason],
   );
 
@@ -262,9 +236,7 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
     if (!filteredVideos.length) return null;
     const progressEntries = progressQuery.data || [];
     const resumeEntry = progressEntries.find(
-      (entry) =>
-        entry.current_time > 0 &&
-        (entry.duration === 0 || entry.current_time < entry.duration - 5),
+      (entry) => entry.current_time > 0 && (entry.duration === 0 || entry.current_time < entry.duration - 5),
     );
     if (resumeEntry) {
       const startIndex = filteredVideos.indexOf(resumeEntry.video_src);
@@ -305,18 +277,14 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
 
   const deleteEpisodeDownload = (entry: EpisodeEntry) => {
     const id = makeDownloadId(entry.video, 0);
-    Alert.alert(
-      "Remove download",
-      `Delete "${entry.label}" from this device?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => void deleteDownload(id),
-        },
-      ],
-    );
+    Alert.alert("Remove download", `Delete "${entry.label}" from this device?`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => void deleteDownload(id),
+      },
+    ]);
   };
 
   const downloadAll = () => {
@@ -325,20 +293,13 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
     }
   };
 
-  const visibleEntries =
-    effectiveSeason != null
-      ? (grouped.bySeason.get(effectiveSeason) ?? [])
-      : grouped.other;
+  const visibleEntries = effectiveSeason != null ? (grouped.bySeason.get(effectiveSeason) ?? []) : grouped.other;
 
   const showDropdown = seasonKeys.length >= 2;
 
   const detailsPanel = (
     <>
-      {imageUrl ? (
-        <Image source={{ uri: imageUrl }} style={styles.poster} />
-      ) : (
-        <View style={styles.posterFallback} />
-      )}
+      {imageUrl ? <Image source={{ uri: imageUrl }} style={styles.poster} /> : <View style={styles.posterFallback} />}
       <Text style={styles.title}>{details.name}</Text>
       <Text style={styles.meta}>{formatTitleType(details.type)}</Text>
       <Text style={styles.description}>{description}</Text>
@@ -348,19 +309,14 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
             <Pressable
               key={genre}
               onPress={() => navigation.navigate("Genre", { genre })}
-              style={({ pressed }) => [
-                styles.chip,
-                pressed && styles.chipPressed,
-              ]}
+              style={({ pressed }) => [styles.chip, pressed && styles.chipPressed]}
             >
               <Text style={styles.chipLabel}>{genre}</Text>
             </Pressable>
           ))}
         </View>
       ) : null}
-      {details.cast?.length ? (
-        <Text style={styles.cast}>Cast: {details.cast.join(", ")}</Text>
-      ) : null}
+      {details.cast?.length ? <Text style={styles.cast}>Cast: {details.cast.join(", ")}</Text> : null}
       <View style={styles.actionRow}>
         <Pressable
           onPress={() =>
@@ -375,32 +331,18 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
             })
           }
           disabled={!playTarget}
-          style={[
-            styles.primaryButton,
-            !playTarget && styles.primaryButtonDisabled,
-          ]}
+          style={[styles.primaryButton, !playTarget && styles.primaryButtonDisabled]}
         >
           <View style={styles.buttonContent}>
-            <Feather
-              name={playTarget?.initialTime ? "play" : "play-circle"}
-              size={18}
-              color={colors.primaryText}
-            />
-            <Text style={styles.primaryLabel}>
-              {playTarget?.initialTime ? "Resume" : "Play"}
-            </Text>
+            <Feather name={playTarget?.initialTime ? "play" : "play-circle"} size={18} color={colors.primaryText} />
+            <Text style={styles.primaryLabel}>{playTarget?.initialTime ? "Resume" : "Play"}</Text>
           </View>
         </Pressable>
-        <Pressable
-          onPress={() => toggleWatchlist.mutate()}
-          style={styles.secondaryButton}
-        >
+        <Pressable onPress={() => toggleWatchlist.mutate()} style={styles.secondaryButton}>
           <View style={styles.buttonContent}>
             <Feather name="bookmark" size={18} color={colors.text} />
             <Text style={styles.secondaryLabel}>
-              {watchlistQuery.data?.inList
-                ? "Remove from My List"
-                : "Add to My List"}
+              {watchlistQuery.data?.inList ? "Remove from My List" : "Add to My List"}
             </Text>
           </View>
         </Pressable>
@@ -409,9 +351,7 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
             <View style={styles.buttonContent}>
               <Feather name="download" size={18} color={colors.text} />
               <Text style={styles.secondaryLabel}>
-                {filteredVideos.length > 1
-                  ? `Download all (${filteredVideos.length})`
-                  : "Download"}
+                {filteredVideos.length > 1 ? `Download all (${filteredVideos.length})` : "Download"}
               </Text>
             </View>
           </Pressable>
@@ -424,18 +364,9 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
     <>
       {showDropdown ? (
         <View style={styles.seasonSection}>
-          <Pressable
-            onPress={() => setSeasonMenuOpen((open) => !open)}
-            style={styles.seasonTrigger}
-          >
-            <Text style={styles.seasonTriggerLabel}>
-              Season {effectiveSeason}
-            </Text>
-            <Feather
-              name={seasonMenuOpen ? "chevron-up" : "chevron-down"}
-              size={18}
-              color={colors.text}
-            />
+          <Pressable onPress={() => setSeasonMenuOpen((open) => !open)} style={styles.seasonTrigger}>
+            <Text style={styles.seasonTriggerLabel}>Season {effectiveSeason}</Text>
+            <Feather name={seasonMenuOpen ? "chevron-up" : "chevron-down"} size={18} color={colors.text} />
           </Pressable>
           {seasonMenuOpen ? (
             <View style={styles.menuSheet}>
@@ -463,38 +394,21 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
         <View style={styles.variantRow}>
           {(["sub", "dub", "both"] as AudioSelection[]).map((option) => {
             const active = (selectedVariant ?? "sub") === option;
-            const label =
-              option === "both"
-                ? "Sub + Dub"
-                : option === "sub"
-                  ? "Sub"
-                  : "Dub";
+            const label = option === "both" ? "Sub + Dub" : option === "sub" ? "Sub" : "Dub";
             return (
               <Pressable
                 key={option}
                 onPress={() => setSelectedVariant(option)}
-                style={[
-                  styles.variantOption,
-                  active && styles.variantOptionActive,
-                ]}
+                style={[styles.variantOption, active && styles.variantOptionActive]}
               >
-                <Text
-                  style={[
-                    styles.variantLabel,
-                    active && styles.variantLabelActive,
-                  ]}
-                >
-                  {label}
-                </Text>
+                <Text style={[styles.variantLabel, active && styles.variantLabelActive]}>{label}</Text>
               </Pressable>
             );
           })}
         </View>
       ) : null}
 
-      {seasonKeys.length > 0 ? (
-        <Text style={styles.sectionTitle}>Episodes</Text>
-      ) : null}
+      {seasonKeys.length > 0 ? <Text style={styles.sectionTitle}>Episodes</Text> : null}
       {visibleEntries.length ? (
         visibleEntries.map((entry) => {
           const startIndex = filteredVideos.indexOf(entry.video);

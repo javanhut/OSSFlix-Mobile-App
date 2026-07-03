@@ -1,12 +1,6 @@
 import * as FileSystem from "expo-file-system";
 
-import {
-  loadManifest,
-  posterUri,
-  saveManifest,
-  subtitleUri,
-  videoUri,
-} from "../../src/storage/downloadsStorage";
+import { loadManifest, posterUri, saveManifest, subtitleUri, videoUri } from "../../src/storage/downloadsStorage";
 import type { DownloadsSnapshot } from "../../src/types/downloads";
 
 beforeEach(() => {
@@ -18,9 +12,7 @@ describe("downloadsStorage", () => {
   it("builds stable per-id file paths under the downloads dir", () => {
     expect(videoUri("abc")).toBe("file:///documents/downloads/abc.mp4");
     expect(posterUri("abc")).toBe("file:///documents/downloads/abc.jpg");
-    expect(subtitleUri("abc", "en-US")).toBe(
-      "file:///documents/downloads/abc.enus.vtt",
-    );
+    expect(subtitleUri("abc", "en-US")).toBe("file:///documents/downloads/abc.enus.vtt");
   });
 
   it("returns an empty snapshot when no manifest exists", async () => {

@@ -1,10 +1,4 @@
-import {
-  ActivityIndicator,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
 import { colors } from "../theme/colors";
@@ -28,10 +22,7 @@ function DownloadControl({
   onDeleteDownload?: () => void;
 }) {
   if (status === "downloading" || status === "queued") {
-    const pct =
-      typeof progress === "number" && progress >= 0
-        ? `${Math.round(progress * 100)}%`
-        : null;
+    const pct = typeof progress === "number" && progress >= 0 ? `${Math.round(progress * 100)}%` : null;
     return (
       <View style={styles.downloadButton} accessibilityLabel="Downloading">
         <ActivityIndicator size="small" color={colors.accentText} />
@@ -41,11 +32,7 @@ function DownloadControl({
   }
   if (status === "completed") {
     return (
-      <Pressable
-        onPress={onDeleteDownload}
-        style={styles.downloadButton}
-        accessibilityLabel="Remove download"
-      >
+      <Pressable onPress={onDeleteDownload} style={styles.downloadButton} accessibilityLabel="Remove download">
         <Feather name="check-circle" size={18} color="#22c55e" />
       </Pressable>
     );
@@ -57,11 +44,7 @@ function DownloadControl({
       style={styles.downloadButton}
       accessibilityLabel={retry ? "Retry download" : "Download for offline"}
     >
-      <Feather
-        name={retry ? "refresh-cw" : "download"}
-        size={18}
-        color={colors.accentText}
-      />
+      <Feather name={retry ? "refresh-cw" : "download"} size={18} color={colors.accentText} />
     </Pressable>
   );
 }
@@ -102,19 +85,11 @@ export function EpisodeRow({
     !!progress &&
     progress.current_time > 0 &&
     (progress.duration === 0 || progress.current_time < progress.duration - 5);
-  const isWatched =
-    !!progress &&
-    progress.duration > 0 &&
-    progress.current_time >= progress.duration - 5;
-  const pct =
-    progress && progress.duration > 0
-      ? Math.min(100, (progress.current_time / progress.duration) * 100)
-      : 0;
+  const isWatched = !!progress && progress.duration > 0 && progress.current_time >= progress.duration - 5;
+  const pct = progress && progress.duration > 0 ? Math.min(100, (progress.current_time / progress.duration) * 100) : 0;
 
   const badgeText = parsed ? `Episode ${parsed.episode}` : "Movie";
-  const titleText = parsed
-    ? parsed.title || `Episode ${parsed.episode}`
-    : fallbackLabel;
+  const titleText = parsed ? parsed.title || `Episode ${parsed.episode}` : fallbackLabel;
 
   let metaText: string | null = null;
   if (progress && progress.duration > 0) {
@@ -131,34 +106,16 @@ export function EpisodeRow({
         onPress={onPlay}
         style={({ pressed }) => [styles.main, pressed && styles.mainPressed]}
         accessibilityRole="button"
-        accessibilityLabel={
-          parsed ? `Play Episode ${parsed.episode}` : `Play ${titleText}`
-        }
+        accessibilityLabel={parsed ? `Play Episode ${parsed.episode}` : `Play ${titleText}`}
       >
-        <View
-          style={[
-            styles.badge,
-            isInProgress && styles.badgeInProgress,
-            isWatched && styles.badgeWatched,
-          ]}
-        >
+        <View style={[styles.badge, isInProgress && styles.badgeInProgress, isWatched && styles.badgeWatched]}>
           <Text style={styles.badgeLabel} numberOfLines={1}>
             {badgeText}
           </Text>
-          {isWatched ? (
-            <Feather
-              name="check"
-              size={12}
-              color={colors.primaryText}
-              style={styles.badgeCheck}
-            />
-          ) : null}
+          {isWatched ? <Feather name="check" size={12} color={colors.primaryText} style={styles.badgeCheck} /> : null}
         </View>
         <View style={styles.info}>
-          <Text
-            style={[styles.title, isWatched && styles.titleWatched]}
-            numberOfLines={2}
-          >
+          <Text style={[styles.title, isWatched && styles.titleWatched]} numberOfLines={2}>
             {titleText}
           </Text>
           {metaText ? <Text style={styles.meta}>{metaText}</Text> : null}
@@ -172,21 +129,13 @@ export function EpisodeRow({
               onDeleteDownload={onDeleteDownload}
             />
           ) : null}
-          <Feather
-            name="play"
-            size={16}
-            color={colors.accentText}
-            style={styles.playIcon}
-          />
+          <Feather name="play" size={16} color={colors.accentText} style={styles.playIcon} />
         </View>
       </Pressable>
       {isInProgress && onRestart ? (
         <Pressable
           onPress={onRestart}
-          style={({ pressed }) => [
-            styles.restart,
-            pressed && styles.restartPressed,
-          ]}
+          style={({ pressed }) => [styles.restart, pressed && styles.restartPressed]}
           accessibilityRole="button"
           accessibilityLabel="Play from beginning"
         >
@@ -195,13 +144,7 @@ export function EpisodeRow({
       ) : null}
       {pct > 0 ? (
         <View style={styles.progressTrack} pointerEvents="none">
-          <View
-            style={[
-              styles.progressFill,
-              { width: `${pct}%` },
-              isWatched && styles.progressFillComplete,
-            ]}
-          />
+          <View style={[styles.progressFill, { width: `${pct}%` }, isWatched && styles.progressFillComplete]} />
         </View>
       ) : null}
     </View>

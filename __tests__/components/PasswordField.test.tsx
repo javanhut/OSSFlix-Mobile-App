@@ -21,9 +21,7 @@ describe("PasswordField", () => {
 
   it("forwards onChangeText", () => {
     const onChange = jest.fn();
-    const { getByPlaceholderText } = render(
-      <PasswordField value="" onChangeText={onChange} placeholder="Password" />,
-    );
+    const { getByPlaceholderText } = render(<PasswordField value="" onChangeText={onChange} placeholder="Password" />);
     fireEvent.changeText(getByPlaceholderText("Password"), "hunter2");
     expect(onChange).toHaveBeenCalledWith("hunter2");
   });

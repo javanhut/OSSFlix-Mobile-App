@@ -1,17 +1,6 @@
-import {
-  ActivityIndicator,
-  FlatList,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { useQuery } from "@tanstack/react-query";
-import {
-  type RouteProp,
-  useNavigation,
-  useRoute,
-} from "@react-navigation/native";
+import { type RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { api } from "../api/client";
@@ -24,12 +13,8 @@ import { useAllowRotation } from "../hooks/useAllowRotation";
 
 export function LibraryScreen() {
   useAllowRotation();
-  const route =
-    useRoute<
-      RouteProp<Record<string, { type: string; title: string }>, string>
-    >();
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const route = useRoute<RouteProp<Record<string, { type: string; title: string }>, string>>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { type, title } = route.params;
   const query = useQuery({
     queryKey: ["library", type],
@@ -60,10 +45,7 @@ export function LibraryScreen() {
       }
       ListHeaderComponent={
         <View style={styles.header}>
-          <AppHeader
-            title={title}
-            subtitle={`Browse every ${title.toLowerCase()} entry available on this server.`}
-          />
+          <AppHeader title={title} subtitle={`Browse every ${title.toLowerCase()} entry available on this server.`} />
         </View>
       }
       ListEmptyComponent={
@@ -76,9 +58,7 @@ export function LibraryScreen() {
         <TitleCard
           item={item}
           width={160}
-          onPress={() =>
-            navigation.navigate("TitleDetails", { dirPath: item.pathToDir })
-          }
+          onPress={() => navigation.navigate("TitleDetails", { dirPath: item.pathToDir })}
         />
       )}
     />

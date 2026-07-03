@@ -9,8 +9,7 @@ export interface ParsedEpisode {
 
 export const SEASON_TOKEN = /^(?:s|season\s?)0*(\d+)$/i;
 export const EPISODE_TOKEN = /^(?:e|ep|episode\s?)0*(\d+)$/i;
-export const COMBINED_SE_TOKEN =
-  /(?:^|[._\s-])(?:s|season\s?)0*(\d+)[._\s-]*(?:e|ep|episode\s?)0*(\d+)(?=$|[._\s-])/i;
+export const COMBINED_SE_TOKEN = /(?:^|[._\s-])(?:s|season\s?)0*(\d+)[._\s-]*(?:e|ep|episode\s?)0*(\d+)(?=$|[._\s-])/i;
 export const CANONICAL_SUFFIX = /_s(\d+)_ep(\d+)(?:_(?:sub|dub))?\.[^.]+$/i;
 export const VARIANT_SUFFIX = /_(sub|dub)\.[^.]+$/i;
 
@@ -20,9 +19,7 @@ export function detectVariant(videoSrc: string): AudioVariant | null {
   return match ? (match[1].toLowerCase() as AudioVariant) : null;
 }
 
-export function inferEpisodeVariants(
-  videos: string[],
-): Map<string, AudioVariant | null> {
+export function inferEpisodeVariants(videos: string[]): Map<string, AudioVariant | null> {
   const result = new Map<string, AudioVariant | null>();
   const byEpisode = new Map<string, string[]>();
 
@@ -123,8 +120,7 @@ export function parseEpisodePath(relPath: string): ParsedEpisode | null {
   if (combined) {
     seasonFromFile = Number(combined[1]);
     epFromFile = Number(combined[2]);
-    const stripAllSE =
-      /(?:^|[._\s-])(?:s|season\s?)0*\d+[._\s-]*(?:e|ep|episode\s?)0*\d+(?=$|[._\s-])/gi;
+    const stripAllSE = /(?:^|[._\s-])(?:s|season\s?)0*\d+[._\s-]*(?:e|ep|episode\s?)0*\d+(?=$|[._\s-])/gi;
     titleRemnant = stem
       .replace(stripAllSE, " ")
       .replace(/_(sub|dub)\b/gi, " ")
