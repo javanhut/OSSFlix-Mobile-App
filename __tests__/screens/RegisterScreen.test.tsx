@@ -31,9 +31,11 @@ describe("RegisterScreen", () => {
   });
 
   it("on success, registers and stores the authenticated session", async () => {
-    jest
-      .spyOn(api, "mobileRegister")
-      .mockResolvedValue({ token: "tok", profile: { id: 9, name: "Ada" } as any, expiresAt: "" });
+    jest.spyOn(api, "mobileRegister").mockResolvedValue({
+      token: "tok",
+      profile: { id: 9, name: "Ada" } as any,
+      expiresAt: "",
+    });
 
     const { getByPlaceholderText, getByText } = render(<RegisterScreen />);
     fireEvent.changeText(getByPlaceholderText("Profile name"), "  Ada  ");
@@ -67,7 +69,10 @@ describe("RegisterScreen", () => {
       fireEvent.press(getByText("Create Account"));
     });
     await waitFor(() => {
-      expect(Alert.alert).toHaveBeenCalledWith("Registration failed", "Unable to create the profile.");
+      expect(Alert.alert).toHaveBeenCalledWith(
+        "Registration failed",
+        "Unable to create the profile.",
+      );
     });
   });
 });

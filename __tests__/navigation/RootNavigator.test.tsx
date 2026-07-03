@@ -7,25 +7,35 @@
 jest.mock("../../src/screens/ServerConnectScreen", () => {
   const React = require("react");
   const { Text } = require("react-native");
-  return { ServerConnectScreen: () => React.createElement(Text, null, "screen:ServerConnect") };
+  return {
+    ServerConnectScreen: () =>
+      React.createElement(Text, null, "screen:ServerConnect"),
+  };
 });
 
 jest.mock("../../src/screens/ProfileLookupScreen", () => {
   const React = require("react");
   const { Text } = require("react-native");
-  return { ProfileLookupScreen: () => React.createElement(Text, null, "screen:ProfileLookup") };
+  return {
+    ProfileLookupScreen: () =>
+      React.createElement(Text, null, "screen:ProfileLookup"),
+  };
 });
 
 jest.mock("../../src/screens/SignInScreen", () => {
   const React = require("react");
   const { Text } = require("react-native");
-  return { SignInScreen: () => React.createElement(Text, null, "screen:SignIn") };
+  return {
+    SignInScreen: () => React.createElement(Text, null, "screen:SignIn"),
+  };
 });
 
 jest.mock("../../src/screens/RegisterScreen", () => {
   const React = require("react");
   const { Text } = require("react-native");
-  return { RegisterScreen: () => React.createElement(Text, null, "screen:Register") };
+  return {
+    RegisterScreen: () => React.createElement(Text, null, "screen:Register"),
+  };
 });
 
 jest.mock("../../src/screens/HomeScreen", () => {
@@ -37,31 +47,42 @@ jest.mock("../../src/screens/HomeScreen", () => {
 jest.mock("../../src/screens/LibraryScreen", () => {
   const React = require("react");
   const { Text } = require("react-native");
-  return { LibraryScreen: () => React.createElement(Text, null, "screen:Library") };
+  return {
+    LibraryScreen: () => React.createElement(Text, null, "screen:Library"),
+  };
 });
 
 jest.mock("../../src/screens/SearchScreen", () => {
   const React = require("react");
   const { Text } = require("react-native");
-  return { SearchScreen: () => React.createElement(Text, null, "screen:Search") };
+  return {
+    SearchScreen: () => React.createElement(Text, null, "screen:Search"),
+  };
 });
 
 jest.mock("../../src/screens/WatchlistScreen", () => {
   const React = require("react");
   const { Text } = require("react-native");
-  return { WatchlistScreen: () => React.createElement(Text, null, "screen:Watchlist") };
+  return {
+    WatchlistScreen: () => React.createElement(Text, null, "screen:Watchlist"),
+  };
 });
 
 jest.mock("../../src/screens/TitleDetailsScreen", () => {
   const React = require("react");
   const { Text } = require("react-native");
-  return { TitleDetailsScreen: () => React.createElement(Text, null, "screen:TitleDetails") };
+  return {
+    TitleDetailsScreen: () =>
+      React.createElement(Text, null, "screen:TitleDetails"),
+  };
 });
 
 jest.mock("../../src/screens/PlayerScreen", () => {
   const React = require("react");
   const { Text } = require("react-native");
-  return { PlayerScreen: () => React.createElement(Text, null, "screen:Player") };
+  return {
+    PlayerScreen: () => React.createElement(Text, null, "screen:Player"),
+  };
 });
 
 import React from "react";

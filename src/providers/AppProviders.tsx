@@ -4,8 +4,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { NavigationContainer, DarkTheme } from "@react-navigation/native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { bootstrapDownloads } from "../downloads/downloadManager";
 import { buildSessionSnapshot, useSessionStore } from "../state/session";
-import { loadSessionSnapshot, saveSessionSnapshot } from "../storage/sessionStorage";
+import {
+  loadSessionSnapshot,
+  saveSessionSnapshot,
+} from "../storage/sessionStorage";
 import { colors } from "../theme/colors";
 
 const queryClient = new QueryClient();
@@ -21,7 +25,15 @@ function BootstrappedApp({ children }: PropsWithChildren) {
   useEffect(() => {
     loadSessionSnapshot()
       .then(hydrate)
-      .catch(() => hydrate({ serverUrl: null, token: null, profile: null, selectedProfile: null }));
+      .catch(() =>
+        hydrate({
+          serverUrl: null,
+          token: null,
+          profile: null,
+          selectedProfile: null,
+        }),
+      );
+    void bootstrapDownloads().catch(() => {});
   }, [hydrate]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: buildSessionSnapshot reads from the store; these deps trigger the save when any field changes.

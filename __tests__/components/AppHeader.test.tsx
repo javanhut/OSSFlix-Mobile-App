@@ -10,26 +10,34 @@ describe("AppHeader", () => {
   });
 
   it("renders eyebrow and subtitle when provided", () => {
-    const { getByText } = render(<AppHeader eyebrow="Section" title="Hello" subtitle="A subtitle" />);
+    const { getByText } = render(
+      <AppHeader eyebrow="Section" title="Hello" subtitle="A subtitle" />,
+    );
     expect(getByText("Section")).toBeTruthy();
     expect(getByText("A subtitle")).toBeTruthy();
   });
 
   it("does not render the action button when only actionLabel is provided", () => {
-    const { queryByText } = render(<AppHeader title="Hello" actionLabel="Back" />);
+    const { queryByText } = render(
+      <AppHeader title="Hello" actionLabel="Back" />,
+    );
     expect(queryByText("Back")).toBeNull();
   });
 
   it("does not render the action button when only onAction is provided", () => {
     const onAction = jest.fn();
-    const { queryByText } = render(<AppHeader title="Hello" onAction={onAction} />);
+    const { queryByText } = render(
+      <AppHeader title="Hello" onAction={onAction} />,
+    );
     expect(queryByText("Back")).toBeNull();
     expect(onAction).not.toHaveBeenCalled();
   });
 
   it("renders and calls onAction when both actionLabel and onAction are provided", () => {
     const onAction = jest.fn();
-    const { getByText } = render(<AppHeader title="Hello" actionLabel="Back" onAction={onAction} />);
+    const { getByText } = render(
+      <AppHeader title="Hello" actionLabel="Back" onAction={onAction} />,
+    );
     fireEvent.press(getByText("Back"));
     expect(onAction).toHaveBeenCalledTimes(1);
   });

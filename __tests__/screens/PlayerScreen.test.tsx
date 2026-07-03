@@ -38,9 +38,12 @@ const mockGetVolumeInfo = jest.fn(async () => ({ volume: 0.7, maxVolume: 15 }));
 const mockSetPlayerStream = jest.fn();
 jest.mock("../../src/native/systemVolume", () => ({
   getSystemMusicVolume: jest.fn(async () => 0.7),
-  getSystemMusicVolumeInfo: (...args: unknown[]) => mockGetVolumeInfo(...(args as [])),
-  setSystemMusicVolume: (...args: unknown[]) => mockSetVolume(...(args as [number])),
-  setPlayerVolumeStream: (...args: unknown[]) => mockSetPlayerStream(...(args as [])),
+  getSystemMusicVolumeInfo: (...args: unknown[]) =>
+    mockGetVolumeInfo(...(args as [])),
+  setSystemMusicVolume: (...args: unknown[]) =>
+    mockSetVolume(...(args as [number])),
+  setPlayerVolumeStream: (...args: unknown[]) =>
+    mockSetPlayerStream(...(args as [])),
 }));
 
 import React from "react";
@@ -55,7 +58,12 @@ import { useSessionStore } from "../../src/state/session";
 const navigation = { navigate: jest.fn(), goBack: jest.fn() } as any;
 
 function makeRoute(
-  overrides: Partial<{ startIndex: number; initialTime: number; videos: string[]; subtitles: any[] }> = {},
+  overrides: Partial<{
+    startIndex: number;
+    initialTime: number;
+    videos: string[];
+    subtitles: any[];
+  }> = {},
 ) {
   return {
     key: "k",
@@ -63,16 +71,23 @@ function makeRoute(
     params: {
       dirPath: "shows/Foo",
       title: "Foo",
-      videos: overrides.videos ?? ["shows/Foo/foo_s1_ep1.mkv", "shows/Foo/foo_s1_ep2.mkv"],
+      videos: overrides.videos ?? [
+        "shows/Foo/foo_s1_ep1.mkv",
+        "shows/Foo/foo_s1_ep2.mkv",
+      ],
       startIndex: overrides.startIndex ?? 0,
       initialTime: overrides.initialTime ?? 0,
-      subtitles: overrides.subtitles ?? [{ label: "EN", language: "en", src: "s.vtt", format: "vtt" }],
+      subtitles: overrides.subtitles ?? [
+        { label: "EN", language: "en", src: "s.vtt", format: "vtt" },
+      ],
     },
   } as any;
 }
 
 function renderPlayer(routeOverride?: ReturnType<typeof makeRoute>) {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0 } },
+  });
   const route = routeOverride ?? makeRoute();
   return render(
     <QueryClientProvider client={client}>
@@ -89,7 +104,12 @@ function layoutPlayerScreen(root: ReturnType<typeof renderPlayer>) {
 
 async function dragGesture(
   root: ReturnType<typeof renderPlayer>,
-  { locationX, locationY, dx, dy }: { locationX: number; locationY: number; dx: number; dy: number },
+  {
+    locationX,
+    locationY,
+    dx,
+    dy,
+  }: { locationX: number; locationY: number; dx: number; dy: number },
 ) {
   const surface = root.getByTestId("gesture-surface");
   await act(async () => {
@@ -98,11 +118,23 @@ async function dragGesture(
       { dx: 0, dy: 0, moveY: locationY },
     );
     surface.props.onResponderMove?.(
-      { nativeEvent: { locationX: locationX + dx, locationY: locationY + dy, pageY: locationY + dy } },
+      {
+        nativeEvent: {
+          locationX: locationX + dx,
+          locationY: locationY + dy,
+          pageY: locationY + dy,
+        },
+      },
       { dx, dy, moveY: locationY + dy },
     );
     surface.props.onResponderRelease?.(
-      { nativeEvent: { locationX: locationX + dx, locationY: locationY + dy, pageY: locationY + dy } },
+      {
+        nativeEvent: {
+          locationX: locationX + dx,
+          locationY: locationY + dy,
+          pageY: locationY + dy,
+        },
+      },
       { dx, dy, moveY: locationY + dy },
     );
   });
@@ -113,12 +145,16 @@ beforeEach(() => {
     (config: any) =>
       ({
         panHandlers: {
-          onStartShouldSetResponder: (event: any) => config.onStartShouldSetPanResponder?.(event),
+          onStartShouldSetResponder: (event: any) =>
+            config.onStartShouldSetPanResponder?.(event),
           onMoveShouldSetResponder: (event: any, gestureState: any) =>
             config.onMoveShouldSetPanResponder?.(event, gestureState),
-          onResponderGrant: (event: any, gestureState: any) => config.onPanResponderGrant?.(event, gestureState),
-          onResponderMove: (event: any, gestureState: any) => config.onPanResponderMove?.(event, gestureState),
-          onResponderRelease: (event: any, gestureState: any) => config.onPanResponderRelease?.(event, gestureState),
+          onResponderGrant: (event: any, gestureState: any) =>
+            config.onPanResponderGrant?.(event, gestureState),
+          onResponderMove: (event: any, gestureState: any) =>
+            config.onPanResponderMove?.(event, gestureState),
+          onResponderRelease: (event: any, gestureState: any) =>
+            config.onPanResponderRelease?.(event, gestureState),
           onResponderTerminate: (event: any, gestureState: any) =>
             config.onPanResponderTerminate?.(event, gestureState),
         },
@@ -140,8 +176,22 @@ beforeEach(() => {
   jest.spyOn(api, "getProbe").mockResolvedValue({
     duration: 1800,
     audioTracks: [
-      { index: 0, codec: "aac", channels: 2, channelLayout: "stereo", language: "eng", title: "English" },
-      { index: 1, codec: "aac", channels: 2, channelLayout: "stereo", language: "jpn", title: "Japanese" },
+      {
+        index: 0,
+        codec: "aac",
+        channels: 2,
+        channelLayout: "stereo",
+        language: "eng",
+        title: "English",
+      },
+      {
+        index: 1,
+        codec: "aac",
+        channels: 2,
+        channelLayout: "stereo",
+        language: "jpn",
+        title: "Japanese",
+      },
     ],
   });
   jest.spyOn(api, "getTimings").mockResolvedValue({
@@ -168,7 +218,9 @@ describe("PlayerScreen — render and Video wiring", () => {
     renderPlayer();
     await waitFor(() => expect((Video as any).lastProps).toBeDefined());
     const props = (Video as any).lastProps;
-    expect(props.source.uri).toContain("/api/stream?src=shows%2FFoo%2Ffoo_s1_ep1.mkv&audio=0");
+    expect(props.source.uri).toContain(
+      "/api/stream?src=shows%2FFoo%2Ffoo_s1_ep1.mkv&audio=0",
+    );
     expect(props.source.headers).toEqual({ Authorization: "Bearer t" });
     expect(props.textTracks[0].uri).toContain("/api/subtitles?src=s.vtt");
   });
@@ -196,7 +248,12 @@ describe("PlayerScreen — volume gestures", () => {
     layoutPlayerScreen(screen);
     await waitFor(() => expect(mockGetVolumeInfo).toHaveBeenCalled());
 
-    await dragGesture(screen, { locationX: 260, locationY: 220, dx: 0, dy: -200 });
+    await dragGesture(screen, {
+      locationX: 260,
+      locationY: 220,
+      dx: 0,
+      dy: -200,
+    });
 
     await waitFor(() => expect(mockSetVolume).toHaveBeenCalledWith(1));
     expect((Video as any).lastProps.volume).toBe(1);
@@ -209,7 +266,12 @@ describe("PlayerScreen — volume gestures", () => {
     layoutPlayerScreen(screen);
     await waitFor(() => expect(mockGetVolumeInfo).toHaveBeenCalled());
 
-    await dragGesture(screen, { locationX: 250, locationY: 100, dx: 0, dy: 120 });
+    await dragGesture(screen, {
+      locationX: 250,
+      locationY: 100,
+      dx: 0,
+      dy: 120,
+    });
 
     await waitFor(() => expect(mockSetVolume).toHaveBeenCalled());
     const lastVolume = mockSetVolume.mock.calls.at(-1)?.[0];
@@ -222,7 +284,12 @@ describe("PlayerScreen — volume gestures", () => {
     layoutPlayerScreen(screen);
     await waitFor(() => expect(mockGetVolumeInfo).toHaveBeenCalled());
 
-    await dragGesture(screen, { locationX: 150, locationY: 180, dx: 0, dy: -90 });
+    await dragGesture(screen, {
+      locationX: 150,
+      locationY: 180,
+      dx: 0,
+      dy: -90,
+    });
 
     expect(mockSetVolume).not.toHaveBeenCalled();
     expect((Video as any).lastProps.volume).toBe(1);
@@ -233,7 +300,12 @@ describe("PlayerScreen — volume gestures", () => {
     layoutPlayerScreen(screen);
     await waitFor(() => expect(mockGetVolumeInfo).toHaveBeenCalled());
 
-    await dragGesture(screen, { locationX: 260, locationY: 180, dx: 0, dy: -8 });
+    await dragGesture(screen, {
+      locationX: 260,
+      locationY: 180,
+      dx: 0,
+      dy: -8,
+    });
 
     expect(mockSetVolume).not.toHaveBeenCalled();
     expect((Video as any).lastProps.volume).toBe(1);
@@ -467,7 +539,9 @@ describe("PlayerScreen — next-episode countdown", () => {
   });
 
   it("does not show the overlay when there is no next episode", async () => {
-    const { queryByText } = renderPlayer(makeRoute({ videos: ["shows/Foo/only.mkv"], startIndex: 0 }));
+    const { queryByText } = renderPlayer(
+      makeRoute({ videos: ["shows/Foo/only.mkv"], startIndex: 0 }),
+    );
     await waitFor(() => expect((Video as any).lastProps).toBeDefined());
     await waitFor(() => expect(api.getTimings).toHaveBeenCalled());
     await act(async () => {
@@ -482,11 +556,13 @@ describe("PlayerScreen — persistence lifecycle", () => {
   it("persists progress when AppState transitions away from active", async () => {
     const listeners: Array<(s: string) => void> = [];
     const AppState = require("react-native").AppState;
-    const addSpy = jest.spyOn(AppState, "addEventListener").mockImplementation((...args: unknown[]) => {
-      const cb = args[1] as (s: string) => void;
-      listeners.push(cb);
-      return { remove: () => {} } as any;
-    });
+    const addSpy = jest
+      .spyOn(AppState, "addEventListener")
+      .mockImplementation((...args: unknown[]) => {
+        const cb = args[1] as (s: string) => void;
+        listeners.push(cb);
+        return { remove: () => {} } as any;
+      });
     renderPlayer();
     await waitFor(() => expect((Video as any).lastProps).toBeDefined());
     await act(async () => {

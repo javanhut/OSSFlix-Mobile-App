@@ -1,4 +1,10 @@
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, View } from "react-native";
+import {
+  ActivityIndicator,
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  View,
+} from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -13,8 +19,12 @@ import { useAllowRotation } from "../hooks/useAllowRotation";
 
 export function RecommendationsScreen() {
   useAllowRotation();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const query = useQuery({ queryKey: ["categories"], queryFn: api.getCategories });
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const query = useQuery({
+    queryKey: ["categories"],
+    queryFn: api.getCategories,
+  });
 
   if (query.isLoading) {
     return (
@@ -24,7 +34,9 @@ export function RecommendationsScreen() {
     );
   }
 
-  const newlyAdded = (query.data || []).find((row) => row.genre === "Newly Added");
+  const newlyAdded = (query.data || []).find(
+    (row) => row.genre === "Newly Added",
+  );
   const titles = newlyAdded?.titles || [];
 
   return (
@@ -35,11 +47,18 @@ export function RecommendationsScreen() {
       columnWrapperStyle={styles.row}
       contentContainerStyle={styles.list}
       refreshControl={
-        <RefreshControl refreshing={query.isRefetching} onRefresh={() => void query.refetch()} tintColor={colors.primary} />
+        <RefreshControl
+          refreshing={query.isRefetching}
+          onRefresh={() => void query.refetch()}
+          tintColor={colors.primary}
+        />
       }
       ListHeaderComponent={
         <View style={styles.header}>
-          <AppHeader title="Recommendations" subtitle="Fresh picks based on what's new on this server." />
+          <AppHeader
+            title="Recommendations"
+            subtitle="Fresh picks based on what's new on this server."
+          />
         </View>
       }
       ListEmptyComponent={
@@ -52,7 +71,9 @@ export function RecommendationsScreen() {
         <TitleCard
           item={item}
           width={160}
-          onPress={() => navigation.navigate("TitleDetails", { dirPath: item.pathToDir })}
+          onPress={() =>
+            navigation.navigate("TitleDetails", { dirPath: item.pathToDir })
+          }
         />
       )}
     />

@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AppState, type LayoutChangeEvent, PanResponder, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  AppState,
+  type LayoutChangeEvent,
+  PanResponder,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as ScreenOrientation from "expo-screen-orientation";
@@ -9,8 +17,13 @@ import Video, { SelectedTrackType, TextTrackType } from "react-native-video";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { api } from "../api/client";
+import { saveOfflineProgress } from "../downloads/downloadManager";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-import { getSystemMusicVolumeInfo, setPlayerVolumeStream, setSystemMusicVolume } from "../native/systemVolume";
+import {
+  getSystemMusicVolumeInfo,
+  setPlayerVolumeStream,
+  setSystemMusicVolume,
+} from "../native/systemVolume";
 import { colors } from "../theme/colors";
 import { formatEpisodeLabel, parseEpisodePath } from "../utils/episodeNaming";
 
@@ -34,7 +47,8 @@ function formatTime(seconds: number): string {
   const hours = Math.floor(total / 3600);
   const minutes = Math.floor((total % 3600) / 60);
   const secs = total % 60;
-  if (hours > 0) return `${hours}:${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  if (hours > 0)
+    return `${hours}:${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   return `${minutes}:${secs.toString().padStart(2, "0")}`;
 }
 
@@ -48,7 +62,9 @@ function quantizeVolumeToSystemStep(volume: number, maxVolume: number): number {
   return Math.round(bounded * steps) / steps;
 }
 
-function normalizeSubtitleLanguage(language: string): "en" | "es" | "fr" | "de" | "it" | "pt" | "ja" | "ko" | "zh" {
+function normalizeSubtitleLanguage(
+  language: string,
+): "en" | "es" | "fr" | "de" | "it" | "pt" | "ja" | "ko" | "zh" {
   const code = language.trim().toLowerCase().slice(0, 2);
   switch (code) {
     case "es":
@@ -67,17 +83,33 @@ function normalizeSubtitleLanguage(language: string): "en" | "es" | "fr" | "de" 
 
 export function PlayerScreen({ route, navigation }: Props) {
   const insets = useSafeAreaInsets();
-  const { dirPath, title, videos, startIndex, initialTime, subtitles } = route.params;
+  const {
+    dirPath,
+    title,
+    videos,
+    startIndex,
+    initialTime,
+    subtitles,
+    offline,
+    offlineMeta,
+  } = route.params;
 
   const playerRef = useRef<any>(null);
   const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const volumeHudTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const volumeHudTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
+    null,
+  );
   const countdownCancelledRef = useRef(false);
   const lastAppliedSystemVolumeRef = useRef<number | null>(null);
   const volumeUpdateTokenRef = useRef(0);
-  const lastTapRef = useRef<{ time: number; zone: GestureZone | null }>({ time: 0, zone: null });
+  const lastTapRef = useRef<{ time: number; zone: GestureZone | null }>({
+    time: 0,
+    zone: null,
+  });
   const gestureStartRef = useRef<{
     zone: GestureZone;
     volumeEligible: boolean;
@@ -110,6 +142,7 @@ export function PlayerScreen({ route, navigation }: Props) {
   const [countdown, setCountdown] = useState<number | null>(null);
 
   const currentVideo = videos[currentIndex];
+  const currentOfflineMeta = offline ? offlineMeta?.[currentIndex] : undefined;
   const hasNext = currentIndex < videos.length - 1;
   const hasPrev = currentIndex > 0;
   const speeds = [0.5, 0.75, 1, 1.25, 1.5, 2];
@@ -117,30 +150,56 @@ export function PlayerScreen({ route, navigation }: Props) {
   const probeQuery = useQuery({
     queryKey: ["stream-probe", currentVideo],
     queryFn: () => api.getProbe(currentVideo),
+    enabled: !offline,
   });
   const timingsQuery = useQuery({
     queryKey: ["episode-timings", currentVideo],
     queryFn: () => api.getTimings(currentVideo),
+    enabled: !offline,
   });
 
-  const subtitleTracks = useMemo(
-    () =>
-      (subtitles || []).map((track) => ({
+  const timings = offline
+    ? (currentOfflineMeta?.timings ?? null)
+    : (timingsQuery.data ?? null);
+
+  const subtitleTracks = useMemo(() => {
+    if (offline) {
+      return (currentOfflineMeta?.subtitles || []).map((track) => ({
         title: track.label,
         language: normalizeSubtitleLanguage(track.language),
         type: TextTrackType.VTT,
-        uri: api.buildSubtitleUrl(track.src),
-      })),
-    [subtitles],
-  );
+        uri: track.uri,
+      }));
+    }
+    return (subtitles || []).map((track) => ({
+      title: track.label,
+      language: normalizeSubtitleLanguage(track.language),
+      type: TextTrackType.VTT,
+      uri: api.buildSubtitleUrl(track.src),
+    }));
+  }, [offline, currentOfflineMeta?.subtitles, subtitles]);
 
-  const totalDuration = duration || probeQuery.data?.duration || 0;
+  const totalDuration =
+    duration ||
+    (offline ? currentOfflineMeta?.duration : probeQuery.data?.duration) ||
+    0;
   const displayTime = isScrubbing ? scrubTime : currentTime;
-  const playedPercent = totalDuration > 0 ? clamp((displayTime / totalDuration) * 100, 0, 100) : 0;
+  const playedPercent =
+    totalDuration > 0 ? clamp((displayTime / totalDuration) * 100, 0, 100) : 0;
 
   const persistProgress = useCallback(
     async (time: number, knownDuration: number) => {
       if (!currentVideo) return;
+      if (offline) {
+        const id = currentOfflineMeta?.id;
+        if (!id) return;
+        await saveOfflineProgress(id, {
+          current_time: time,
+          duration: knownDuration,
+          updatedAt: Date.now(),
+        }).catch(() => {});
+        return;
+      }
       await api
         .saveProgress({
           video_src: currentVideo,
@@ -150,7 +209,7 @@ export function PlayerScreen({ route, navigation }: Props) {
         })
         .catch(() => {});
     },
-    [currentVideo, dirPath],
+    [currentVideo, dirPath, offline, currentOfflineMeta?.id],
   );
 
   const clearMenus = useCallback(() => {
@@ -244,7 +303,9 @@ export function PlayerScreen({ route, navigation }: Props) {
     if (!currentVideo) return null;
     const parsed = parseEpisodePath(currentVideo);
     if (!parsed) return null;
-    return parsed.title ? `Episode ${parsed.episode}: ${parsed.title}` : `Episode ${parsed.episode}`;
+    return parsed.title
+      ? `Episode ${parsed.episode}: ${parsed.title}`
+      : `Episode ${parsed.episode}`;
   }, [currentVideo]);
 
   const cancelCountdown = useCallback(() => {
@@ -301,7 +362,9 @@ export function PlayerScreen({ route, navigation }: Props) {
       try {
         await ScreenOrientation.unlockAsync();
         if (cancelled) return;
-        await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
+        await ScreenOrientation.lockAsync(
+          ScreenOrientation.OrientationLock.LANDSCAPE,
+        );
       } catch {}
     })();
     setPlayerVolumeStream();
@@ -314,10 +377,13 @@ export function PlayerScreen({ route, navigation }: Props) {
       .catch(() => {});
     return () => {
       cancelled = true;
-      void ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(() => {});
+      void ScreenOrientation.lockAsync(
+        ScreenOrientation.OrientationLock.PORTRAIT_UP,
+      ).catch(() => {});
       if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
       if (tapTimeoutRef.current) clearTimeout(tapTimeoutRef.current);
-      if (volumeHudTimeoutRef.current) clearTimeout(volumeHudTimeoutRef.current);
+      if (volumeHudTimeoutRef.current)
+        clearTimeout(volumeHudTimeoutRef.current);
     };
   }, []);
 
@@ -352,11 +418,10 @@ export function PlayerScreen({ route, navigation }: Props) {
   }, [currentVideo, hideControlsSoon, cancelCountdown]);
 
   useEffect(() => {
-    const timings = timingsQuery.data;
     const hasOutro = timings?.outro_start != null && timings?.outro_end != null;
     let trigger = -1;
     if (hasOutro) {
-      trigger = timings!.outro_start as number;
+      trigger = timings.outro_start as number;
     } else if (totalDuration > COUNTDOWN_FALLBACK_BUFFER) {
       trigger = totalDuration - COUNTDOWN_FALLBACK_BUFFER;
     }
@@ -365,12 +430,23 @@ export function PlayerScreen({ route, navigation }: Props) {
       return;
     }
     const pastTrigger = currentTime >= trigger;
-    if (pastTrigger && !countdownIntervalRef.current && !countdownCancelledRef.current) {
+    if (
+      pastTrigger &&
+      !countdownIntervalRef.current &&
+      !countdownCancelledRef.current
+    ) {
       startCountdown();
     } else if (!pastTrigger && countdownIntervalRef.current) {
       cancelCountdown();
     }
-  }, [currentTime, totalDuration, timingsQuery.data, hasNext, startCountdown, cancelCountdown]);
+  }, [
+    currentTime,
+    totalDuration,
+    timings,
+    hasNext,
+    startCountdown,
+    cancelCountdown,
+  ]);
 
   useEffect(() => {
     return () => {
@@ -456,11 +532,17 @@ export function PlayerScreen({ route, navigation }: Props) {
   );
 
   const getGestureTouchY = useCallback(
-    (event: { nativeEvent: { pageY?: number; locationY?: number } }, gestureState?: { moveY?: number }) => {
+    (
+      event: { nativeEvent: { pageY?: number; locationY?: number } },
+      gestureState?: { moveY?: number },
+    ) => {
       if (gestureState?.moveY != null && Number.isFinite(gestureState.moveY)) {
         return gestureState.moveY;
       }
-      if (event.nativeEvent.pageY != null && Number.isFinite(event.nativeEvent.pageY)) {
+      if (
+        event.nativeEvent.pageY != null &&
+        Number.isFinite(event.nativeEvent.pageY)
+      ) {
         return event.nativeEvent.pageY;
       }
       return event.nativeEvent.locationY ?? 0;
@@ -471,7 +553,11 @@ export function PlayerScreen({ route, navigation }: Props) {
   const getVolumeForTouchY = useCallback(
     (touchY: number) => {
       const trackHeight = Math.max(surfaceHeight - VOLUME_TOUCH_PADDING * 2, 1);
-      const normalizedY = clamp((touchY - VOLUME_TOUCH_PADDING) / trackHeight, 0, 1);
+      const normalizedY = clamp(
+        (touchY - VOLUME_TOUCH_PADDING) / trackHeight,
+        0,
+        1,
+      );
       return 1 - normalizedY;
     },
     [surfaceHeight],
@@ -527,15 +613,23 @@ export function PlayerScreen({ route, navigation }: Props) {
           const horizontalDistance = Math.abs(gestureState.dx);
           if (!state.volumeActive) {
             if (verticalDistance < VOLUME_ACTIVATION_DISTANCE) return;
-            if (verticalDistance <= horizontalDistance + VOLUME_HORIZONTAL_TOLERANCE) return;
+            if (
+              verticalDistance <=
+              horizontalDistance + VOLUME_HORIZONTAL_TOLERANCE
+            )
+              return;
           }
 
           state.volumeActive = true;
-          const nextVolume = getVolumeForTouchY(getGestureTouchY(event, gestureState));
+          const nextVolume = getVolumeForTouchY(
+            getGestureTouchY(event, gestureState),
+          );
           applySystemVolume(nextVolume);
           setShowControls(true);
-          if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
-          if (volumeHudTimeoutRef.current) clearTimeout(volumeHudTimeoutRef.current);
+          if (controlsTimeoutRef.current)
+            clearTimeout(controlsTimeoutRef.current);
+          if (volumeHudTimeoutRef.current)
+            clearTimeout(volumeHudTimeoutRef.current);
         },
         onPanResponderRelease: (event, gestureState) => {
           const state = gestureStartRef.current;
@@ -543,16 +637,24 @@ export function PlayerScreen({ route, navigation }: Props) {
 
           if (state?.volumeActive) {
             if (surfaceHeight > 0) {
-              applySystemVolume(getVolumeForTouchY(getGestureTouchY(event, gestureState)));
+              applySystemVolume(
+                getVolumeForTouchY(getGestureTouchY(event, gestureState)),
+              );
             }
-            volumeHudTimeoutRef.current = setTimeout(() => setVolumeHud(null), 700);
+            volumeHudTimeoutRef.current = setTimeout(
+              () => setVolumeHud(null),
+              700,
+            );
             showControlsTemporarily();
             return;
           }
 
           const now = Date.now();
           const lastTap = lastTapRef.current;
-          if (lastTap.zone === state?.zone && now - lastTap.time < DOUBLE_TAP_MS) {
+          if (
+            lastTap.zone === state?.zone &&
+            now - lastTap.time < DOUBLE_TAP_MS
+          ) {
             if (tapTimeoutRef.current) clearTimeout(tapTimeoutRef.current);
             lastTapRef.current = { time: 0, zone: null };
             handleDoubleTap(state?.zone || "center");
@@ -568,7 +670,8 @@ export function PlayerScreen({ route, navigation }: Props) {
         },
         onPanResponderTerminate: () => {
           gestureStartRef.current = null;
-          if (volumeHudTimeoutRef.current) clearTimeout(volumeHudTimeoutRef.current);
+          if (volumeHudTimeoutRef.current)
+            clearTimeout(volumeHudTimeoutRef.current);
           setVolumeHud(null);
         },
       }),
@@ -624,7 +727,6 @@ export function PlayerScreen({ route, navigation }: Props) {
   );
 
   const skipRange = useMemo(() => {
-    const timings = timingsQuery.data;
     if (!timings) return null;
     if (
       timings.intro_start != null &&
@@ -643,16 +745,24 @@ export function PlayerScreen({ route, navigation }: Props) {
       return { label: "Skip Credits", target: timings.outro_end };
     }
     return null;
-  }, [currentTime, timingsQuery.data]);
+  }, [currentTime, timings]);
 
   return (
-    <View testID="player-screen" style={styles.screen} onLayout={handleSurfaceLayout}>
+    <View
+      testID="player-screen"
+      style={styles.screen}
+      onLayout={handleSurfaceLayout}
+    >
       <Video
         ref={playerRef}
-        source={{
-          uri: api.buildStreamUrl(currentVideo, audioIndex),
-          headers: api.buildStreamHeaders(),
-        }}
+        source={
+          offline
+            ? { uri: currentVideo }
+            : {
+                uri: api.buildStreamUrl(currentVideo, audioIndex),
+                headers: api.buildStreamHeaders(),
+              }
+        }
         textTracks={subtitleTracks}
         selectedTextTrack={
           selectedSubtitle != null
@@ -686,7 +796,11 @@ export function PlayerScreen({ route, navigation }: Props) {
         }}
       />
 
-      <View testID="gesture-surface" style={styles.gestureSurface} {...gestureResponder.panHandlers} />
+      <View
+        testID="gesture-surface"
+        style={styles.gestureSurface}
+        {...gestureResponder.panHandlers}
+      />
 
       {skipFeedback ? (
         <View key={skipFeedback.key} style={styles.feedbackBubble}>
@@ -697,7 +811,9 @@ export function PlayerScreen({ route, navigation }: Props) {
       {volumeHud != null ? (
         <View style={styles.volumeHud}>
           <View style={styles.volumeTrack}>
-            <View style={[styles.volumeFill, { height: `${volumeHud * 100}%` }]} />
+            <View
+              style={[styles.volumeFill, { height: `${volumeHud * 100}%` }]}
+            />
           </View>
           <Text style={styles.volumeText}>{Math.round(volumeHud * 100)}%</Text>
         </View>
@@ -714,10 +830,16 @@ export function PlayerScreen({ route, navigation }: Props) {
             ) : null}
             <Text style={styles.countdownNumber}>{countdown}</Text>
             <View style={styles.countdownButtons}>
-              <Pressable onPress={handleCountdownCancel} style={styles.countdownCancel}>
+              <Pressable
+                onPress={handleCountdownCancel}
+                style={styles.countdownCancel}
+              >
                 <Text style={styles.countdownCancelLabel}>Cancel</Text>
               </Pressable>
-              <Pressable onPress={handleCountdownPlayNow} style={styles.countdownPlay}>
+              <Pressable
+                onPress={handleCountdownPlayNow}
+                style={styles.countdownPlay}
+              >
                 <Feather name="play" size={14} color={colors.primaryText} />
                 <Text style={styles.countdownPlayLabel}>Play Now</Text>
               </Pressable>
@@ -732,7 +854,10 @@ export function PlayerScreen({ route, navigation }: Props) {
             colors={["rgba(0,0,0,0.78)", "rgba(0,0,0,0)"]}
             style={[styles.topBar, { paddingTop: Math.max(insets.top, 18) }]}
           >
-            <Pressable onPress={() => navigation.goBack()} style={styles.iconButton}>
+            <Pressable
+              onPress={() => navigation.goBack()}
+              style={styles.iconButton}
+            >
               <Feather name="arrow-left" size={22} color={colors.text} />
             </Pressable>
             <View style={styles.titleWrap}>
@@ -752,7 +877,11 @@ export function PlayerScreen({ route, navigation }: Props) {
             )}
 
             <Pressable onPress={togglePlayPause} style={styles.playButton}>
-              <Feather name={paused ? "play" : "pause"} size={30} color={colors.text} />
+              <Feather
+                name={paused ? "play" : "pause"}
+                size={30}
+                color={colors.text}
+              />
             </Pressable>
 
             {hasNext ? (
@@ -765,14 +894,20 @@ export function PlayerScreen({ route, navigation }: Props) {
           </View>
 
           {skipRange ? (
-            <Pressable onPress={() => seekTo(skipRange.target)} style={styles.skipButton}>
+            <Pressable
+              onPress={() => seekTo(skipRange.target)}
+              style={styles.skipButton}
+            >
               <Text style={styles.skipLabel}>{skipRange.label}</Text>
             </Pressable>
           ) : null}
 
           <LinearGradient
             colors={["rgba(0,0,0,0)", "rgba(0,0,0,0.82)"]}
-            style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 18) }]}
+            style={[
+              styles.bottomBar,
+              { paddingBottom: Math.max(insets.bottom, 18) },
+            ]}
           >
             <View style={styles.progressMeta}>
               <Text style={styles.timeLabel}>{formatTime(displayTime)}</Text>
@@ -788,22 +923,36 @@ export function PlayerScreen({ route, navigation }: Props) {
               {...progressResponder.panHandlers}
             >
               <View style={styles.progressTrackBg} />
-              <View style={[styles.progressFill, { width: `${playedPercent}%` }]} />
-              <View style={[styles.progressThumb, { left: `${playedPercent}%` }]} />
+              <View
+                style={[styles.progressFill, { width: `${playedPercent}%` }]}
+              />
+              <View
+                style={[styles.progressThumb, { left: `${playedPercent}%` }]}
+              />
             </View>
 
             <View style={styles.controlsRow}>
               <View style={styles.controlsCluster}>
-                <Pressable onPress={() => skipBy(-SEEK_STEP)} style={styles.iconButton}>
+                <Pressable
+                  onPress={() => skipBy(-SEEK_STEP)}
+                  style={styles.iconButton}
+                >
                   <Feather name="rotate-ccw" size={20} color={colors.text} />
                 </Pressable>
-                <Pressable onPress={() => skipBy(SEEK_STEP)} style={styles.iconButton}>
+                <Pressable
+                  onPress={() => skipBy(SEEK_STEP)}
+                  style={styles.iconButton}
+                >
                   <Feather name="rotate-cw" size={20} color={colors.text} />
                 </Pressable>
               </View>
 
               {currentEpisodeLabel ? (
-                <Text style={styles.episodeLabel} numberOfLines={1} ellipsizeMode="tail">
+                <Text
+                  style={styles.episodeLabel}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
                   {currentEpisodeLabel}
                 </Text>
               ) : null}
@@ -820,7 +969,10 @@ export function PlayerScreen({ route, navigation }: Props) {
                 </Pressable>
                 <Pressable
                   onPress={() => setShowSpeedMenu((value) => !value)}
-                  style={[styles.iconButton, showSpeedMenu && styles.iconButtonActive]}
+                  style={[
+                    styles.iconButton,
+                    showSpeedMenu && styles.iconButtonActive,
+                  ]}
                 >
                   <Feather name="settings" size={20} color={colors.text} />
                 </Pressable>
@@ -837,9 +989,14 @@ export function PlayerScreen({ route, navigation }: Props) {
                       setShowSpeedMenu(false);
                       hideControlsSoon();
                     }}
-                    style={[styles.menuItem, playbackRate === speed && styles.menuItemActive]}
+                    style={[
+                      styles.menuItem,
+                      playbackRate === speed && styles.menuItemActive,
+                    ]}
                   >
-                    <Text style={styles.menuLabel}>{speed === 1 ? "Normal" : `${speed}x`}</Text>
+                    <Text style={styles.menuLabel}>
+                      {speed === 1 ? "Normal" : `${speed}x`}
+                    </Text>
                   </Pressable>
                 ))}
               </View>

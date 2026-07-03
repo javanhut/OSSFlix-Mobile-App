@@ -17,17 +17,25 @@ beforeEach(() => {
 const items: TitleSummary[] = [
   { name: "One", imagePath: "/api/assets/one.jpg", pathToDir: "movies/One" },
   { name: "Two", imagePath: "/api/assets/two.jpg", pathToDir: "movies/Two" },
-  { name: "Three", imagePath: "/api/assets/three.jpg", pathToDir: "movies/Three" },
+  {
+    name: "Three",
+    imagePath: "/api/assets/three.jpg",
+    pathToDir: "movies/Three",
+  },
 ];
 
 describe("FeaturedCarousel", () => {
   it("returns null when items is empty", () => {
-    const { toJSON } = render(<FeaturedCarousel items={[]} onSelect={() => {}} />);
+    const { toJSON } = render(
+      <FeaturedCarousel items={[]} onSelect={() => {}} />,
+    );
     expect(toJSON()).toBeNull();
   });
 
   it("renders every slide title", () => {
-    const { getByText } = render(<FeaturedCarousel items={items} onSelect={() => {}} />);
+    const { getByText } = render(
+      <FeaturedCarousel items={items} onSelect={() => {}} />,
+    );
     expect(getByText("One")).toBeTruthy();
     expect(getByText("Two")).toBeTruthy();
     expect(getByText("Three")).toBeTruthy();
@@ -35,7 +43,9 @@ describe("FeaturedCarousel", () => {
 
   it("fires onSelect when Open Title is pressed on a slide", () => {
     const onSelect = jest.fn();
-    const { getAllByText } = render(<FeaturedCarousel items={items} onSelect={onSelect} />);
+    const { getAllByText } = render(
+      <FeaturedCarousel items={items} onSelect={onSelect} />,
+    );
     fireEvent.press(getAllByText("Open Title")[0]);
     expect(onSelect).toHaveBeenCalledWith(items[0]);
   });

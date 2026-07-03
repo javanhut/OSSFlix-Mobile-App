@@ -22,7 +22,12 @@ function setProfile(profile: any) {
 beforeEach(() => {
   navigation.navigate.mockReset();
   navigation.goBack.mockReset();
-  setProfile({ id: 1, name: "Ada", email: "ada@example.com", image_path: null });
+  setProfile({
+    id: 1,
+    name: "Ada",
+    email: "ada@example.com",
+    image_path: null,
+  });
   jest.spyOn(Alert, "alert").mockImplementation(() => {});
 });
 
@@ -33,7 +38,9 @@ afterEach(() => {
 describe("SwitchProfileScreen", () => {
   it("shows the no-email empty state when the profile has no email", () => {
     setProfile({ id: 1, name: "Ada", email: null, image_path: null });
-    const { getByText } = renderWithQuery(<SwitchProfileScreen navigation={navigation} route={route} />);
+    const { getByText } = renderWithQuery(
+      <SwitchProfileScreen navigation={navigation} route={route} />,
+    );
     expect(getByText("No email on this profile")).toBeTruthy();
   });
 
@@ -45,7 +52,9 @@ describe("SwitchProfileScreen", () => {
       ],
       hasUnclaimed: false,
     } as any);
-    const { findByText, getByText } = renderWithQuery(<SwitchProfileScreen navigation={navigation} route={route} />);
+    const { findByText, getByText } = renderWithQuery(
+      <SwitchProfileScreen navigation={navigation} route={route} />,
+    );
     expect(await findByText("Ada")).toBeTruthy();
     expect(getByText("Lin")).toBeTruthy();
     expect(getByText("Current")).toBeTruthy();
@@ -56,7 +65,9 @@ describe("SwitchProfileScreen", () => {
       profiles: [{ id: 1, name: "Ada", image_path: null, has_password: true }],
       hasUnclaimed: false,
     } as any);
-    const { findByText } = renderWithQuery(<SwitchProfileScreen navigation={navigation} route={route} />);
+    const { findByText } = renderWithQuery(
+      <SwitchProfileScreen navigation={navigation} route={route} />,
+    );
     fireEvent.press(await findByText("Ada"));
     expect(navigation.goBack).toHaveBeenCalled();
   });
@@ -71,7 +82,15 @@ describe("SwitchProfileScreen", () => {
     } as any);
     const loginSpy = jest.spyOn(api, "mobileLogin").mockResolvedValue({
       token: "new-tok",
-      profile: { id: 2, name: "Lin", email: "ada@example.com", image_path: null, movies_directory: null, tvshows_directory: null, use_global_dirs: 1 },
+      profile: {
+        id: 2,
+        name: "Lin",
+        email: "ada@example.com",
+        image_path: null,
+        movies_directory: null,
+        tvshows_directory: null,
+        use_global_dirs: 1,
+      },
       expiresAt: "2030-01-01",
     } as any);
 
@@ -101,7 +120,15 @@ describe("SwitchProfileScreen", () => {
     } as any);
     const setPwSpy = jest.spyOn(api, "mobileSetPassword").mockResolvedValue({
       token: "new-tok",
-      profile: { id: 2, name: "Lin", email: "ada@example.com", image_path: null, movies_directory: null, tvshows_directory: null, use_global_dirs: 1 },
+      profile: {
+        id: 2,
+        name: "Lin",
+        email: "ada@example.com",
+        image_path: null,
+        movies_directory: null,
+        tvshows_directory: null,
+        use_global_dirs: 1,
+      },
       expiresAt: "2030-01-01",
     } as any);
 
@@ -127,7 +154,9 @@ describe("SwitchProfileScreen", () => {
       hasUnclaimed: false,
     } as any);
     const loginSpy = jest.spyOn(api, "mobileLogin");
-    const { findByText } = renderWithQuery(<SwitchProfileScreen navigation={navigation} route={route} />);
+    const { findByText } = renderWithQuery(
+      <SwitchProfileScreen navigation={navigation} route={route} />,
+    );
     fireEvent.press(await findByText("Lin"));
     fireEvent.press(await findByText("Switch to this Profile"));
     expect(Alert.alert).toHaveBeenCalled();
@@ -135,8 +164,12 @@ describe("SwitchProfileScreen", () => {
   });
 
   it("shows the 'no other profiles' empty state when only one profile is returned", async () => {
-    jest.spyOn(api, "lookupProfiles").mockResolvedValue({ profiles: [], hasUnclaimed: false } as any);
-    const { findByText } = renderWithQuery(<SwitchProfileScreen navigation={navigation} route={route} />);
+    jest
+      .spyOn(api, "lookupProfiles")
+      .mockResolvedValue({ profiles: [], hasUnclaimed: false } as any);
+    const { findByText } = renderWithQuery(
+      <SwitchProfileScreen navigation={navigation} route={route} />,
+    );
     expect(await findByText("No other profiles")).toBeTruthy();
   });
 });

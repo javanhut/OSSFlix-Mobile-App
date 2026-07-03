@@ -23,7 +23,10 @@ jest.mock("expo-status-bar", () => ({
 
 jest.mock("../src/providers/AppProviders", () => {
   const React = require("react");
-  return { AppProviders: ({ children }: any) => React.createElement(React.Fragment, null, children) };
+  return {
+    AppProviders: ({ children }: any) =>
+      React.createElement(React.Fragment, null, children),
+  };
 });
 
 jest.mock("../src/navigation/RootNavigator", () => {
@@ -48,7 +51,10 @@ describe("App", () => {
   });
 
   it("configures the immersive nav bar on Android", async () => {
-    Object.defineProperty(Platform, "OS", { configurable: true, value: "android" });
+    Object.defineProperty(Platform, "OS", {
+      configurable: true,
+      value: "android",
+    });
     render(<App />);
     await waitFor(() => {
       expect(mockSetVisibility).toHaveBeenCalledWith("hidden");

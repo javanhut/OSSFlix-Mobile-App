@@ -25,25 +25,35 @@ describe("titleFromStem", () => {
 
 describe("formatEpisodeLabel", () => {
   it("includes the title when present", () => {
-    expect(formatEpisodeLabel({ season: 1, episode: 2, title: "Pilot", ext: "mkv" })).toBe("S1 E2 - Pilot");
+    expect(
+      formatEpisodeLabel({ season: 1, episode: 2, title: "Pilot", ext: "mkv" }),
+    ).toBe("S1 E2 - Pilot");
   });
 
   it("omits the dash when title is empty", () => {
-    expect(formatEpisodeLabel({ season: 3, episode: 4, title: "", ext: "mkv" })).toBe("S3 E4");
+    expect(
+      formatEpisodeLabel({ season: 3, episode: 4, title: "", ext: "mkv" }),
+    ).toBe("S3 E4");
   });
 });
 
 describe("canonicalFilename", () => {
   it("pads season and episode to two digits", () => {
-    expect(canonicalFilename({ season: 1, episode: 2, title: "Pilot", ext: "mkv" })).toBe("pilot_s01_ep02.mkv");
+    expect(
+      canonicalFilename({ season: 1, episode: 2, title: "Pilot", ext: "mkv" }),
+    ).toBe("pilot_s01_ep02.mkv");
   });
 
   it("falls back to 'episode' when the title slugs to empty", () => {
-    expect(canonicalFilename({ season: 1, episode: 2, title: "///", ext: "mkv" })).toBe("episode_s01_ep02.mkv");
+    expect(
+      canonicalFilename({ season: 1, episode: 2, title: "///", ext: "mkv" }),
+    ).toBe("episode_s01_ep02.mkv");
   });
 
   it("uses the raw number when ≥10", () => {
-    expect(canonicalFilename({ season: 12, episode: 23, title: "Big", ext: "mkv" })).toBe("big_s12_ep23.mkv");
+    expect(
+      canonicalFilename({ season: 12, episode: 23, title: "Big", ext: "mkv" }),
+    ).toBe("big_s12_ep23.mkv");
   });
 });
 
@@ -72,7 +82,9 @@ describe("parseEpisodePath", () => {
   });
 
   it("strips duplicate s##_ep## tokens in the title remnant", () => {
-    const parsed = parseEpisodePath("something_s02_ep11_summer_of_growth_s02_ep11.mkv");
+    const parsed = parseEpisodePath(
+      "something_s02_ep11_summer_of_growth_s02_ep11.mkv",
+    );
     expect(parsed?.season).toBe(2);
     expect(parsed?.episode).toBe(11);
     expect(parsed?.title).toBe("Something Summer Of Growth");
@@ -153,7 +165,9 @@ describe("compareVideoSrc", () => {
   });
 
   it("falls back to numeric localeCompare when neither side parses", () => {
-    const sorted = ["track 2.mkv", "track 10.mkv", "track 1.mkv"].sort(compareVideoSrc);
+    const sorted = ["track 2.mkv", "track 10.mkv", "track 1.mkv"].sort(
+      compareVideoSrc,
+    );
     expect(sorted).toEqual(["track 1.mkv", "track 2.mkv", "track 10.mkv"]);
   });
 });

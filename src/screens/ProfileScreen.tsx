@@ -1,5 +1,12 @@
 import { useState } from "react";
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { useQueryClient } from "@tanstack/react-query";
 import { Feather } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -14,7 +21,8 @@ import type { RootStackParamList } from "../navigation/RootNavigator";
 
 export function ProfileScreen() {
   useAllowRotation();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const queryClient = useQueryClient();
   const profile = useSessionStore((state) => state.profile);
   const serverUrl = useSessionStore((state) => state.serverUrl);
@@ -35,7 +43,10 @@ export function ProfileScreen() {
   return (
     <>
       <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-        <AppHeader title="Profile" subtitle="Manage your session and preferences." />
+        <AppHeader
+          title="Profile"
+          subtitle="Manage your session and preferences."
+        />
 
         <View style={styles.card}>
           <View style={styles.avatar}>
@@ -60,7 +71,10 @@ export function ProfileScreen() {
 
         {profile?.email ? (
           <Pressable
-            style={({ pressed }) => [styles.switchButton, pressed && styles.switchButtonPressed]}
+            style={({ pressed }) => [
+              styles.switchButton,
+              pressed && styles.switchButtonPressed,
+            ]}
             onPress={() => navigation.navigate("SwitchProfile")}
           >
             <Feather name="users" size={18} color={colors.primaryText} />
@@ -69,7 +83,10 @@ export function ProfileScreen() {
         ) : null}
 
         <Pressable
-          style={({ pressed }) => [styles.signOut, pressed && styles.signOutPressed]}
+          style={({ pressed }) => [
+            styles.signOut,
+            pressed && styles.signOutPressed,
+          ]}
           onPress={() => setSignOutOpen(true)}
         >
           <Feather name="log-out" size={18} color={colors.text} />
@@ -77,22 +94,37 @@ export function ProfileScreen() {
         </Pressable>
       </ScrollView>
 
-      <Modal visible={signOutOpen} transparent animationType="fade" onRequestClose={() => setSignOutOpen(false)}>
-        <Pressable style={styles.modalBackdrop} onPress={() => setSignOutOpen(false)}>
+      <Modal
+        visible={signOutOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSignOutOpen(false)}
+      >
+        <Pressable
+          style={styles.modalBackdrop}
+          onPress={() => setSignOutOpen(false)}
+        >
           <Pressable style={styles.modalCard} onPress={() => {}}>
             <Text style={styles.modalTitle}>Sign out?</Text>
             <Text style={styles.modalBody}>
-              This ends your mobile session on this device. You'll need to sign in again to stream.
+              This ends your mobile session on this device. You'll need to sign
+              in again to stream.
             </Text>
             <View style={styles.modalActions}>
               <Pressable
-                style={({ pressed }) => [styles.modalCancel, pressed && styles.modalCancelPressed]}
+                style={({ pressed }) => [
+                  styles.modalCancel,
+                  pressed && styles.modalCancelPressed,
+                ]}
                 onPress={() => setSignOutOpen(false)}
               >
                 <Text style={styles.modalCancelLabel}>Cancel</Text>
               </Pressable>
               <Pressable
-                style={({ pressed }) => [styles.modalConfirm, pressed && styles.modalConfirmPressed]}
+                style={({ pressed }) => [
+                  styles.modalConfirm,
+                  pressed && styles.modalConfirmPressed,
+                ]}
                 onPress={() => void handleLogout()}
               >
                 <Feather name="log-out" size={16} color={colors.primaryText} />

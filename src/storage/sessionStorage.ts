@@ -46,12 +46,16 @@ export async function loadSessionSnapshot(): Promise<SessionSnapshot> {
   };
 }
 
-export async function saveSessionSnapshot(snapshot: SessionSnapshot): Promise<void> {
+export async function saveSessionSnapshot(
+  snapshot: SessionSnapshot,
+): Promise<void> {
   await Promise.all([
     snapshot.serverUrl
       ? SecureStore.setItemAsync(KEYS.serverUrl, snapshot.serverUrl)
       : SecureStore.deleteItemAsync(KEYS.serverUrl),
-    snapshot.token ? SecureStore.setItemAsync(KEYS.token, snapshot.token) : SecureStore.deleteItemAsync(KEYS.token),
+    snapshot.token
+      ? SecureStore.setItemAsync(KEYS.token, snapshot.token)
+      : SecureStore.deleteItemAsync(KEYS.token),
     writeJson(KEYS.profile, snapshot.profile),
     writeJson(KEYS.selectedProfile, snapshot.selectedProfile),
   ]);

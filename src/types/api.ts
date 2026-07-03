@@ -98,6 +98,18 @@ export interface StreamProbeResponse {
   audioTracks: AudioTrackInfo[];
 }
 
+export interface CacheStatus {
+  /** True when a complete, byte-exact file is ready to download from /api/stream. */
+  cached: boolean;
+  /** True while the server is still transcoding the file. */
+  transcoding: boolean;
+  bytesWritten: number;
+  duration: number | string;
+  fileSize: number;
+  /** Present when the source is backed by KaidaDB. */
+  kaidadb?: boolean;
+}
+
 export interface SearchResponse {
   titles: TitleSummary[];
   genres: string[];

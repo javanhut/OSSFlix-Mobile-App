@@ -46,7 +46,9 @@ describe("RecommendationsScreen", () => {
     jest.spyOn(api, "getCategories").mockResolvedValue([
       {
         genre: "Newly Added",
-        titles: [{ pathToDir: "x", name: "Alpha", imagePath: null, type: "Movie" }],
+        titles: [
+          { pathToDir: "x", name: "Alpha", imagePath: null, type: "Movie" },
+        ],
       },
     ] as any);
     const { findAllByText } = renderWithQuery(<RecommendationsScreen />);
@@ -57,7 +59,10 @@ describe("RecommendationsScreen", () => {
 
   it("renders an empty state when there's no Newly Added row", async () => {
     jest.spyOn(api, "getCategories").mockResolvedValue([
-      { genre: "Other", titles: [{ pathToDir: "z", name: "Z", imagePath: null, type: "Movie" }] },
+      {
+        genre: "Other",
+        titles: [{ pathToDir: "z", name: "Z", imagePath: null, type: "Movie" }],
+      },
     ] as any);
     const { findByText } = renderWithQuery(<RecommendationsScreen />);
     expect(await findByText("Nothing to recommend yet")).toBeTruthy();

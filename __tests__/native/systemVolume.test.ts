@@ -8,7 +8,9 @@
 
 type SystemVolumeModule = typeof import("../../src/native/systemVolume");
 
-function loadWithReactNativeMock(rnMock: Record<string, unknown>): SystemVolumeModule {
+function loadWithReactNativeMock(
+  rnMock: Record<string, unknown>,
+): SystemVolumeModule {
   let mod!: SystemVolumeModule;
   jest.isolateModules(() => {
     jest.doMock("react-native", () => rnMock);
@@ -20,12 +22,21 @@ function loadWithReactNativeMock(rnMock: Record<string, unknown>): SystemVolumeM
 
 const platformMock = (os: "android" | "ios" | "web") => ({
   NativeModules: { SystemVolume: undefined },
-  Platform: { OS: os, select: (obj: Record<string, unknown>) => obj[os] ?? obj.default },
+  Platform: {
+    OS: os,
+    select: (obj: Record<string, unknown>) => obj[os] ?? obj.default,
+  },
 });
 
-const androidWithModule = (impl: { getMusicVolume: jest.Mock; setMusicVolume: jest.Mock }) => ({
+const androidWithModule = (impl: {
+  getMusicVolume: jest.Mock;
+  setMusicVolume: jest.Mock;
+}) => ({
   NativeModules: { SystemVolume: impl },
-  Platform: { OS: "android", select: (obj: Record<string, unknown>) => obj.android ?? obj.default },
+  Platform: {
+    OS: "android",
+    select: (obj: Record<string, unknown>) => obj.android ?? obj.default,
+  },
 });
 
 describe("systemVolume on non-Android platforms", () => {
@@ -36,7 +47,10 @@ describe("systemVolume on non-Android platforms", () => {
 
   it("getSystemMusicVolumeInfo returns a fallback volume and max step count on iOS", async () => {
     const mod = loadWithReactNativeMock(platformMock("ios"));
-    await expect(mod.getSystemMusicVolumeInfo()).resolves.toEqual({ volume: 1, maxVolume: 15 });
+    await expect(mod.getSystemMusicVolumeInfo()).resolves.toEqual({
+      volume: 1,
+      maxVolume: 15,
+    });
   });
 
   it("setSystemMusicVolume clamps and returns the requested volume on iOS", async () => {
@@ -55,7 +69,10 @@ describe("systemVolume on Android without the native module installed", () => {
 
   it("getSystemMusicVolumeInfo falls back when the richer native method is unavailable", async () => {
     const mod = loadWithReactNativeMock(platformMock("android"));
-    await expect(mod.getSystemMusicVolumeInfo()).resolves.toEqual({ volume: 1, maxVolume: 15 });
+    await expect(mod.getSystemMusicVolumeInfo()).resolves.toEqual({
+      volume: 1,
+      maxVolume: 15,
+    });
   });
 
   it("setSystemMusicVolume clamps and returns the requested volume", async () => {
@@ -79,11 +96,16 @@ describe("systemVolume on Android with the native module", () => {
   it("getSystemMusicVolumeInfo reads volume metadata from the native module", async () => {
     const impl = {
       getMusicVolume: jest.fn(),
-      getMusicVolumeInfo: jest.fn().mockResolvedValue({ volume: 0.42, maxVolume: 25 }),
+      getMusicVolumeInfo: jest
+        .fn()
+        .mockResolvedValue({ volume: 0.42, maxVolume: 25 }),
       setMusicVolume: jest.fn(),
     };
     const mod = loadWithReactNativeMock(androidWithModule(impl));
-    await expect(mod.getSystemMusicVolumeInfo()).resolves.toEqual({ volume: 0.42, maxVolume: 25 });
+    await expect(mod.getSystemMusicVolumeInfo()).resolves.toEqual({
+      volume: 0.42,
+      maxVolume: 25,
+    });
   });
 
   it("getSystemMusicVolume clamps an out-of-range native value", async () => {

@@ -1,4 +1,12 @@
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -13,8 +21,12 @@ import { useAllowRotation } from "../hooks/useAllowRotation";
 
 export function ExploreScreen() {
   useAllowRotation();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const query = useQuery({ queryKey: ["categories"], queryFn: api.getCategories });
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const query = useQuery({
+    queryKey: ["categories"],
+    queryFn: api.getCategories,
+  });
 
   if (query.isLoading) {
     return (
@@ -34,15 +46,25 @@ export function ExploreScreen() {
       columnWrapperStyle={styles.row}
       contentContainerStyle={styles.list}
       refreshControl={
-        <RefreshControl refreshing={query.isRefetching} onRefresh={() => void query.refetch()} tintColor={colors.primary} />
+        <RefreshControl
+          refreshing={query.isRefetching}
+          onRefresh={() => void query.refetch()}
+          tintColor={colors.primary}
+        />
       }
       ListHeaderComponent={
         <View style={styles.header}>
-          <AppHeader title="Explore" subtitle="Browse every category on this server." />
+          <AppHeader
+            title="Explore"
+            subtitle="Browse every category on this server."
+          />
         </View>
       }
       ListEmptyComponent={
-        <EmptyState title="No categories yet" subtitle="Once the server has scanned media, categories will appear here." />
+        <EmptyState
+          title="No categories yet"
+          subtitle="Once the server has scanned media, categories will appear here."
+        />
       }
       renderItem={({ item }) => (
         <Pressable

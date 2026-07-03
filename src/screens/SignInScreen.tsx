@@ -1,5 +1,14 @@
 import { useMemo, useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 
@@ -19,9 +28,14 @@ export function SignInScreen({ navigation }: Props) {
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const selectedProfile = useSessionStore((state) => state.selectedProfile);
-  const setAuthenticatedSession = useSessionStore((state) => state.setAuthenticatedSession);
+  const setAuthenticatedSession = useSessionStore(
+    (state) => state.setAuthenticatedSession,
+  );
 
-  const needsSetPassword = useMemo(() => selectedProfile && !selectedProfile.has_password, [selectedProfile]);
+  const needsSetPassword = useMemo(
+    () => selectedProfile && !selectedProfile.has_password,
+    [selectedProfile],
+  );
 
   const submit = async () => {
     if (!selectedProfile) {
@@ -34,13 +48,17 @@ export function SignInScreen({ navigation }: Props) {
         ? await api.mobileSetPassword(selectedProfile.id, password)
         : await api.mobileLogin(selectedProfile.id, password);
       if (!response?.token || !response?.profile) {
-        throw new Error("Server did not return a valid session. Please try again.");
+        throw new Error(
+          "Server did not return a valid session. Please try again.",
+        );
       }
       setAuthenticatedSession(response.token, response.profile);
     } catch (error) {
       const raw = error instanceof Error ? error.message : "Unable to sign in.";
       const message =
-        raw === "password_not_set" ? "This profile has no password yet. Go back and select it again to set one." : raw;
+        raw === "password_not_set"
+          ? "This profile has no password yet. Go back and select it again to set one."
+          : raw;
       Alert.alert("Authentication failed", message);
     } finally {
       setSubmitting(false);
@@ -48,21 +66,44 @@ export function SignInScreen({ navigation }: Props) {
   };
 
   return (
-    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : "height"}>
-      <ScrollView style={styles.screen} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+    <KeyboardAvoidingView
+      style={styles.flex}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <ScrollView
+        style={styles.screen}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
         <AppHeader
           eyebrow="Profile"
           title={selectedProfile?.name || "Profile"}
-          subtitle={needsSetPassword ? "Set a password for this profile." : "Enter the profile password to continue."}
+          subtitle={
+            needsSetPassword
+              ? "Set a password for this profile."
+              : "Enter the profile password to continue."
+          }
           actionLabel="Back"
           onAction={() => navigation.goBack()}
         />
-        <PasswordField value={password} onChangeText={setPassword} placeholder="Password" />
+        <PasswordField
+          value={password}
+          onChangeText={setPassword}
+          placeholder="Password"
+        />
         <Pressable onPress={submit} disabled={submitting} style={styles.button}>
           <View style={styles.buttonContent}>
-            <Feather name={needsSetPassword ? "lock" : "log-in"} size={18} color={colors.primaryText} />
+            <Feather
+              name={needsSetPassword ? "lock" : "log-in"}
+              size={18}
+              color={colors.primaryText}
+            />
             <Text style={styles.buttonLabel}>
-              {submitting ? "Working..." : needsSetPassword ? "Set Password" : "Sign In"}
+              {submitting
+                ? "Working..."
+                : needsSetPassword
+                  ? "Set Password"
+                  : "Sign In"}
             </Text>
           </View>
         </Pressable>

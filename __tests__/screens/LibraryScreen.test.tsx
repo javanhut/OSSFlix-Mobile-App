@@ -53,10 +53,16 @@ describe("LibraryScreen", () => {
   });
 
   it("navigates to TitleDetails when a card is pressed", async () => {
-    jest.spyOn(api, "getLibrary").mockResolvedValue([{ name: "Pick", imagePath: null, pathToDir: "movies/Pick" }]);
+    jest
+      .spyOn(api, "getLibrary")
+      .mockResolvedValue([
+        { name: "Pick", imagePath: null, pathToDir: "movies/Pick" },
+      ]);
     const { findAllByText } = renderWithQuery(<LibraryScreen />);
     const matches = await findAllByText("Pick");
     fireEvent.press(matches[0]);
-    expect(mockNavigate).toHaveBeenCalledWith("TitleDetails", { dirPath: "movies/Pick" });
+    expect(mockNavigate).toHaveBeenCalledWith("TitleDetails", {
+      dirPath: "movies/Pick",
+    });
   });
 });

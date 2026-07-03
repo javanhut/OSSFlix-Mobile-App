@@ -46,7 +46,10 @@ export function FeaturedCarousel({
     clearTimer();
     timerRef.current = setTimeout(() => {
       const next = (activeIndex + 1) % items.length;
-      listRef.current?.scrollToOffset({ offset: next * slideWidth, animated: true });
+      listRef.current?.scrollToOffset({
+        offset: next * slideWidth,
+        animated: true,
+      });
       setActiveIndex(next);
     }, AUTO_ADVANCE_MS);
     return clearTimer;
@@ -57,7 +60,9 @@ export function FeaturedCarousel({
     if (w !== slideWidth) setSlideWidth(w);
   };
 
-  const handleMomentumEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+  const handleMomentumEnd = (
+    event: NativeSyntheticEvent<NativeScrollEvent>,
+  ) => {
     if (slideWidth === 0) return;
     const idx = Math.round(event.nativeEvent.contentOffset.x / slideWidth);
     const clamped = Math.max(0, Math.min(items.length - 1, idx));
@@ -84,9 +89,16 @@ export function FeaturedCarousel({
         renderItem={({ item }) => {
           const imageUrl = resolveAssetUrl(item.imagePath);
           return (
-            <Pressable onPress={() => onSelect(item)} style={[styles.slide, { width: slideWidth }]}>
+            <Pressable
+              onPress={() => onSelect(item)}
+              style={[styles.slide, { width: slideWidth }]}
+            >
               {imageUrl ? (
-                <Image source={{ uri: imageUrl }} style={styles.image} resizeMode="cover" />
+                <Image
+                  source={{ uri: imageUrl }}
+                  style={styles.image}
+                  resizeMode="cover"
+                />
               ) : (
                 <View style={[styles.image, styles.imageFallback]} />
               )}
@@ -103,7 +115,11 @@ export function FeaturedCarousel({
                   {item.name}
                 </Text>
                 <View style={styles.action}>
-                  <Feather name="play-circle" size={16} color={colors.primaryText} />
+                  <Feather
+                    name="play-circle"
+                    size={16}
+                    color={colors.primaryText}
+                  />
                   <Text style={styles.actionLabel}>Open Title</Text>
                 </View>
               </View>
@@ -114,7 +130,10 @@ export function FeaturedCarousel({
       {items.length > 1 ? (
         <View style={styles.dots}>
           {items.map((item, idx) => (
-            <View key={item.pathToDir} style={[styles.dot, idx === activeIndex && styles.dotActive]} />
+            <View
+              key={item.pathToDir}
+              style={[styles.dot, idx === activeIndex && styles.dotActive]}
+            />
           ))}
         </View>
       ) : null}

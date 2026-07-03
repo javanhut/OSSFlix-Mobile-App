@@ -29,16 +29,21 @@ afterEach(() => {
 describe("HomeScreen", () => {
   it("shows a loader while queries are pending", () => {
     jest.spyOn(api, "getCategories").mockReturnValue(new Promise(() => {}));
-    jest.spyOn(api, "getContinueWatching").mockReturnValue(new Promise(() => {}));
+    jest
+      .spyOn(api, "getContinueWatching")
+      .mockReturnValue(new Promise(() => {}));
     jest.spyOn(api, "getWatchlist").mockReturnValue(new Promise(() => {}));
     const { UNSAFE_root } = renderWithQuery(<HomeScreen />);
     expect(UNSAFE_root).toBeTruthy();
   });
 
   it("renders the welcome message and rails when data is loaded", async () => {
-    jest
-      .spyOn(api, "getCategories")
-      .mockResolvedValue([{ genre: "Action", titles: [{ name: "Bond", imagePath: null, pathToDir: "movies/Bond" }] }]);
+    jest.spyOn(api, "getCategories").mockResolvedValue([
+      {
+        genre: "Action",
+        titles: [{ name: "Bond", imagePath: null, pathToDir: "movies/Bond" }],
+      },
+    ]);
     jest.spyOn(api, "getContinueWatching").mockResolvedValue({
       genre: "Continue",
       titles: [{ name: "Resume", imagePath: null, pathToDir: "movies/Resume" }],
@@ -58,21 +63,37 @@ describe("HomeScreen", () => {
     jest.spyOn(api, "getCategories").mockResolvedValue([
       {
         genre: "Newly Added",
-        titles: [{ name: "Hero", imagePath: "/api/assets/hero.jpg", pathToDir: "movies/Hero" }],
+        titles: [
+          {
+            name: "Hero",
+            imagePath: "/api/assets/hero.jpg",
+            pathToDir: "movies/Hero",
+          },
+        ],
       },
     ]);
-    jest.spyOn(api, "getContinueWatching").mockResolvedValue({ genre: "Continue", titles: [] });
-    jest.spyOn(api, "getWatchlist").mockResolvedValue({ genre: "Watchlist", titles: [] });
+    jest
+      .spyOn(api, "getContinueWatching")
+      .mockResolvedValue({ genre: "Continue", titles: [] });
+    jest
+      .spyOn(api, "getWatchlist")
+      .mockResolvedValue({ genre: "Watchlist", titles: [] });
 
     const { findByText } = renderWithQuery(<HomeScreen />);
     fireEvent.press(await findByText("Open Title"));
-    expect(mockNavigate).toHaveBeenCalledWith("TitleDetails", { dirPath: "movies/Hero" });
+    expect(mockNavigate).toHaveBeenCalledWith("TitleDetails", {
+      dirPath: "movies/Hero",
+    });
   });
 
   it("renders the empty state when there are no categories", async () => {
     jest.spyOn(api, "getCategories").mockResolvedValue([]);
-    jest.spyOn(api, "getContinueWatching").mockResolvedValue({ genre: "Continue", titles: [] });
-    jest.spyOn(api, "getWatchlist").mockResolvedValue({ genre: "Watchlist", titles: [] });
+    jest
+      .spyOn(api, "getContinueWatching")
+      .mockResolvedValue({ genre: "Continue", titles: [] });
+    jest
+      .spyOn(api, "getWatchlist")
+      .mockResolvedValue({ genre: "Watchlist", titles: [] });
     const { findByText } = renderWithQuery(<HomeScreen />);
     expect(await findByText("No library data yet")).toBeTruthy();
   });
@@ -80,10 +101,13 @@ describe("HomeScreen", () => {
   it("omits the comma when no profile name is set", async () => {
     useSessionStore.setState({ profile: null });
     jest.spyOn(api, "getCategories").mockResolvedValue([]);
-    jest.spyOn(api, "getContinueWatching").mockResolvedValue({ genre: "Continue", titles: [] });
-    jest.spyOn(api, "getWatchlist").mockResolvedValue({ genre: "Watchlist", titles: [] });
+    jest
+      .spyOn(api, "getContinueWatching")
+      .mockResolvedValue({ genre: "Continue", titles: [] });
+    jest
+      .spyOn(api, "getWatchlist")
+      .mockResolvedValue({ genre: "Watchlist", titles: [] });
     const { findByText } = renderWithQuery(<HomeScreen />);
     expect(await findByText("Welcome back")).toBeTruthy();
   });
-
 });

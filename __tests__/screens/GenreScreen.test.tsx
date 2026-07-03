@@ -32,30 +32,50 @@ afterEach(() => {
 describe("GenreScreen", () => {
   it("renders titles from the matching category row", async () => {
     jest.spyOn(api, "getCategories").mockResolvedValue([
-      { genre: "Drama", titles: [{ name: "Ripple", imagePath: "/img.jpg", pathToDir: "movies/Ripple" }] },
-      { genre: "Action", titles: [{ name: "Bang", imagePath: "/img2.jpg", pathToDir: "movies/Bang" }] },
+      {
+        genre: "Drama",
+        titles: [
+          { name: "Ripple", imagePath: "/img.jpg", pathToDir: "movies/Ripple" },
+        ],
+      },
+      {
+        genre: "Action",
+        titles: [
+          { name: "Bang", imagePath: "/img2.jpg", pathToDir: "movies/Bang" },
+        ],
+      },
     ]);
     const { findByText } = renderWithQuery(<GenreScreen />);
     expect(await findByText("Ripple")).toBeTruthy();
   });
 
   it("navigates to TitleDetails when a card is pressed", async () => {
-    jest
-      .spyOn(api, "getCategories")
-      .mockResolvedValue([
-        { genre: "Drama", titles: [{ name: "Ripple", imagePath: "/img.jpg", pathToDir: "movies/Ripple" }] },
-      ]);
+    jest.spyOn(api, "getCategories").mockResolvedValue([
+      {
+        genre: "Drama",
+        titles: [
+          {
+            name: "Ripple",
+            imagePath: "/img.jpg",
+            pathToDir: "movies/Ripple",
+          },
+        ],
+      },
+    ]);
     const { findByText } = renderWithQuery(<GenreScreen />);
     fireEvent.press(await findByText("Ripple"));
-    expect(mockNavigate).toHaveBeenCalledWith("TitleDetails", { dirPath: "movies/Ripple" });
+    expect(mockNavigate).toHaveBeenCalledWith("TitleDetails", {
+      dirPath: "movies/Ripple",
+    });
   });
 
   it("shows the empty state when the genre has no titles", async () => {
-    jest
-      .spyOn(api, "getCategories")
-      .mockResolvedValue([
-        { genre: "Comedy", titles: [{ name: "Laugh", imagePath: null, pathToDir: "movies/Laugh" }] },
-      ]);
+    jest.spyOn(api, "getCategories").mockResolvedValue([
+      {
+        genre: "Comedy",
+        titles: [{ name: "Laugh", imagePath: null, pathToDir: "movies/Laugh" }],
+      },
+    ]);
     const { findByText } = renderWithQuery(<GenreScreen />);
     expect(await findByText("No Drama titles")).toBeTruthy();
   });

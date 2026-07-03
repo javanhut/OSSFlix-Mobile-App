@@ -23,7 +23,12 @@ function setProfile(profile: any) {
 
 beforeEach(() => {
   mockNavigate.mockReset();
-  setProfile({ id: 1, name: "Ada", email: "ada@example.com", image_path: null });
+  setProfile({
+    id: 1,
+    name: "Ada",
+    email: "ada@example.com",
+    image_path: null,
+  });
 });
 
 afterEach(() => {
@@ -58,7 +63,9 @@ describe("ProfileScreen", () => {
   });
 
   it("sign-out modal: cancel dismisses without logging out", () => {
-    const logoutSpy = jest.spyOn(api, "mobileLogout").mockResolvedValue({ ok: true });
+    const logoutSpy = jest
+      .spyOn(api, "mobileLogout")
+      .mockResolvedValue({ ok: true });
     const { getAllByText, getByText } = renderWithQuery(<ProfileScreen />);
     fireEvent.press(getAllByText("Sign Out")[0]);
     fireEvent.press(getByText("Cancel"));
@@ -67,7 +74,9 @@ describe("ProfileScreen", () => {
   });
 
   it("sign-out modal: confirm calls logout and clears auth", async () => {
-    const logoutSpy = jest.spyOn(api, "mobileLogout").mockResolvedValue({ ok: true });
+    const logoutSpy = jest
+      .spyOn(api, "mobileLogout")
+      .mockResolvedValue({ ok: true });
     const { getAllByText } = renderWithQuery(<ProfileScreen />);
     fireEvent.press(getAllByText("Sign Out")[0]);
     const buttons = getAllByText("Sign Out");

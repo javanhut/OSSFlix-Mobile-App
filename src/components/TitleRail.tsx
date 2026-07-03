@@ -69,7 +69,9 @@ export function TitleRail({
           horizontal
           data={items}
           keyExtractor={(item) => item.pathToDir}
-          renderItem={({ item }) => <TitleCard item={item} onPress={() => onSelect(item)} />}
+          renderItem={({ item }) => (
+            <TitleCard item={item} onPress={() => onSelect(item)} />
+          )}
           showsHorizontalScrollIndicator={false}
           onScroll={handleScroll}
           scrollEventThrottle={16}

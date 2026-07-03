@@ -28,16 +28,24 @@ afterEach(() => {
 
 describe("ExploreScreen", () => {
   it("shows the loader while categories are pending", () => {
-    jest.spyOn(api, "getCategories").mockReturnValue(new Promise(() => {}) as any);
+    jest
+      .spyOn(api, "getCategories")
+      .mockReturnValue(new Promise(() => {}) as any);
     const { toJSON } = renderWithQuery(<ExploreScreen />);
     expect(toJSON()).toBeTruthy();
   });
 
   it("renders the category tiles when data is loaded", async () => {
     jest.spyOn(api, "getCategories").mockResolvedValue([
-      { genre: "Action", titles: [{ pathToDir: "a", name: "A", imagePath: null, type: "Movie" }] },
+      {
+        genre: "Action",
+        titles: [{ pathToDir: "a", name: "A", imagePath: null, type: "Movie" }],
+      },
       { genre: "Empty", titles: [] },
-      { genre: "Comedy", titles: [{ pathToDir: "c", name: "C", imagePath: null, type: "Movie" }] },
+      {
+        genre: "Comedy",
+        titles: [{ pathToDir: "c", name: "C", imagePath: null, type: "Movie" }],
+      },
     ] as any);
     const { findByText, queryByText } = renderWithQuery(<ExploreScreen />);
     expect(await findByText("Action")).toBeTruthy();
@@ -47,7 +55,10 @@ describe("ExploreScreen", () => {
 
   it("navigates to the Genre route when a tile is pressed", async () => {
     jest.spyOn(api, "getCategories").mockResolvedValue([
-      { genre: "Action", titles: [{ pathToDir: "a", name: "A", imagePath: null, type: "Movie" }] },
+      {
+        genre: "Action",
+        titles: [{ pathToDir: "a", name: "A", imagePath: null, type: "Movie" }],
+      },
     ] as any);
     const { findByText } = renderWithQuery(<ExploreScreen />);
     fireEvent.press(await findByText("Action"));

@@ -11,6 +11,7 @@ import { colors } from "../theme/colors";
 import { ExploreScreen } from "../screens/ExploreScreen";
 import { GenreScreen } from "../screens/GenreScreen";
 import { HomeScreen } from "../screens/HomeScreen";
+import { DownloadsScreen } from "../screens/DownloadsScreen";
 import { LibraryScreen } from "../screens/LibraryScreen";
 import { PlayerScreen } from "../screens/PlayerScreen";
 import { ProfileLookupScreen } from "../screens/ProfileLookupScreen";
@@ -29,7 +30,10 @@ import { SidebarOverlay, type SidebarItem } from "../components/SidebarOverlay";
 export type RootStackParamList = {
   ServerConnect: undefined;
   ProfileLookup: undefined;
-  ProfileSelect: { profiles: import("../types/api").PublicProfile[]; source: "email" | "unclaimed" };
+  ProfileSelect: {
+    profiles: import("../types/api").PublicProfile[];
+    source: "email" | "unclaimed";
+  };
   SignIn: undefined;
   Register: undefined;
   MainTabs: undefined;
@@ -45,7 +49,21 @@ export type RootStackParamList = {
     videos: string[];
     startIndex: number;
     initialTime: number;
-    subtitles?: { label: string; language: string; src: string; format: string }[];
+    subtitles?: {
+      label: string;
+      language: string;
+      src: string;
+      format: string;
+    }[];
+    /** When true, `videos` holds local file:// URIs and no network is used. */
+    offline?: boolean;
+    /** Offline metadata parallel to `videos` (duration, timings, local subtitles). */
+    offlineMeta?: {
+      id: string;
+      duration?: number;
+      timings?: import("../types/api").EpisodeTiming | null;
+      subtitles?: { label: string; language: string; uri: string }[];
+    }[];
   };
 };
 
@@ -53,6 +71,7 @@ export type MainTabParamList = {
   Home: undefined;
   Search: undefined;
   Explore: undefined;
+  Downloads: undefined;
   Profile: undefined;
 };
 
@@ -120,29 +139,55 @@ function MainTabs() {
       <Tab.Screen
         name="Home"
         component={HomeScreen}
-        options={{ tabBarIcon: ({ color }) => <Feather name="home" size={iconSize} color={color} /> }}
+        options={{
+          tabBarIcon: ({ color }) => (
+            <Feather name="home" size={iconSize} color={color} />
+          ),
+        }}
       />
       <Tab.Screen
         name="Search"
         component={SearchScreen}
-        options={{ tabBarIcon: ({ color }) => <Feather name="search" size={iconSize} color={color} /> }}
+        options={{
+          tabBarIcon: ({ color }) => (
+            <Feather name="search" size={iconSize} color={color} />
+          ),
+        }}
       />
       <Tab.Screen
         name="Explore"
         component={ExploreScreen}
-        options={{ tabBarIcon: ({ color }) => <Feather name="compass" size={iconSize} color={color} /> }}
+        options={{
+          tabBarIcon: ({ color }) => (
+            <Feather name="compass" size={iconSize} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Downloads"
+        component={DownloadsScreen}
+        options={{
+          tabBarIcon: ({ color }) => (
+            <Feather name="download" size={iconSize} color={color} />
+          ),
+        }}
       />
       <Tab.Screen
         name="Profile"
         component={ProfileScreen}
-        options={{ tabBarIcon: ({ color }) => <Feather name="user" size={iconSize} color={color} /> }}
+        options={{
+          tabBarIcon: ({ color }) => (
+            <Feather name="user" size={iconSize} color={color} />
+          ),
+        }}
       />
     </Tab.Navigator>
   );
 }
 
 function MainTabsWithSidebar() {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { width, height } = useWindowDimensions();
   const isLandscape = width > height;
 
@@ -165,12 +210,14 @@ function MainTabsWithSidebar() {
     {
       icon: "monitor",
       label: "TV Shows",
-      onPress: () => navigation.navigate("Library", { type: "tv show", title: "TV Shows" }),
+      onPress: () =>
+        navigation.navigate("Library", { type: "tv show", title: "TV Shows" }),
     },
     {
       icon: "film",
       label: "Movies",
-      onPress: () => navigation.navigate("Library", { type: "Movie", title: "Movies" }),
+      onPress: () =>
+        navigation.navigate("Library", { type: "Movie", title: "Movies" }),
     },
   ];
 
@@ -196,35 +243,78 @@ export function RootNavigator() {
       }}
     >
       {!serverUrl ? (
-        <Stack.Screen name="ServerConnect" component={ServerConnectScreen} options={{ title: "Connect to Server" }} />
+        <Stack.Screen
+          name="ServerConnect"
+          component={ServerConnectScreen}
+          options={{ title: "Connect to Server" }}
+        />
       ) : !token || !profile ? (
         <>
-          <Stack.Screen name="ProfileLookup" component={ProfileLookupScreen} options={{ title: "Find Profile" }} />
-          <Stack.Screen name="ProfileSelect" component={ProfileSelectScreen} options={{ title: "Choose Profile" }} />
-          <Stack.Screen name="SignIn" component={SignInScreen} options={{ title: "Sign In" }} />
-          <Stack.Screen name="Register" component={RegisterScreen} options={{ title: "Create Profile" }} />
+          <Stack.Screen
+            name="ProfileLookup"
+            component={ProfileLookupScreen}
+            options={{ title: "Find Profile" }}
+          />
+          <Stack.Screen
+            name="ProfileSelect"
+            component={ProfileSelectScreen}
+            options={{ title: "Choose Profile" }}
+          />
+          <Stack.Screen
+            name="SignIn"
+            component={SignInScreen}
+            options={{ title: "Sign In" }}
+          />
+          <Stack.Screen
+            name="Register"
+            component={RegisterScreen}
+            options={{ title: "Create Profile" }}
+          />
         </>
       ) : (
         <>
-          <Stack.Screen name="MainTabs" component={MainTabsWithSidebar} options={{ headerShown: false }} />
-          <Stack.Screen name="TitleDetails" component={TitleDetailsScreen} options={{ title: "Details" }} />
-          <Stack.Screen name="Genre" component={GenreScreen} options={({ route }) => ({ title: route.params.genre })} />
+          <Stack.Screen
+            name="MainTabs"
+            component={MainTabsWithSidebar}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="TitleDetails"
+            component={TitleDetailsScreen}
+            options={{ title: "Details" }}
+          />
+          <Stack.Screen
+            name="Genre"
+            component={GenreScreen}
+            options={({ route }) => ({ title: route.params.genre })}
+          />
           <Stack.Screen
             name="Library"
             component={LibraryScreen}
             options={({ route }) => ({ title: route.params.title })}
           />
-          <Stack.Screen name="Watchlist" component={WatchlistScreen} options={{ title: "My List" }} />
+          <Stack.Screen
+            name="Watchlist"
+            component={WatchlistScreen}
+            options={{ title: "My List" }}
+          />
           <Stack.Screen
             name="Recommendations"
             component={RecommendationsScreen}
             options={{ title: "Recommendations" }}
           />
-          <Stack.Screen name="SwitchProfile" component={SwitchProfileScreen} options={{ title: "Switch Profile" }} />
+          <Stack.Screen
+            name="SwitchProfile"
+            component={SwitchProfileScreen}
+            options={{ title: "Switch Profile" }}
+          />
           <Stack.Screen
             name="Player"
             component={PlayerScreen}
-            options={{ headerShown: false, contentStyle: { backgroundColor: "#000" } }}
+            options={{
+              headerShown: false,
+              contentStyle: { backgroundColor: "#000" },
+            }}
           />
         </>
       )}

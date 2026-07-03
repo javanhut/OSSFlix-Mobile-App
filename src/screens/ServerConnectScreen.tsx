@@ -35,15 +35,25 @@ export function ServerConnectScreen() {
       }
       setConfiguredServerUrl(normalized);
     } catch (error) {
-      Alert.alert("Connection failed", error instanceof Error ? error.message : "Unable to reach the server.");
+      Alert.alert(
+        "Connection failed",
+        error instanceof Error ? error.message : "Unable to reach the server.",
+      );
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : "height"}>
-      <ScrollView style={styles.screen} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+    <KeyboardAvoidingView
+      style={styles.flex}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <ScrollView
+        style={styles.screen}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
         <AppHeader
           eyebrow="Android Setup"
           title="Connect to Reelscape"
@@ -61,11 +71,16 @@ export function ServerConnectScreen() {
         <Pressable
           onPress={handleConnect}
           disabled={submitting}
-          style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
+          style={({ pressed }) => [
+            styles.button,
+            pressed && styles.buttonPressed,
+          ]}
         >
           <View style={styles.buttonContent}>
             <Feather name="wifi" size={18} color={colors.primaryText} />
-            <Text style={styles.buttonLabel}>{submitting ? "Testing..." : "Connect"}</Text>
+            <Text style={styles.buttonLabel}>
+              {submitting ? "Testing..." : "Connect"}
+            </Text>
           </View>
         </Pressable>
       </ScrollView>

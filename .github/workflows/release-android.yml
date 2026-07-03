@@ -3,7 +3,7 @@ name: Release Android APK
 on:
   push:
     tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - "v[0-9]+.[0-9]+.[0-9]+"
 
 permissions:
   contents: write
@@ -11,7 +11,7 @@ permissions:
 
 env:
   # Run all JavaScript actions on Node.js 24 instead of the deprecated Node 20 default.
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
   vulnerability-scan:
@@ -24,9 +24,9 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: fs
-          scan-ref: '.'
-          severity: 'HIGH,CRITICAL'
-          exit-code: '1'
+          scan-ref: "."
+          severity: "HIGH,CRITICAL"
+          exit-code: "1"
           ignore-unfixed: true
 
       - name: Trivy SARIF report (non-blocking)
@@ -34,10 +34,10 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: fs
-          scan-ref: '.'
+          scan-ref: "."
           format: sarif
           output: trivy-results.sarif
-          exit-code: '0'
+          exit-code: "0"
           ignore-unfixed: true
 
       - name: Upload SARIF to Security tab
@@ -54,7 +54,7 @@ jobs:
 
       - uses: actions/setup-node@v5
         with:
-          node-version: '24'
+          node-version: "24"
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -103,7 +103,7 @@ jobs:
 
       - uses: actions/setup-node@v5
         with:
-          node-version: '24'
+          node-version: "24"
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -112,7 +112,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: "17"
 
       - uses: android-actions/setup-android@v3
 

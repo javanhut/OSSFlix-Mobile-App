@@ -17,7 +17,14 @@ import { Feather } from "@expo/vector-icons";
 import { api, resolveAssetUrl } from "../api/client";
 import { EmptyState } from "../components/EmptyState";
 import { EpisodeRow } from "../components/EpisodeRow";
+import {
+  deleteDownload,
+  makeDownloadId,
+  startDownload,
+} from "../downloads/downloadManager";
 import type { RootStackParamList } from "../navigation/RootNavigator";
+import { useDownloadsStore } from "../state/downloads";
+import { useSessionStore } from "../state/session";
 import { colors } from "../theme/colors";
 import {
   type AudioVariant,
@@ -69,7 +76,10 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
 
   const queryClient = useQueryClient();
   const { dirPath } = route.params;
-  const detailsQuery = useQuery({ queryKey: ["title-details", dirPath], queryFn: () => api.getTitleDetails(dirPath) });
+  const detailsQuery = useQuery({
+    queryKey: ["title-details", dirPath],
+    queryFn: () => api.getTitleDetails(dirPath),
+  });
   const watchlistQuery = useQuery({
     queryKey: ["watchlist-check", dirPath],
     queryFn: () => api.watchlistCheck(dirPath),
@@ -95,21 +105,35 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
     },
     onError: (error, _vars, context) => {
       if (context?.previous !== undefined) {
-        queryClient.setQueryData(["watchlist-check", dirPath], context.previous);
+        queryClient.setQueryData(
+          ["watchlist-check", dirPath],
+          context.previous,
+        );
       }
-      Alert.alert("Unable to update My List", error instanceof Error ? error.message : "Request failed.");
+      Alert.alert(
+        "Unable to update My List",
+        error instanceof Error ? error.message : "Request failed.",
+      );
     },
     onSettled: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["watchlist"] }),
-        queryClient.invalidateQueries({ queryKey: ["watchlist-check", dirPath] }),
+        queryClient.invalidateQueries({
+          queryKey: ["watchlist-check", dirPath],
+        }),
       ]);
     },
   });
 
   const details = detailsQuery.data;
 
-  const variantMap = useMemo(() => inferEpisodeVariants(details?.videos || []), [details?.videos]);
+  const downloadItems = useDownloadsStore((state) => state.items);
+  const profileId = useSessionStore((state) => state.profile?.id ?? null);
+
+  const variantMap = useMemo(
+    () => inferEpisodeVariants(details?.videos || []),
+    [details?.videos],
+  );
   const availableVariants = useMemo(() => {
     const set = new Set<AudioVariant>();
     for (const v of variantMap.values()) {
@@ -117,9 +141,12 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
     }
     return set;
   }, [variantMap]);
-  const hasBothVariants = availableVariants.has("sub") && availableVariants.has("dub");
+  const hasBothVariants =
+    availableVariants.has("sub") && availableVariants.has("dub");
 
-  const [selectedVariant, setSelectedVariant] = useState<AudioSelection | null>(null);
+  const [selectedVariant, setSelectedVariant] = useState<AudioSelection | null>(
+    null,
+  );
 
   useEffect(() => {
     if (hasBothVariants && selectedVariant === null) {
@@ -131,7 +158,11 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
 
   const filteredVideos = useMemo(() => {
     const videos = details?.videos || [];
-    if (selectedVariant === "both" || !hasBothVariants || selectedVariant === null) {
+    if (
+      selectedVariant === "both" ||
+      !hasBothVariants ||
+      selectedVariant === null
+    ) {
       return videos;
     }
     const variantFiltered = videos.filter((v) => {
@@ -157,7 +188,9 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
     const winnerByKey = new Map<string, string>();
     for (const [key, candidates] of groups) {
       const winner =
-        candidates.length > 1 ? [...candidates].sort((a, b) => pickRank(a) - pickRank(b))[0]! : candidates[0]!;
+        candidates.length > 1
+          ? [...candidates].sort((a, b) => pickRank(a) - pickRank(b))[0]!
+          : candidates[0]!;
       winnerByKey.set(key, winner);
     }
     const emitted = new Set<string>();
@@ -178,7 +211,11 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
   }, [details?.videos, hasBothVariants, selectedVariant, variantMap]);
 
   const grouped = useMemo(() => {
-    if (!details) return { bySeason: new Map<number, EpisodeEntry[]>(), other: [] as EpisodeEntry[] };
+    if (!details)
+      return {
+        bySeason: new Map<number, EpisodeEntry[]>(),
+        other: [] as EpisodeEntry[],
+      };
     const bySeason = new Map<number, EpisodeEntry[]>();
     const other: EpisodeEntry[] = [];
     const sorted = [...filteredVideos].sort(compareVideoSrc);
@@ -195,12 +232,18 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
     return { bySeason, other };
   }, [details, filteredVideos]);
 
-  const seasonKeys = useMemo(() => [...grouped.bySeason.keys()].sort((a, b) => a - b), [grouped.bySeason]);
+  const seasonKeys = useMemo(
+    () => [...grouped.bySeason.keys()].sort((a, b) => a - b),
+    [grouped.bySeason],
+  );
 
   const progressByVideo = useMemo(() => {
     const map = new Map<string, { current_time: number; duration: number }>();
     for (const entry of progressQuery.data || []) {
-      map.set(entry.video_src, { current_time: entry.current_time, duration: entry.duration });
+      map.set(entry.video_src, {
+        current_time: entry.current_time,
+        duration: entry.duration,
+      });
     }
     return map;
   }, [progressQuery.data]);
@@ -210,7 +253,8 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
 
   const effectiveSeason = selectedSeason ?? seasonKeys[0] ?? null;
   const seasonMeta = useMemo(
-    () => details?.seasonsMeta?.find((m) => m.season === effectiveSeason) ?? null,
+    () =>
+      details?.seasonsMeta?.find((m) => m.season === effectiveSeason) ?? null,
     [details?.seasonsMeta, effectiveSeason],
   );
 
@@ -218,7 +262,9 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
     if (!filteredVideos.length) return null;
     const progressEntries = progressQuery.data || [];
     const resumeEntry = progressEntries.find(
-      (entry) => entry.current_time > 0 && (entry.duration === 0 || entry.current_time < entry.duration - 5),
+      (entry) =>
+        entry.current_time > 0 &&
+        (entry.duration === 0 || entry.current_time < entry.duration - 5),
     );
     if (resumeEntry) {
       const startIndex = filteredVideos.indexOf(resumeEntry.video_src);
@@ -245,13 +291,54 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
   const description = seasonMeta?.description ?? details.description;
   const imageUrl = resolveAssetUrl(bannerSrc);
 
-  const visibleEntries = effectiveSeason != null ? (grouped.bySeason.get(effectiveSeason) ?? []) : grouped.other;
+  const startEpisodeDownload = (entry: EpisodeEntry) => {
+    void startDownload({
+      src: entry.video,
+      dirPath: details.dirPath,
+      title: details.name,
+      episodeLabel: entry.parsed ? entry.label : undefined,
+      poster: details.bannerImage,
+      subtitles: details.subtitles,
+      profileId,
+    });
+  };
+
+  const deleteEpisodeDownload = (entry: EpisodeEntry) => {
+    const id = makeDownloadId(entry.video, 0);
+    Alert.alert(
+      "Remove download",
+      `Delete "${entry.label}" from this device?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => void deleteDownload(id),
+        },
+      ],
+    );
+  };
+
+  const downloadAll = () => {
+    for (const video of filteredVideos) {
+      startEpisodeDownload(buildEntry(video, details.dirPath));
+    }
+  };
+
+  const visibleEntries =
+    effectiveSeason != null
+      ? (grouped.bySeason.get(effectiveSeason) ?? [])
+      : grouped.other;
 
   const showDropdown = seasonKeys.length >= 2;
 
   const detailsPanel = (
     <>
-      {imageUrl ? <Image source={{ uri: imageUrl }} style={styles.poster} /> : <View style={styles.posterFallback} />}
+      {imageUrl ? (
+        <Image source={{ uri: imageUrl }} style={styles.poster} />
+      ) : (
+        <View style={styles.posterFallback} />
+      )}
       <Text style={styles.title}>{details.name}</Text>
       <Text style={styles.meta}>{formatTitleType(details.type)}</Text>
       <Text style={styles.description}>{description}</Text>
@@ -261,14 +348,19 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
             <Pressable
               key={genre}
               onPress={() => navigation.navigate("Genre", { genre })}
-              style={({ pressed }) => [styles.chip, pressed && styles.chipPressed]}
+              style={({ pressed }) => [
+                styles.chip,
+                pressed && styles.chipPressed,
+              ]}
             >
               <Text style={styles.chipLabel}>{genre}</Text>
             </Pressable>
           ))}
         </View>
       ) : null}
-      {details.cast?.length ? <Text style={styles.cast}>Cast: {details.cast.join(", ")}</Text> : null}
+      {details.cast?.length ? (
+        <Text style={styles.cast}>Cast: {details.cast.join(", ")}</Text>
+      ) : null}
       <View style={styles.actionRow}>
         <Pressable
           onPress={() =>
@@ -283,21 +375,47 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
             })
           }
           disabled={!playTarget}
-          style={[styles.primaryButton, !playTarget && styles.primaryButtonDisabled]}
+          style={[
+            styles.primaryButton,
+            !playTarget && styles.primaryButtonDisabled,
+          ]}
         >
           <View style={styles.buttonContent}>
-            <Feather name={playTarget?.initialTime ? "play" : "play-circle"} size={18} color={colors.primaryText} />
-            <Text style={styles.primaryLabel}>{playTarget?.initialTime ? "Resume" : "Play"}</Text>
-          </View>
-        </Pressable>
-        <Pressable onPress={() => toggleWatchlist.mutate()} style={styles.secondaryButton}>
-          <View style={styles.buttonContent}>
-            <Feather name="bookmark" size={18} color={colors.text} />
-            <Text style={styles.secondaryLabel}>
-              {watchlistQuery.data?.inList ? "Remove from My List" : "Add to My List"}
+            <Feather
+              name={playTarget?.initialTime ? "play" : "play-circle"}
+              size={18}
+              color={colors.primaryText}
+            />
+            <Text style={styles.primaryLabel}>
+              {playTarget?.initialTime ? "Resume" : "Play"}
             </Text>
           </View>
         </Pressable>
+        <Pressable
+          onPress={() => toggleWatchlist.mutate()}
+          style={styles.secondaryButton}
+        >
+          <View style={styles.buttonContent}>
+            <Feather name="bookmark" size={18} color={colors.text} />
+            <Text style={styles.secondaryLabel}>
+              {watchlistQuery.data?.inList
+                ? "Remove from My List"
+                : "Add to My List"}
+            </Text>
+          </View>
+        </Pressable>
+        {filteredVideos.length ? (
+          <Pressable onPress={downloadAll} style={styles.secondaryButton}>
+            <View style={styles.buttonContent}>
+              <Feather name="download" size={18} color={colors.text} />
+              <Text style={styles.secondaryLabel}>
+                {filteredVideos.length > 1
+                  ? `Download all (${filteredVideos.length})`
+                  : "Download"}
+              </Text>
+            </View>
+          </Pressable>
+        ) : null}
       </View>
     </>
   );
@@ -306,9 +424,18 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
     <>
       {showDropdown ? (
         <View style={styles.seasonSection}>
-          <Pressable onPress={() => setSeasonMenuOpen((open) => !open)} style={styles.seasonTrigger}>
-            <Text style={styles.seasonTriggerLabel}>Season {effectiveSeason}</Text>
-            <Feather name={seasonMenuOpen ? "chevron-up" : "chevron-down"} size={18} color={colors.text} />
+          <Pressable
+            onPress={() => setSeasonMenuOpen((open) => !open)}
+            style={styles.seasonTrigger}
+          >
+            <Text style={styles.seasonTriggerLabel}>
+              Season {effectiveSeason}
+            </Text>
+            <Feather
+              name={seasonMenuOpen ? "chevron-up" : "chevron-down"}
+              size={18}
+              color={colors.text}
+            />
           </Pressable>
           {seasonMenuOpen ? (
             <View style={styles.menuSheet}>
@@ -336,31 +463,53 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
         <View style={styles.variantRow}>
           {(["sub", "dub", "both"] as AudioSelection[]).map((option) => {
             const active = (selectedVariant ?? "sub") === option;
-            const label = option === "both" ? "Sub + Dub" : option === "sub" ? "Sub" : "Dub";
+            const label =
+              option === "both"
+                ? "Sub + Dub"
+                : option === "sub"
+                  ? "Sub"
+                  : "Dub";
             return (
               <Pressable
                 key={option}
                 onPress={() => setSelectedVariant(option)}
-                style={[styles.variantOption, active && styles.variantOptionActive]}
+                style={[
+                  styles.variantOption,
+                  active && styles.variantOptionActive,
+                ]}
               >
-                <Text style={[styles.variantLabel, active && styles.variantLabelActive]}>{label}</Text>
+                <Text
+                  style={[
+                    styles.variantLabel,
+                    active && styles.variantLabelActive,
+                  ]}
+                >
+                  {label}
+                </Text>
               </Pressable>
             );
           })}
         </View>
       ) : null}
 
-      {seasonKeys.length > 0 ? <Text style={styles.sectionTitle}>Episodes</Text> : null}
+      {seasonKeys.length > 0 ? (
+        <Text style={styles.sectionTitle}>Episodes</Text>
+      ) : null}
       {visibleEntries.length ? (
         visibleEntries.map((entry) => {
           const startIndex = filteredVideos.indexOf(entry.video);
           const progress = progressByVideo.get(entry.video) ?? null;
+          const download = downloadItems[makeDownloadId(entry.video, 0)];
           return (
             <EpisodeRow
               key={entry.video}
               parsed={entry.parsed}
               fallbackLabel={entry.label}
               progress={progress}
+              downloadStatus={download?.status}
+              downloadProgress={download?.progress}
+              onDownload={() => startEpisodeDownload(entry)}
+              onDeleteDownload={() => deleteEpisodeDownload(entry)}
               onPlay={() =>
                 navigation.navigate("Player", {
                   dirPath: details.dirPath,
