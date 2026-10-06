@@ -50,10 +50,11 @@ describe("HomeScreen", () => {
       genre: "Watchlist",
       titles: [{ name: "Saved", imagePath: null, pathToDir: "movies/Saved" }],
     });
-    const { findByText, getByText } = renderWithQuery(<HomeScreen />);
+    const { findByText, getByText, getAllByText } = renderWithQuery(<HomeScreen />);
     expect(await findByText("Reelscape")).toBeTruthy();
     expect(getByText("Continue Watching")).toBeTruthy();
-    expect(getByText("My List")).toBeTruthy();
+    // Once as a browse link, once as the rail heading.
+    expect(getAllByText("My List")).toHaveLength(2);
     expect(getByText("Action")).toBeTruthy();
   });
 
@@ -84,6 +85,30 @@ describe("HomeScreen", () => {
       dirPath: "movies/Hero",
       autoplay: true,
     });
+  });
+
+  it.each([
+    ["Movies", "Library", { type: "Movie", title: "Movies" }],
+    ["TV Shows", "Library", { type: "tv show", title: "TV Shows" }],
+    ["Anime", "Genre", { genre: "Anime" }],
+    ["For You", "Recommendations", undefined],
+  ])("browse link %s opens %s", async (label, screen, params) => {
+    jest.spyOn(api, "getCategories").mockResolvedValue([]);
+    jest.spyOn(api, "getContinueWatching").mockResolvedValue({ genre: "Continue", titles: [] });
+    jest.spyOn(api, "getWatchlist").mockResolvedValue({ genre: "Watchlist", titles: [] });
+    const { findByText } = renderWithQuery(<HomeScreen />);
+    fireEvent.press(await findByText(label));
+    if (params) expect(mockNavigate).toHaveBeenCalledWith(screen, params);
+    else expect(mockNavigate).toHaveBeenCalledWith(screen);
+  });
+
+  it("browse link My List opens the watchlist", async () => {
+    jest.spyOn(api, "getCategories").mockResolvedValue([]);
+    jest.spyOn(api, "getContinueWatching").mockResolvedValue({ genre: "Continue", titles: [] });
+    jest.spyOn(api, "getWatchlist").mockResolvedValue({ genre: "Watchlist", titles: [] });
+    const { findByText } = renderWithQuery(<HomeScreen />);
+    fireEvent.press(await findByText("My List"));
+    expect(mockNavigate).toHaveBeenCalledWith("Watchlist");
   });
 
   it("renders the empty state when there are no categories", async () => {

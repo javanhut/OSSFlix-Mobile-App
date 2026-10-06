@@ -27,14 +27,17 @@ whenever native code or native dependencies change.
 This app ships native modules (`react-native-video`, the `SystemVolume` module in `android/`), so it
 does **not** run in Expo Go — use the development build above.
 
-The `android/` directory is checked in because of the custom native module. If you regenerate it with
-`expo prebuild --clean`, restore `SystemVolumeModule.kt` / `SystemVolumePackage.kt` and the
-`add(SystemVolumePackage())` line in `MainApplication.kt`.
+The `android/` directory is checked in because of custom native code. If you regenerate it with
+`expo prebuild --clean`, restore:
+
+- `SystemVolumeModule.kt` / `SystemVolumePackage.kt` and the `add(SystemVolumePackage())` line in `MainApplication.kt`
 
 Releases: pushing a `vX.Y.Z` tag runs `.github/workflows/release-android.yml`, which scans, typechecks,
 tests, builds the release APK and publishes it as a GitHub release.
 
 The server must include the mobile auth endpoints added in `OSSFlix`.
+
+Android TV is a separate app: see `OSSFlix-TV-App`.
 
 ## Notes
 

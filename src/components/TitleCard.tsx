@@ -1,4 +1,5 @@
-import { Image, Pressable, type StyleProp, StyleSheet, Text, View, type ViewStyle } from "react-native";
+import { Image, type StyleProp, StyleSheet, Text, View, type ViewStyle } from "react-native";
+import { Pressable } from "./FocusPressable";
 import { LinearGradient } from "expo-linear-gradient";
 
 import { resolveAssetUrl } from "../api/client";
@@ -27,6 +28,7 @@ export function TitleCard({
       accessibilityRole="button"
       accessibilityLabel={item.name}
       style={({ pressed }) => [styles.card, { width }, style, pressed && styles.cardPressed]}
+      focusStyle={styles.cardFocused}
     >
       {imageUrl ? (
         <Image source={{ uri: imageUrl }} style={styles.image} resizeMode="cover" />
@@ -55,6 +57,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceElevated,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.05)",
+  },
+  cardFocused: {
+    transform: [{ scale: 1.06 }],
+    borderColor: "rgba(255,255,255,0.9)",
   },
   cardPressed: {
     opacity: 0.85,

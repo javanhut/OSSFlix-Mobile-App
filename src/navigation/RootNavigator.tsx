@@ -1,4 +1,4 @@
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { type BottomTabBarButtonProps, createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -27,6 +27,7 @@ import { SwitchProfileScreen } from "../screens/SwitchProfileScreen";
 import { TitleDetailsScreen } from "../screens/TitleDetailsScreen";
 import { SearchScreen } from "../screens/SearchScreen";
 import { WatchlistScreen } from "../screens/WatchlistScreen";
+import { Pressable } from "../components/FocusPressable";
 import { SidebarOverlay, type SidebarItem } from "../components/SidebarOverlay";
 
 export type RootStackParamList = {
@@ -78,6 +79,24 @@ export type MainTabParamList = {
   Profile: undefined;
 };
 
+// Tab buttons with a visible D-pad focus state (TV remote).
+function TabButton({
+  href: _href,
+  pressOpacity: _pressOpacity,
+  hoverEffect: _hoverEffect,
+  ref: _ref,
+  ...rest
+}: BottomTabBarButtonProps) {
+  return <Pressable {...rest} focusStyle={tabStyles.focused} />;
+}
+
+const tabStyles = StyleSheet.create({
+  focused: {
+    backgroundColor: "rgba(255,255,255,0.12)",
+    borderRadius: 12,
+  },
+});
+
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
@@ -118,6 +137,7 @@ function MainTabs() {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
+        tabBarButton: (props) => <TabButton {...props} />,
         tabBarPosition: isLandscape ? "left" : "bottom",
         tabBarVariant: "uikit",
         tabBarActiveTintColor: "#ffffff",

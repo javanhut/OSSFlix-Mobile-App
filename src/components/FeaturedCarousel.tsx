@@ -5,11 +5,11 @@ import {
   type LayoutChangeEvent,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
-  Pressable,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import { Pressable } from "./FocusPressable";
 import { LinearGradient } from "expo-linear-gradient";
 import { useQuery } from "@tanstack/react-query";
 

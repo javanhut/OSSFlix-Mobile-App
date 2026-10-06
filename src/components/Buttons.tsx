@@ -1,5 +1,6 @@
 import type { ComponentProps } from "react";
-import { Pressable, type StyleProp, StyleSheet, Text, type ViewStyle } from "react-native";
+import { type StyleProp, StyleSheet, Text, type ViewStyle } from "react-native";
+import { Pressable } from "./FocusPressable";
 import { Feather } from "@expo/vector-icons";
 
 import { colors } from "../theme/colors";

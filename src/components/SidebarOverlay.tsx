@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
-import { Animated, PanResponder, Pressable, StyleSheet, Text, View } from "react-native";
+import { Animated, PanResponder, StyleSheet, Text, View } from "react-native";
+import { Pressable } from "./FocusPressable";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 

@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, StyleSheet, Text, TextInput, useWindowDimensions, View } from "react-native";
+import { Pressable } from "../components/FocusPressable";
 import { Feather } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
@@ -16,6 +17,9 @@ type Props = NativeStackScreenProps<RootStackParamList, "ProfileLookup">;
 
 export function ProfileLookupScreen({ navigation }: Props) {
   useAllowRotation();
+  const { width, height } = useWindowDimensions();
+  // TVs and landscape tablets: showcase beside the form, like the web login.
+  const wide = width >= 900 && width > height;
 
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -76,50 +80,54 @@ export function ProfileLookupScreen({ navigation }: Props) {
 
   return (
     <AuthStage topPadding={28}>
-      <BrandWordmark />
-      <Text style={styles.tagline}>{"Your library.\nYour screen."}</Text>
-      <View style={styles.panel}>
-        <Text style={authStyles.heading} accessibilityRole="header">
-          Welcome back
-        </Text>
-        <Text style={authStyles.subheading}>Find your profile to start watching.</Text>
-        <View style={[authStyles.card, styles.card]}>
-          <View style={styles.serverRow}>
-            <Feather name="server" size={14} color={colors.textMuted} />
-            <Text style={styles.serverLabel} numberOfLines={1}>
-              {currentServerUrl ? currentServerUrl : "No server configured"}
-            </Text>
-            <Pressable onPress={() => setServerUrl("")} hitSlop={8} accessibilityRole="button">
-              <Text style={styles.changeLabel}>Change</Text>
-            </Pressable>
-          </View>
-          <TextInput
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            autoCorrect={false}
-            keyboardType="email-address"
-            placeholder="Email"
-            placeholderTextColor={colors.textDim}
-            style={authStyles.input}
-          />
-          <PrimaryButton
-            label={submitting ? "Loading..." : "Find Profiles"}
-            onPress={handleLookup}
-            disabled={submitting}
-            large
-          />
-          <View style={styles.dividerRow}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerLabel}>or</Text>
-            <View style={styles.dividerLine} />
-          </View>
-          <GlassButton label="Use Unclaimed Profile" icon="users" onPress={handleUnclaimed} disabled={submitting} />
-          <GlassButton label="Continue as Guest" icon="user" onPress={handleGuest} disabled={submitting} />
+      <View style={wide && styles.wideRow}>
+        <View style={wide && styles.wideShowcase}>
+          <BrandWordmark />
+          <Text style={[styles.tagline, wide && styles.taglineWide]}>{"Your library.\nYour screen."}</Text>
         </View>
-        <Pressable onPress={() => navigation.navigate("Register")} style={styles.linkButton}>
-          <Text style={styles.linkLabel}>Create a new profile</Text>
-        </Pressable>
+        <View style={[styles.panel, wide && styles.panelWide]}>
+          <Text style={authStyles.heading} accessibilityRole="header">
+            Welcome back
+          </Text>
+          <Text style={authStyles.subheading}>Find your profile to start watching.</Text>
+          <View style={[authStyles.card, styles.card]}>
+            <View style={styles.serverRow}>
+              <Feather name="server" size={14} color={colors.textMuted} />
+              <Text style={styles.serverLabel} numberOfLines={1}>
+                {currentServerUrl ? currentServerUrl : "No server configured"}
+              </Text>
+              <Pressable onPress={() => setServerUrl("")} hitSlop={8} accessibilityRole="button">
+                <Text style={styles.changeLabel}>Change</Text>
+              </Pressable>
+            </View>
+            <TextInput
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="email-address"
+              placeholder="Email"
+              placeholderTextColor={colors.textDim}
+              style={authStyles.input}
+            />
+            <PrimaryButton
+              label={submitting ? "Loading..." : "Find Profiles"}
+              onPress={handleLookup}
+              disabled={submitting}
+              large
+            />
+            <View style={styles.dividerRow}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerLabel}>or</Text>
+              <View style={styles.dividerLine} />
+            </View>
+            <GlassButton label="Use Unclaimed Profile" icon="users" onPress={handleUnclaimed} disabled={submitting} />
+            <GlassButton label="Continue as Guest" icon="user" onPress={handleGuest} disabled={submitting} />
+          </View>
+          <Pressable onPress={() => navigation.navigate("Register")} style={styles.linkButton}>
+            <Text style={styles.linkLabel}>Create a new profile</Text>
+          </Pressable>
+        </View>
       </View>
     </AuthStage>
   );
@@ -134,8 +142,27 @@ const styles = StyleSheet.create({
     letterSpacing: -1.6,
     marginTop: 64,
   },
+  taglineWide: {
+    fontSize: 56,
+    lineHeight: 60,
+    letterSpacing: -2.2,
+    marginTop: 28,
+  },
   panel: {
     marginTop: 36,
+  },
+  wideRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 56,
+    flexGrow: 1,
+  },
+  wideShowcase: {
+    flex: 1,
+  },
+  panelWide: {
+    width: 460,
+    marginTop: 0,
   },
   card: {
     marginTop: 18,

@@ -1,15 +1,6 @@
 import { useState } from "react";
-import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable } from "../components/FocusPressable";
 import { Feather } from "@expo/vector-icons";
 
 import { api, normalizeServerUrl } from "../api/client";

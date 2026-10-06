@@ -535,6 +535,9 @@ describe("PlayerScreen — persistence lifecycle", () => {
   it("persists progress when AppState transitions away from active", async () => {
     const listeners: Array<(s: string) => void> = [];
     const AppState = require("react-native").AppState;
+    // addEventListener is already a jest mock here; mockRestore() would wipe its
+    // implementation for later tests, so put the original back by hand.
+    const originalImpl = AppState.addEventListener.getMockImplementation?.();
     const addSpy = jest.spyOn(AppState, "addEventListener").mockImplementation((...args: unknown[]) => {
       const cb = args[1] as (s: string) => void;
       listeners.push(cb);
@@ -552,6 +555,7 @@ describe("PlayerScreen — persistence lifecycle", () => {
       });
     });
     await waitFor(() => expect(api.saveProgress).toHaveBeenCalled());
-    addSpy.mockRestore();
+    if (originalImpl) addSpy.mockImplementation(originalImpl);
+    else addSpy.mockRestore();
   });
 });

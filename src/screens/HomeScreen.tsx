@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { api } from "../api/client";
 import { EmptyState } from "../components/EmptyState";
 import { FeaturedCarousel } from "../components/FeaturedCarousel";
+import { Pressable } from "../components/FocusPressable";
 import { TitleRail } from "../components/TitleRail";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors } from "../theme/colors";
@@ -39,6 +40,16 @@ const BASIC_GENRES = new Set([
 ]);
 
 const FEATURED_LIMIT = 6;
+
+// Same sections as the web navbar. Also the way into them on TV/landscape, where
+// the swipe-in sidebar isn't available.
+const BROWSE_LINKS: { label: string; to: (nav: NativeStackNavigationProp<RootStackParamList>) => void }[] = [
+  { label: "Movies", to: (nav) => nav.navigate("Library", { type: "Movie", title: "Movies" }) },
+  { label: "TV Shows", to: (nav) => nav.navigate("Library", { type: "tv show", title: "TV Shows" }) },
+  { label: "Anime", to: (nav) => nav.navigate("Genre", { genre: "Anime" }) },
+  { label: "My List", to: (nav) => nav.navigate("Watchlist") },
+  { label: "For You", to: (nav) => nav.navigate("Recommendations") },
+];
 
 export function HomeScreen() {
   useAllowRotation();
@@ -110,6 +121,23 @@ export function HomeScreen() {
       <Text style={[styles.brand, { top: insets.top + 12 }]} accessibilityRole="header">
         Reelscape
       </Text>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.browseRow}
+        contentContainerStyle={styles.browseRowContent}
+      >
+        {BROWSE_LINKS.map((link) => (
+          <Pressable
+            key={link.label}
+            onPress={() => link.to(navigation)}
+            accessibilityRole="link"
+            style={({ pressed }) => [styles.browsePill, pressed && styles.browsePillPressed]}
+          >
+            <Text style={styles.browseLabel}>{link.label}</Text>
+          </Pressable>
+        ))}
+      </ScrollView>
       <TitleRail
         title="Continue Watching"
         items={continueWatchingQuery.data?.titles || []}
@@ -157,6 +185,30 @@ const styles = StyleSheet.create({
     textShadowColor: "rgba(0,0,0,0.5)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 8,
+  },
+  browseRow: {
+    marginHorizontal: -18,
+    marginBottom: 22,
+  },
+  browseRowContent: {
+    paddingHorizontal: 18,
+    gap: 10,
+  },
+  browsePill: {
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.borderBright,
+    backgroundColor: colors.glass,
+  },
+  browsePillPressed: {
+    backgroundColor: colors.surfaceHover,
+  },
+  browseLabel: {
+    color: colors.text,
+    fontFamily: fonts.bodySemiBold,
+    fontSize: 14,
   },
   loading: {
     flex: 1,

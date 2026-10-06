@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AppState, type LayoutChangeEvent, PanResponder, Pressable, StyleSheet, Text, View } from "react-native";
+import { AppState, type LayoutChangeEvent, PanResponder, StyleSheet, Text, View } from "react-native";
+import { Pressable } from "../components/FocusPressable";
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as ScreenOrientation from "expo-screen-orientation";

@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import { Pressable } from "../components/FocusPressable";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 
@@ -89,8 +90,10 @@ const styles = StyleSheet.create({
     marginTop: 32,
   },
   tile: {
-    width: 120,
+    width: 132,
     alignItems: "center",
+    padding: 6,
+    borderRadius: 24,
   },
   tilePressed: {
     transform: [{ scale: 1.04 }],
