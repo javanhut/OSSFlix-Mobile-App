@@ -1,14 +1,17 @@
 import { useMemo, useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 
 import { api } from "../api/client";
-import { AppHeader } from "../components/AppHeader";
+import { AuthStage, authStyles } from "../components/AuthStage";
+import { PrimaryButton } from "../components/Buttons";
+import { ProfileAvatar } from "../components/ProfileAvatar";
 import { PasswordField } from "../components/PasswordField";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { useSessionStore } from "../state/session";
 import { colors } from "../theme/colors";
+import { fonts } from "../theme/typography";
 import { useAllowRotation } from "../hooks/useAllowRotation";
 
 type Props = NativeStackScreenProps<RootStackParamList, "SignIn">;
@@ -48,57 +51,57 @@ export function SignInScreen({ navigation }: Props) {
   };
 
   return (
-    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : "height"}>
-      <ScrollView style={styles.screen} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <AppHeader
-          eyebrow="Profile"
-          title={selectedProfile?.name || "Profile"}
-          subtitle={needsSetPassword ? "Set a password for this profile." : "Enter the profile password to continue."}
-          actionLabel="Back"
-          onAction={() => navigation.goBack()}
-        />
+    <AuthStage topPadding={72}>
+      <View style={styles.identity}>
+        {selectedProfile ? <ProfileAvatar profile={selectedProfile} size={96} /> : null}
+        <Text style={[authStyles.heading, styles.center]} accessibilityRole="header">
+          {selectedProfile?.name || "Profile"}
+        </Text>
+        <Text style={[authStyles.subheading, styles.center]}>
+          {needsSetPassword ? "Set a password for this profile." : "Enter the profile password to continue."}
+        </Text>
+      </View>
+      <View style={[authStyles.card, styles.card]}>
         <PasswordField value={password} onChangeText={setPassword} placeholder="Password" />
-        <Pressable onPress={submit} disabled={submitting} style={styles.button}>
-          <View style={styles.buttonContent}>
-            <Feather name={needsSetPassword ? "lock" : "log-in"} size={18} color={colors.primaryText} />
-            <Text style={styles.buttonLabel}>
-              {submitting ? "Working..." : needsSetPassword ? "Set Password" : "Sign In"}
-            </Text>
-          </View>
-        </Pressable>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        <PrimaryButton
+          large
+          icon={needsSetPassword ? "lock" : "log-in"}
+          label={submitting ? "Working..." : needsSetPassword ? "Set Password" : "Sign In"}
+          onPress={submit}
+          disabled={submitting}
+        />
+      </View>
+      <Pressable onPress={() => navigation.goBack()} style={styles.back} accessibilityRole="button">
+        <Feather name="chevron-left" size={16} color={colors.textMuted} />
+        <Text style={styles.backLabel}>Back</Text>
+      </Pressable>
+    </AuthStage>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  screen: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  content: {
-    padding: 24,
-    flexGrow: 1,
-  },
-  button: {
-    marginTop: 16,
-    backgroundColor: colors.primary,
-    borderRadius: 16,
-    paddingVertical: 15,
+  identity: {
     alignItems: "center",
+    gap: 10,
   },
-  buttonContent: {
+  center: {
+    textAlign: "center",
+  },
+  card: {
+    marginTop: 28,
+    gap: 14,
+  },
+  back: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    alignSelf: "center",
+    gap: 4,
+    marginTop: 24,
+    padding: 8,
   },
-  buttonLabel: {
-    color: colors.primaryText,
-    fontSize: 16,
-    fontWeight: "700",
+  backLabel: {
+    color: colors.textMuted,
+    fontFamily: fonts.bodySemiBold,
+    fontSize: 14,
   },
 });

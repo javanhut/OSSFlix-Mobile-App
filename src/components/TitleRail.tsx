@@ -11,6 +11,7 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 
 import { colors } from "../theme/colors";
+import { fonts } from "../theme/typography";
 import type { TitleSummary } from "../types/api";
 import { TitleCard } from "./TitleCard";
 
@@ -60,10 +61,9 @@ export function TitleRail({
 
   return (
     <View style={styles.section}>
-      <View style={styles.headingRow}>
-        <View style={styles.headingAccent} />
-        <Text style={styles.heading}>{title.toUpperCase()}</Text>
-      </View>
+      <Text style={styles.heading} accessibilityRole="header">
+        {title}
+      </Text>
       <View style={styles.railWrapper} onLayout={handleLayout}>
         <FlatList
           horizontal
@@ -102,23 +102,12 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: 28,
   },
-  headingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 14,
-  },
-  headingAccent: {
-    width: 4,
-    height: 18,
-    borderRadius: 2,
-    backgroundColor: colors.primary,
-    marginRight: 10,
-  },
   heading: {
     color: colors.text,
-    fontSize: 16,
-    fontWeight: "800",
-    letterSpacing: 1.2,
+    fontFamily: fonts.displayBold,
+    fontSize: 20,
+    letterSpacing: -0.4,
+    marginBottom: 12,
   },
   railWrapper: {
     position: "relative",

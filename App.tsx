@@ -10,11 +10,10 @@ function ImmersiveMode() {
   useEffect(() => {
     if (Platform.OS !== "android") return;
 
+    // Edge-to-edge (SDK 54+) already draws a transparent, overlaying nav bar
+    // that reveals on swipe while hidden.
     void NavigationBar.setVisibilityAsync("hidden").catch(() => {});
-    void NavigationBar.setBehaviorAsync("overlay-swipe").catch(() => {});
-    void NavigationBar.setBackgroundColorAsync("#00000000").catch(() => {});
-    void NavigationBar.setButtonStyleAsync("light").catch(() => {});
-    void NavigationBar.setPositionAsync("absolute").catch(() => {});
+    NavigationBar.setStyle("light");
   }, []);
 
   return null;
@@ -23,7 +22,7 @@ function ImmersiveMode() {
 export default function App() {
   return (
     <AppProviders>
-      <StatusBar hidden style="light" translucent />
+      <StatusBar hidden style="light" />
       <ImmersiveMode />
       <RootNavigator />
     </AppProviders>

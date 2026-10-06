@@ -3,11 +3,13 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
-import { useWindowDimensions, View } from "react-native";
+import { StyleSheet, useWindowDimensions, View } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useSessionStore } from "../state/session";
 import { colors } from "../theme/colors";
+import { fonts } from "../theme/typography";
 import { ExploreScreen } from "../screens/ExploreScreen";
 import { GenreScreen } from "../screens/GenreScreen";
 import { HomeScreen } from "../screens/HomeScreen";
@@ -37,7 +39,8 @@ export type RootStackParamList = {
   SignIn: undefined;
   Register: undefined;
   MainTabs: undefined;
-  TitleDetails: { dirPath: string };
+  /** autoplay: open the player as soon as the title has loaded (hero "Play"). */
+  TitleDetails: { dirPath: string; autoplay?: boolean };
   Genre: { genre: string };
   Library: { type: string; title: string };
   Watchlist: undefined;
@@ -88,7 +91,7 @@ function MainTabs() {
 
   const tabBarStyle = isLandscape
     ? {
-        backgroundColor: colors.surfaceElevated,
+        backgroundColor: colors.glassStrong,
         borderRightColor: colors.border,
         borderRightWidth: 1,
         borderTopWidth: 0,
@@ -103,7 +106,7 @@ function MainTabs() {
         maxWidth: railWidth,
       }
     : {
-        backgroundColor: colors.surfaceElevated,
+        backgroundColor: colors.glassStrong,
         borderTopColor: colors.border,
         paddingTop: 14,
         paddingBottom: insets.bottom + extraBottom,
@@ -117,8 +120,8 @@ function MainTabs() {
         headerShown: false,
         tabBarPosition: isLandscape ? "left" : "bottom",
         tabBarVariant: "uikit",
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textMuted,
+        tabBarActiveTintColor: "#ffffff",
+        tabBarInactiveTintColor: colors.textDim,
         tabBarActiveBackgroundColor: "transparent",
         tabBarInactiveBackgroundColor: "transparent",
         tabBarShowLabel: !isLandscape,
@@ -133,7 +136,7 @@ function MainTabs() {
               backgroundColor: "transparent",
             }
           : { paddingVertical: 4 },
-        tabBarLabelStyle: { fontSize: 12, fontWeight: "700", marginTop: 6 },
+        tabBarLabelStyle: { fontSize: 12, fontFamily: fonts.bodySemiBold, marginTop: 6 },
       }}
     >
       <Tab.Screen
@@ -180,21 +183,12 @@ function MainTabsWithSidebar() {
   const { width, height } = useWindowDimensions();
   const isLandscape = width > height;
 
+  // Same order as the web navbar.
   const items: SidebarItem[] = [
     {
-      icon: "play-circle",
-      label: "Anime",
-      onPress: () => navigation.navigate("Genre", { genre: "Anime" }),
-    },
-    {
-      icon: "star",
-      label: "Recommendations",
-      onPress: () => navigation.navigate("Recommendations"),
-    },
-    {
-      icon: "bookmark",
-      label: "My List",
-      onPress: () => navigation.navigate("Watchlist"),
+      icon: "film",
+      label: "Movies",
+      onPress: () => navigation.navigate("Library", { type: "Movie", title: "Movies" }),
     },
     {
       icon: "monitor",
@@ -202,9 +196,19 @@ function MainTabsWithSidebar() {
       onPress: () => navigation.navigate("Library", { type: "tv show", title: "TV Shows" }),
     },
     {
-      icon: "film",
-      label: "Movies",
-      onPress: () => navigation.navigate("Library", { type: "Movie", title: "Movies" }),
+      icon: "play-circle",
+      label: "Anime",
+      onPress: () => navigation.navigate("Genre", { genre: "Anime" }),
+    },
+    {
+      icon: "bookmark",
+      label: "My List",
+      onPress: () => navigation.navigate("Watchlist"),
+    },
+    {
+      icon: "star",
+      label: "Recommendations",
+      onPress: () => navigation.navigate("Recommendations"),
     },
   ];
 
@@ -216,6 +220,23 @@ function MainTabsWithSidebar() {
   );
 }
 
+function HeaderFade() {
+  return (
+    <LinearGradient
+      colors={["rgba(7,7,10,0.85)", "rgba(7,7,10,0.35)", "rgba(7,7,10,0)"]}
+      locations={[0, 0.7, 1]}
+      style={StyleSheet.absoluteFill}
+    />
+  );
+}
+
+// Screens with a full-bleed banner/hero draw under a see-through header (web navbar at scroll top).
+const overlayHeader = {
+  title: "",
+  headerTransparent: true,
+  headerBackground: () => <HeaderFade />,
+} as const;
+
 export function RootNavigator() {
   const serverUrl = useSessionStore((state) => state.serverUrl);
   const token = useSessionStore((state) => state.token);
@@ -224,8 +245,10 @@ export function RootNavigator() {
   return (
     <Stack.Navigator
       screenOptions={{
-        headerStyle: { backgroundColor: colors.surface },
+        headerStyle: { backgroundColor: colors.background },
         headerTintColor: colors.text,
+        headerShadowVisible: false,
+        headerTitleStyle: { fontFamily: fonts.displayBold },
         contentStyle: { backgroundColor: colors.background },
       }}
     >
@@ -233,27 +256,19 @@ export function RootNavigator() {
         <Stack.Screen name="ServerConnect" component={ServerConnectScreen} options={{ title: "Connect to Server" }} />
       ) : !token || !profile ? (
         <>
-          <Stack.Screen name="ProfileLookup" component={ProfileLookupScreen} options={{ title: "Find Profile" }} />
-          <Stack.Screen name="ProfileSelect" component={ProfileSelectScreen} options={{ title: "Choose Profile" }} />
-          <Stack.Screen name="SignIn" component={SignInScreen} options={{ title: "Sign In" }} />
+          <Stack.Screen name="ProfileLookup" component={ProfileLookupScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="ProfileSelect" component={ProfileSelectScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="SignIn" component={SignInScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Register" component={RegisterScreen} options={{ title: "Create Profile" }} />
         </>
       ) : (
         <>
           <Stack.Screen name="MainTabs" component={MainTabsWithSidebar} options={{ headerShown: false }} />
-          <Stack.Screen name="TitleDetails" component={TitleDetailsScreen} options={{ title: "Details" }} />
-          <Stack.Screen name="Genre" component={GenreScreen} options={({ route }) => ({ title: route.params.genre })} />
-          <Stack.Screen
-            name="Library"
-            component={LibraryScreen}
-            options={({ route }) => ({ title: route.params.title })}
-          />
-          <Stack.Screen name="Watchlist" component={WatchlistScreen} options={{ title: "My List" }} />
-          <Stack.Screen
-            name="Recommendations"
-            component={RecommendationsScreen}
-            options={{ title: "Recommendations" }}
-          />
+          <Stack.Screen name="TitleDetails" component={TitleDetailsScreen} options={overlayHeader} />
+          <Stack.Screen name="Genre" component={GenreScreen} options={overlayHeader} />
+          <Stack.Screen name="Library" component={LibraryScreen} options={overlayHeader} />
+          <Stack.Screen name="Watchlist" component={WatchlistScreen} options={overlayHeader} />
+          <Stack.Screen name="Recommendations" component={RecommendationsScreen} options={overlayHeader} />
           <Stack.Screen name="SwitchProfile" component={SwitchProfileScreen} options={{ title: "Switch Profile" }} />
           <Stack.Screen
             name="Player"

@@ -6,7 +6,7 @@ import { api } from "../../src/api/client";
 import { useSessionStore } from "../../src/state/session";
 import { renderWithQuery } from "../utils/renderWithQuery";
 
-const navigation = { navigate: jest.fn(), goBack: jest.fn() } as any;
+const navigation = { navigate: jest.fn(), goBack: jest.fn(), setParams: jest.fn() } as any;
 const route = {
   key: "k",
   name: "TitleDetails",
@@ -28,6 +28,7 @@ const baseDetails = {
 beforeEach(() => {
   navigation.navigate.mockReset();
   navigation.goBack.mockReset();
+  navigation.setParams.mockReset();
   useSessionStore.setState({
     bootstrapped: false,
     serverUrl: "http://media.local",
@@ -48,6 +49,30 @@ afterEach(() => {
 });
 
 describe("TitleDetailsScreen", () => {
+  it("autoplay opens the player at the resume point once, then clears the flag", async () => {
+    jest
+      .spyOn(api, "getProgressForDir")
+      .mockResolvedValue([
+        { video_src: "shows/Foo/foo_s1_ep2.mkv", dir_path: "shows/Foo", current_time: 60, duration: 1200 },
+      ]);
+    const autoplayRoute = { ...route, params: { dirPath: "shows/Foo", autoplay: true } };
+    renderWithQuery(<TitleDetailsScreen navigation={navigation} route={autoplayRoute} />);
+    await waitFor(() =>
+      expect(navigation.navigate).toHaveBeenCalledWith(
+        "Player",
+        expect.objectContaining({ dirPath: "shows/Foo", startIndex: 1, initialTime: 60 }),
+      ),
+    );
+    expect(navigation.setParams).toHaveBeenCalledWith({ autoplay: false });
+    expect(navigation.navigate).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not open the player without autoplay", async () => {
+    const { findByText } = renderWithQuery(<TitleDetailsScreen navigation={navigation} route={route} />);
+    await findByText("Play");
+    expect(navigation.navigate).not.toHaveBeenCalled();
+  });
+
   it("renders the loader while details are loading", () => {
     jest.spyOn(api, "getTitleDetails").mockReturnValue(new Promise(() => {}));
     jest.spyOn(api, "watchlistCheck").mockReturnValue(new Promise(() => {}));
@@ -67,7 +92,7 @@ describe("TitleDetailsScreen", () => {
     expect(getByText("Drama")).toBeTruthy();
     expect(getByText("Cast: Ada, Lin")).toBeTruthy();
     expect(getByText("Play")).toBeTruthy();
-    expect(getByText("Add to My List")).toBeTruthy();
+    expect(getByText("My List")).toBeTruthy();
   });
 
   it("renders Resume when there is in-progress playback", async () => {
@@ -84,7 +109,7 @@ describe("TitleDetailsScreen", () => {
 
     const { findByText, getByText } = renderWithQuery(<TitleDetailsScreen navigation={navigation} route={route} />);
     expect(await findByText("Resume")).toBeTruthy();
-    expect(getByText("Remove from My List")).toBeTruthy();
+    expect(getByText("In My List")).toBeTruthy();
   });
 
   it("navigates to Player from the Play button using the resume entry index", async () => {
@@ -166,7 +191,7 @@ describe("TitleDetailsScreen", () => {
     const addSpy = jest.spyOn(api, "addToWatchlist").mockResolvedValue({ ok: true });
 
     const { findByText } = renderWithQuery(<TitleDetailsScreen navigation={navigation} route={route} />);
-    const button = await findByText("Add to My List");
+    const button = await findByText("My List");
     await act(async () => {
       fireEvent.press(button);
     });
@@ -180,7 +205,7 @@ describe("TitleDetailsScreen", () => {
     const removeSpy = jest.spyOn(api, "removeFromWatchlist").mockResolvedValue({ ok: true });
 
     const { findByText } = renderWithQuery(<TitleDetailsScreen navigation={navigation} route={route} />);
-    const button = await findByText("Remove from My List");
+    const button = await findByText("In My List");
     await act(async () => {
       fireEvent.press(button);
     });
@@ -194,7 +219,7 @@ describe("TitleDetailsScreen", () => {
     jest.spyOn(api, "addToWatchlist").mockRejectedValue(new Error("boom"));
 
     const { findByText } = renderWithQuery(<TitleDetailsScreen navigation={navigation} route={route} />);
-    const button = await findByText("Add to My List");
+    const button = await findByText("My List");
     await act(async () => {
       fireEvent.press(button);
     });
@@ -210,7 +235,7 @@ describe("TitleDetailsScreen", () => {
     jest.spyOn(api, "addToWatchlist").mockRejectedValue("weird");
 
     const { findByText } = renderWithQuery(<TitleDetailsScreen navigation={navigation} route={route} />);
-    const button = await findByText("Add to My List");
+    const button = await findByText("My List");
     await act(async () => {
       fireEvent.press(button);
     });

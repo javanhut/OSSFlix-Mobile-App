@@ -49,7 +49,7 @@ describe("LibraryScreen", () => {
   it("shows the empty state when no titles match", async () => {
     jest.spyOn(api, "getLibrary").mockResolvedValue([]);
     const { findByText } = renderWithQuery(<LibraryScreen />);
-    expect(await findByText("No movies found")).toBeTruthy();
+    expect(await findByText("No movies found.")).toBeTruthy();
   });
 
   it("navigates to TitleDetails when a card is pressed", async () => {

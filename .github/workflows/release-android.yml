@@ -137,6 +137,10 @@ jobs:
         if: steps.cache-node-modules-build.outputs.cache-hit != 'true'
         run: bun install --frozen-lockfile
 
+      # Ivaldi checkouts don't always keep the executable bit on the wrapper.
+      - name: Make Gradle wrapper executable
+        run: chmod +x android/gradlew
+
       - name: Build release APK
         working-directory: android
         run: ./gradlew assembleRelease --no-daemon

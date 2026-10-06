@@ -24,6 +24,11 @@
         "foregroundImage": "./assets/ReelScape_Icon.png",
         "backgroundColor": "#0b1020"
       }
-    }
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-status-bar",
+      "expo-font"
+    ]
   }
 }

@@ -1,100 +1,101 @@
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, type StyleProp, StyleSheet, Text, View, type ViewStyle } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 
 import { resolveAssetUrl } from "../api/client";
 import { colors } from "../theme/colors";
+import { fonts } from "../theme/typography";
 import type { TitleSummary } from "../types/api";
-import { formatTitleType } from "../utils/titleType";
 
-export function TitleCard({ item, onPress, width = 170 }: { item: TitleSummary; onPress: () => void; width?: number }) {
+/** Poster card with the title overlaid on a bottom scrim (web `.oss-card`). */
+export function TitleCard({
+  item,
+  onPress,
+  width = 140,
+  style,
+}: {
+  item: TitleSummary;
+  onPress: () => void;
+  width?: number;
+  style?: StyleProp<ViewStyle>;
+}) {
   const imageUrl = resolveAssetUrl(item.imagePath);
   const progress = typeof item.progressPct === "number" ? Math.max(0, Math.min(100, item.progressPct)) : 0;
 
   return (
-    <Pressable onPress={onPress} style={[styles.card, { width }]}>
-      <View style={styles.imageWrapper}>
-        {imageUrl ? (
-          <Image source={{ uri: imageUrl }} style={styles.image} />
-        ) : (
-          <View style={[styles.image, styles.placeholder]}>
-            <Text style={styles.placeholderLabel}>{item.name}</Text>
-          </View>
-        )}
-        {progress > 0 ? (
-          <View style={styles.progressTrack} pointerEvents="none" testID="title-card-progress">
-            <View style={[styles.progressFill, { width: `${progress}%` }]} testID="title-card-progress-fill" />
-          </View>
-        ) : null}
-      </View>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={item.name}
+      style={({ pressed }) => [styles.card, { width }, style, pressed && styles.cardPressed]}
+    >
+      {imageUrl ? (
+        <Image source={{ uri: imageUrl }} style={styles.image} resizeMode="cover" />
+      ) : (
+        <View style={[styles.image, styles.placeholder]} />
+      )}
+      <LinearGradient pointerEvents="none" colors={["rgba(0,0,0,0)", "rgba(0,0,0,0.9)"]} style={styles.scrim} />
       <Text style={styles.title} numberOfLines={2}>
         {item.name}
       </Text>
-      {!!item.type && (
-        <View style={styles.badge}>
-          <Text style={styles.badgeLabel}>{formatTitleType(item.type)}</Text>
+      {progress > 0 ? (
+        <View style={styles.progressTrack} pointerEvents="none" testID="title-card-progress">
+          <View style={[styles.progressFill, { width: `${progress}%` }]} testID="title-card-progress-fill" />
         </View>
-      )}
+      ) : null}
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    width: 170,
-    marginRight: 14,
+    aspectRatio: 2 / 3,
+    marginRight: 12,
+    borderRadius: 10,
+    overflow: "hidden",
+    backgroundColor: colors.surfaceElevated,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.05)",
   },
-  imageWrapper: {
-    position: "relative",
+  cardPressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.97 }],
   },
   image: {
+    ...StyleSheet.absoluteFill,
     width: "100%",
-    aspectRatio: 0.72,
-    borderRadius: 16,
-    backgroundColor: colors.border,
+    height: "100%",
   },
   placeholder: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 16,
+    backgroundColor: colors.surfaceElevated,
   },
-  placeholderLabel: {
-    color: colors.textSoft,
-    textAlign: "center",
-    fontWeight: "700",
+  scrim: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: "45%",
+  },
+  title: {
+    position: "absolute",
+    left: 10,
+    right: 10,
+    bottom: 11,
+    color: "#ffffff",
+    fontFamily: fonts.displaySemiBold,
+    fontSize: 13,
+    lineHeight: 17,
+    letterSpacing: -0.1,
   },
   progressTrack: {
     position: "absolute",
-    left: 8,
-    right: 8,
-    bottom: 8,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: "rgba(255,255,255,0.25)",
-    overflow: "hidden",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 3,
+    backgroundColor: "rgba(255,255,255,0.2)",
   },
   progressFill: {
     height: "100%",
     backgroundColor: colors.primary,
-    borderRadius: 2,
-  },
-  title: {
-    marginTop: 10,
-    color: colors.text,
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  badge: {
-    alignSelf: "flex-start",
-    marginTop: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 999,
-    backgroundColor: colors.surfaceAccent,
-  },
-  badgeLabel: {
-    color: colors.textSoft,
-    fontSize: 11,
-    fontWeight: "700",
   },
 });

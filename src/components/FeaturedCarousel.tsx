@@ -11,20 +11,43 @@ import {
   View,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { Feather } from "@expo/vector-icons";
+import { useQuery } from "@tanstack/react-query";
 
-import { resolveAssetUrl } from "../api/client";
-import { colors } from "../theme/colors";
+import { api, resolveAssetUrl } from "../api/client";
+import { brandGradient, colors } from "../theme/colors";
+import { fonts } from "../theme/typography";
 import type { TitleSummary } from "../types/api";
+import { GlassButton, PlayButton } from "./Buttons";
+import { SCREEN_GUTTER } from "./PageHero";
 
-const AUTO_ADVANCE_MS = 6000;
+const AUTO_ADVANCE_MS = 8000;
 
+function HeroDescription({ dirPath }: { dirPath: string }) {
+  // Shares the cache with TitleDetailsScreen, so opening the title afterwards is instant.
+  const query = useQuery({
+    queryKey: ["title-details", dirPath],
+    queryFn: () => api.getTitleDetails(dirPath),
+    staleTime: 5 * 60 * 1000,
+  });
+  if (!query.data?.description) return null;
+  return (
+    <Text style={styles.description} numberOfLines={3}>
+      {query.data.description}
+    </Text>
+  );
+}
+
+/** Full-bleed home hero carousel (web `MediaCarousel`). */
 export function FeaturedCarousel({
   items,
   onSelect,
+  onPlay,
+  height,
 }: {
   items: TitleSummary[];
   onSelect: (item: TitleSummary) => void;
+  onPlay?: (item: TitleSummary) => void;
+  height: number;
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [slideWidth, setSlideWidth] = useState(0);
@@ -70,7 +93,7 @@ export function FeaturedCarousel({
   if (!items.length) return null;
 
   return (
-    <View style={styles.wrapper} onLayout={handleLayout}>
+    <View style={[styles.wrapper, { height }]} onLayout={handleLayout}>
       <FlatList
         ref={listRef}
         data={items}
@@ -84,10 +107,10 @@ export function FeaturedCarousel({
           offset: slideWidth * index,
           index,
         })}
-        renderItem={({ item }) => {
+        renderItem={({ item, index }) => {
           const imageUrl = resolveAssetUrl(item.imagePath);
           return (
-            <Pressable onPress={() => onSelect(item)} style={[styles.slide, { width: slideWidth }]}>
+            <View style={[styles.slide, { width: slideWidth, height }]}>
               {imageUrl ? (
                 <Image source={{ uri: imageUrl }} style={styles.image} resizeMode="cover" />
               ) : (
@@ -95,30 +118,54 @@ export function FeaturedCarousel({
               )}
               <LinearGradient
                 pointerEvents="none"
-                colors={["transparent", "rgba(7,11,22,0.92)"]}
-                style={styles.overlay}
+                colors={["rgba(7,7,10,0.85)", "rgba(7,7,10,0.35)", "rgba(7,7,10,0)"]}
+                locations={[0, 0.5, 1]}
+                style={styles.topFade}
+              />
+              <LinearGradient
+                pointerEvents="none"
+                colors={["rgba(7,7,10,0)", "rgba(7,7,10,0.6)", colors.background]}
+                locations={[0, 0.55, 1]}
+                style={styles.bottomFade}
               />
               <View style={styles.content}>
-                <View style={styles.eyebrowBadge}>
-                  <Text style={styles.eyebrow}>Newly Added</Text>
-                </View>
-                <Text style={styles.title} numberOfLines={2}>
+                <Text style={styles.title} numberOfLines={3}>
                   {item.name}
                 </Text>
-                <View style={styles.action}>
-                  <Feather name="play-circle" size={16} color={colors.primaryText} />
-                  <Text style={styles.actionLabel}>Open Title</Text>
+                {index === activeIndex ? <HeroDescription dirPath={item.pathToDir} /> : null}
+                <View style={styles.actions}>
+                  {onPlay ? <PlayButton label="Play" large onPress={() => onPlay(item)} /> : null}
+                  <GlassButton label="More Info" icon="info" large onPress={() => onSelect(item)} />
                 </View>
               </View>
-            </Pressable>
+            </View>
           );
         }}
       />
       {items.length > 1 ? (
         <View style={styles.dots}>
-          {items.map((item, idx) => (
-            <View key={item.pathToDir} style={[styles.dot, idx === activeIndex && styles.dotActive]} />
-          ))}
+          {items.map((item, idx) =>
+            idx === activeIndex ? (
+              <LinearGradient
+                key={item.pathToDir}
+                colors={[...brandGradient]}
+                start={{ x: 0, y: 0.5 }}
+                end={{ x: 1, y: 0.5 }}
+                style={[styles.dot, styles.dotActive]}
+              />
+            ) : (
+              <Pressable
+                key={item.pathToDir}
+                hitSlop={8}
+                accessibilityLabel={`Show ${item.name}`}
+                onPress={() => {
+                  listRef.current?.scrollToOffset({ offset: idx * slideWidth, animated: true });
+                  setActiveIndex(idx);
+                }}
+                style={styles.dot}
+              />
+            ),
+          )}
         </View>
       ) : null}
     </View>
@@ -127,88 +174,78 @@ export function FeaturedCarousel({
 
 const styles = StyleSheet.create({
   wrapper: {
-    marginBottom: 24,
+    marginHorizontal: -SCREEN_GUTTER,
+    marginTop: -SCREEN_GUTTER,
+    marginBottom: 20,
   },
   slide: {
-    aspectRatio: 16 / 9,
-    borderRadius: 20,
     overflow: "hidden",
-    backgroundColor: colors.surfaceElevated,
+    backgroundColor: colors.surface,
   },
   image: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     width: "100%",
     height: "100%",
   },
   imageFallback: {
     backgroundColor: colors.surfaceElevated,
   },
-  overlay: {
+  topFade: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 120,
+  },
+  bottomFade: {
     position: "absolute",
     left: 0,
     right: 0,
     bottom: 0,
-    height: "65%",
+    height: "70%",
   },
   content: {
     position: "absolute",
-    left: 16,
-    right: 16,
-    bottom: 16,
-  },
-  eyebrowBadge: {
-    alignSelf: "flex-start",
-    backgroundColor: "rgba(7,11,22,0.7)",
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
-  },
-  eyebrow: {
-    color: colors.accentText,
-    fontSize: 11,
-    fontWeight: "800",
-    letterSpacing: 1.2,
-    textTransform: "uppercase",
+    left: SCREEN_GUTTER + 4,
+    right: SCREEN_GUTTER + 4,
+    bottom: 44,
   },
   title: {
-    color: colors.text,
-    fontSize: 22,
-    fontWeight: "800",
-    marginTop: 6,
-    lineHeight: 26,
+    color: "#ffffff",
+    fontFamily: fonts.display,
+    fontSize: 36,
+    lineHeight: 38,
+    letterSpacing: -1.3,
   },
-  action: {
-    marginTop: 12,
-    alignSelf: "flex-start",
+  description: {
+    color: "rgba(255,255,255,0.78)",
+    fontFamily: fonts.body,
+    fontSize: 14,
+    lineHeight: 20,
+    marginTop: 10,
+  },
+  actions: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: colors.primary,
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-  },
-  actionLabel: {
-    color: colors.primaryText,
-    fontWeight: "800",
-    fontSize: 13,
+    gap: 10,
+    marginTop: 16,
   },
   dots: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 16,
     flexDirection: "row",
     justifyContent: "center",
-    marginTop: 12,
-    gap: 6,
+    alignItems: "center",
+    gap: 8,
   },
   dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "rgba(255,255,255,0.22)",
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "rgba(255,255,255,0.28)",
   },
   dotActive: {
-    backgroundColor: colors.primary,
-    width: 18,
+    width: 28,
   },
 });

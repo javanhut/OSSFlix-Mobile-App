@@ -9,9 +9,8 @@ describe("AppHeader", () => {
     expect(queryByText("eyebrow")).toBeNull();
   });
 
-  it("renders eyebrow and subtitle when provided", () => {
-    const { getByText } = render(<AppHeader eyebrow="Section" title="Hello" subtitle="A subtitle" />);
-    expect(getByText("Section")).toBeTruthy();
+  it("renders the subtitle when provided", () => {
+    const { getByText } = render(<AppHeader title="Hello" subtitle="A subtitle" />);
     expect(getByText("A subtitle")).toBeTruthy();
   });
 

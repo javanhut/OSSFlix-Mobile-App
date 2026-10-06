@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -13,8 +13,11 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { api, resolveAssetUrl } from "../api/client";
+import { GlassButton, PlayButton } from "../components/Buttons";
 import { EmptyState } from "../components/EmptyState";
 import { EpisodeRow } from "../components/EpisodeRow";
 import { deleteDownload, makeDownloadId, startDownload } from "../downloads/downloadManager";
@@ -22,6 +25,7 @@ import type { RootStackParamList } from "../navigation/RootNavigator";
 import { useDownloadsStore } from "../state/downloads";
 import { useSessionStore } from "../state/session";
 import { colors } from "../theme/colors";
+import { fonts } from "../theme/typography";
 import {
   type AudioVariant,
   compareVideoSrc,
@@ -69,9 +73,10 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
   useAllowRotation();
   const { width, height } = useWindowDimensions();
   const isLandscape = width > height;
+  const insets = useSafeAreaInsets();
 
   const queryClient = useQueryClient();
-  const { dirPath } = route.params;
+  const { dirPath, autoplay } = route.params;
   const detailsQuery = useQuery({
     queryKey: ["title-details", dirPath],
     queryFn: () => api.getTitleDetails(dirPath),
@@ -247,6 +252,23 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
     return { startIndex: 0, initialTime: 0 };
   }, [filteredVideos, progressQuery.data]);
 
+  // Hero "Play" lands here with autoplay; start playback once the resume point is known.
+  const autoplayedRef = useRef(false);
+  useEffect(() => {
+    const data = detailsQuery.data;
+    if (!autoplay || autoplayedRef.current || !data || !playTarget || progressQuery.isLoading) return;
+    autoplayedRef.current = true;
+    navigation.setParams({ autoplay: false });
+    navigation.navigate("Player", {
+      dirPath: data.dirPath,
+      title: data.name,
+      videos: filteredVideos,
+      startIndex: playTarget.startIndex,
+      initialTime: playTarget.initialTime,
+      subtitles: data.subtitles,
+    });
+  }, [autoplay, detailsQuery.data, playTarget, progressQuery.isLoading, filteredVideos, navigation]);
+
   if (detailsQuery.isLoading) {
     return (
       <View style={styles.loading}>
@@ -297,10 +319,46 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
 
   const showDropdown = seasonKeys.length >= 2;
 
+  const inList = !!watchlistQuery.data?.inList;
   const detailsPanel = (
     <>
-      {imageUrl ? <Image source={{ uri: imageUrl }} style={styles.poster} /> : <View style={styles.posterFallback} />}
-      <Text style={styles.title}>{details.name}</Text>
+      <View style={[styles.banner, { minHeight: (isLandscape ? 200 : 260) + insets.top }]}>
+        {imageUrl ? (
+          <Image source={{ uri: imageUrl }} style={styles.bannerImage} resizeMode="cover" />
+        ) : (
+          <View style={[styles.bannerImage, styles.bannerFallback]} />
+        )}
+        <LinearGradient
+          pointerEvents="none"
+          colors={["rgba(7,7,10,0.7)", "rgba(7,7,10,0)"]}
+          style={styles.bannerTopFade}
+        />
+        <LinearGradient
+          pointerEvents="none"
+          colors={["rgba(7,7,10,0)", "rgba(7,7,10,0.55)", colors.background]}
+          locations={[0, 0.5, 1]}
+          style={styles.bannerScrim}
+        />
+        <View style={styles.bannerCopy}>
+          <Text style={styles.title} numberOfLines={2} accessibilityRole="header">
+            {details.name}
+          </Text>
+          <Pressable
+            onPress={() => toggleWatchlist.mutate()}
+            accessibilityRole="button"
+            style={({ pressed }) => [
+              styles.listPill,
+              inList && styles.listPillActive,
+              pressed && styles.listPillPressed,
+            ]}
+          >
+            <Feather name={inList ? "check" : "plus"} size={14} color={inList ? colors.accentSoft : colors.text} />
+            <Text style={[styles.listPillLabel, inList && styles.listPillLabelActive]}>
+              {inList ? "In My List" : "My List"}
+            </Text>
+          </Pressable>
+        </View>
+      </View>
       <Text style={styles.meta}>{formatTitleType(details.type)}</Text>
       <Text style={styles.description}>{description}</Text>
       {details.genre?.length ? (
@@ -318,7 +376,10 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
       ) : null}
       {details.cast?.length ? <Text style={styles.cast}>Cast: {details.cast.join(", ")}</Text> : null}
       <View style={styles.actionRow}>
-        <Pressable
+        <PlayButton
+          large
+          label={playTarget?.initialTime ? "Resume" : "Play"}
+          disabled={!playTarget}
           onPress={() =>
             playTarget &&
             navigation.navigate("Player", {
@@ -330,31 +391,14 @@ export function TitleDetailsScreen({ route, navigation }: Props) {
               subtitles: details.subtitles,
             })
           }
-          disabled={!playTarget}
-          style={[styles.primaryButton, !playTarget && styles.primaryButtonDisabled]}
-        >
-          <View style={styles.buttonContent}>
-            <Feather name={playTarget?.initialTime ? "play" : "play-circle"} size={18} color={colors.primaryText} />
-            <Text style={styles.primaryLabel}>{playTarget?.initialTime ? "Resume" : "Play"}</Text>
-          </View>
-        </Pressable>
-        <Pressable onPress={() => toggleWatchlist.mutate()} style={styles.secondaryButton}>
-          <View style={styles.buttonContent}>
-            <Feather name="bookmark" size={18} color={colors.text} />
-            <Text style={styles.secondaryLabel}>
-              {watchlistQuery.data?.inList ? "Remove from My List" : "Add to My List"}
-            </Text>
-          </View>
-        </Pressable>
+        />
         {filteredVideos.length ? (
-          <Pressable onPress={downloadAll} style={styles.secondaryButton}>
-            <View style={styles.buttonContent}>
-              <Feather name="download" size={18} color={colors.text} />
-              <Text style={styles.secondaryLabel}>
-                {filteredVideos.length > 1 ? `Download all (${filteredVideos.length})` : "Download"}
-              </Text>
-            </View>
-          </Pressable>
+          <GlassButton
+            large
+            icon="download"
+            label={filteredVideos.length > 1 ? `Download all (${filteredVideos.length})` : "Download"}
+            onPress={downloadAll}
+          />
         ) : null}
       </View>
     </>
@@ -512,41 +556,89 @@ const styles = StyleSheet.create({
     backgroundColor: colors.border,
     opacity: 0.4,
   },
-  poster: {
-    width: "100%",
-    aspectRatio: 16 / 9,
-    borderRadius: 24,
-    backgroundColor: colors.surfaceElevated,
-    marginBottom: 18,
+  banner: {
+    marginHorizontal: -20,
+    marginTop: -20,
+    justifyContent: "flex-end",
+    overflow: "hidden",
+    backgroundColor: colors.surface,
   },
-  posterFallback: {
+  bannerImage: {
+    ...StyleSheet.absoluteFill,
     width: "100%",
-    aspectRatio: 16 / 9,
-    borderRadius: 24,
+    height: "100%",
+  },
+  bannerFallback: {
     backgroundColor: colors.surfaceElevated,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginBottom: 18,
+  },
+  bannerTopFade: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 110,
+  },
+  bannerScrim: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: "75%",
+  },
+  bannerCopy: {
+    paddingHorizontal: 22,
+    paddingBottom: 14,
+    gap: 12,
   },
   loading: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#070b16",
+    backgroundColor: colors.background,
   },
   title: {
-    color: colors.text,
+    color: "#ffffff",
+    fontFamily: fonts.display,
     fontSize: 30,
-    fontWeight: "800",
+    lineHeight: 33,
+    letterSpacing: -1,
+  },
+  listPill: {
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 7,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.14)",
+  },
+  listPillActive: {
+    backgroundColor: colors.primaryTint,
+    borderColor: "rgba(59,130,246,0.4)",
+  },
+  listPillPressed: {
+    opacity: 0.8,
+  },
+  listPillLabel: {
+    color: colors.text,
+    fontFamily: fonts.bodySemiBold,
+    fontSize: 13,
+  },
+  listPillLabelActive: {
+    color: colors.accentSoft,
   },
   meta: {
     color: colors.accentText,
-    fontWeight: "700",
-    marginTop: 8,
+    fontFamily: fonts.bodySemiBold,
+    marginTop: 14,
   },
   description: {
     color: colors.textSoft,
-    marginTop: 16,
+    fontFamily: fonts.body,
+    marginTop: 12,
     lineHeight: 22,
     fontSize: 15,
   },
@@ -569,49 +661,19 @@ const styles = StyleSheet.create({
   },
   chipLabel: {
     color: colors.textSoft,
-    fontWeight: "700",
+    fontFamily: fonts.bodySemiBold,
     fontSize: 12,
   },
   cast: {
     color: colors.textMuted,
+    fontFamily: fonts.body,
     marginTop: 16,
     fontSize: 14,
     lineHeight: 21,
   },
   actionRow: {
-    marginTop: 20,
-    gap: 12,
-  },
-  primaryButton: {
-    backgroundColor: colors.primary,
-    borderRadius: 16,
-    paddingVertical: 15,
-    alignItems: "center",
-  },
-  primaryButtonDisabled: {
-    opacity: 0.45,
-  },
-  primaryLabel: {
-    color: colors.primaryText,
-    fontWeight: "700",
-    fontSize: 16,
-  },
-  secondaryButton: {
-    backgroundColor: colors.surfaceAccent,
-    borderRadius: 16,
-    paddingVertical: 15,
-    alignItems: "center",
-  },
-  secondaryLabel: {
-    color: colors.text,
-    fontWeight: "700",
-    fontSize: 15,
-  },
-  buttonContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
+    marginTop: 18,
+    gap: 10,
   },
   seasonSection: {
     marginTop: 24,
@@ -634,7 +696,7 @@ const styles = StyleSheet.create({
   },
   menuSheet: {
     marginTop: 8,
-    backgroundColor: "rgba(10,15,28,0.96)",
+    backgroundColor: colors.glassStrong,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: colors.border,
@@ -656,8 +718,9 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     color: colors.text,
+    fontFamily: fonts.displayBold,
     fontSize: 22,
-    fontWeight: "800",
+    letterSpacing: -0.4,
     marginTop: 24,
     marginBottom: 14,
   },

@@ -884,11 +884,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#000",
   },
   video: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: "#000",
   },
   gestureSurface: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     zIndex: 5,
   },
   topBar: {

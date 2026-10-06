@@ -1,22 +1,37 @@
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, View } from "react-native";
+import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { api } from "../api/client";
-import { AppHeader } from "../components/AppHeader";
 import { EmptyState } from "../components/EmptyState";
-import { TitleCard } from "../components/TitleCard";
+import { PageHero, SCREEN_GUTTER } from "../components/PageHero";
+import { TitleRail } from "../components/TitleRail";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors } from "../theme/colors";
+import type { Recommendation } from "../types/api";
 import { useAllowRotation } from "../hooks/useAllowRotation";
+
+// Group by the first genre in "Because you watch Action, Drama", like the web For You page.
+export function groupRecommendations(recs: Recommendation[]): { title: string; items: Recommendation[] }[] {
+  const grouped = new Map<string, Recommendation[]>();
+  for (const rec of recs) {
+    const match = rec.reason?.match(/Because you watch (.+)/);
+    const topGenre = (match ? match[1]!.split(", ")[0] : null) || "Recommended";
+    const key = topGenre === "Recommended" ? topGenre : `Because you watch ${topGenre}`;
+    const list = grouped.get(key);
+    if (list) list.push(rec);
+    else grouped.set(key, [rec]);
+  }
+  return [...grouped].map(([title, items]) => ({ title, items }));
+}
 
 export function RecommendationsScreen() {
   useAllowRotation();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const query = useQuery({
-    queryKey: ["categories"],
-    queryFn: api.getCategories,
+    queryKey: ["recommendations"],
+    queryFn: () => api.getRecommendations(),
   });
 
   if (query.isLoading) {
@@ -27,16 +42,13 @@ export function RecommendationsScreen() {
     );
   }
 
-  const newlyAdded = (query.data || []).find((row) => row.genre === "Newly Added");
-  const titles = newlyAdded?.titles || [];
+  const recs = query.data || [];
+  const groups = groupRecommendations(recs);
 
   return (
-    <FlatList
-      data={titles}
-      keyExtractor={(item) => item.pathToDir}
-      numColumns={2}
-      columnWrapperStyle={styles.row}
-      contentContainerStyle={styles.list}
+    <ScrollView
+      style={styles.screen}
+      contentContainerStyle={styles.content}
       refreshControl={
         <RefreshControl
           refreshing={query.isRefetching}
@@ -44,22 +56,28 @@ export function RecommendationsScreen() {
           tintColor={colors.primary}
         />
       }
-      ListHeaderComponent={
-        <View style={styles.header}>
-          <AppHeader title="Recommendations" subtitle="Fresh picks based on what's new on this server." />
-        </View>
-      }
-      ListEmptyComponent={
-        <EmptyState title="Nothing to recommend yet" subtitle="As new titles are added, they'll show up here." />
-      }
-      renderItem={({ item }) => (
-        <TitleCard
-          item={item}
-          width={160}
-          onPress={() => navigation.navigate("TitleDetails", { dirPath: item.pathToDir })}
+    >
+      <PageHero
+        title="For You"
+        subtitle="Recommendations based on your watch history."
+        images={recs.map((rec) => rec.imagePath)}
+      />
+      {groups.length ? (
+        groups.map((group) => (
+          <TitleRail
+            key={group.title}
+            title={group.title}
+            items={group.items}
+            onSelect={(item) => navigation.navigate("TitleDetails", { dirPath: item.pathToDir })}
+          />
+        ))
+      ) : (
+        <EmptyState
+          title="No recommendations yet."
+          subtitle="Start watching something and we'll suggest similar titles!"
         />
       )}
-    />
+    </ScrollView>
   );
 }
 
@@ -70,15 +88,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  list: {
-    padding: 18,
-    paddingBottom: 36,
+  screen: {
+    flex: 1,
+    backgroundColor: colors.background,
   },
-  header: {
-    marginBottom: 6,
-  },
-  row: {
-    gap: 14,
-    marginBottom: 18,
+  content: {
+    padding: SCREEN_GUTTER,
+    paddingBottom: 40,
   },
 });

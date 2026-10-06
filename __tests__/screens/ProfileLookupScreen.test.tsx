@@ -28,7 +28,7 @@ afterEach(() => {
 describe("ProfileLookupScreen", () => {
   it("renders the form header and action buttons", () => {
     const { getByText } = render(<ProfileLookupScreen navigation={navigation} route={route} />);
-    expect(getByText("Find a profile")).toBeTruthy();
+    expect(getByText("Welcome back")).toBeTruthy();
     expect(getByText("Find Profiles")).toBeTruthy();
     expect(getByText("Use Unclaimed Profile")).toBeTruthy();
     expect(getByText("Continue as Guest")).toBeTruthy();

@@ -90,11 +90,7 @@ export function DownloadsScreen() {
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <AppHeader
-        eyebrow="Available offline"
-        title="Downloads"
-        subtitle="Watch these titles without a connection to the server."
-      />
+      <AppHeader title="Downloads" subtitle="Watch these titles without a connection to the server." />
       {groups.length === 0 ? (
         <EmptyState
           title="No downloads yet"

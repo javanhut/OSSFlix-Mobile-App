@@ -1,4 +1,4 @@
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 
 import { loadManifest, posterUri, saveManifest, subtitleUri, videoUri } from "../../src/storage/downloadsStorage";
 import type { DownloadsSnapshot } from "../../src/types/downloads";

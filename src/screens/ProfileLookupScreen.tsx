@@ -1,22 +1,15 @@
 import { useState } from "react";
-import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { Alert, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Feather } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { api } from "../api/client";
-import { AppHeader } from "../components/AppHeader";
+import { AuthStage, BrandWordmark, authStyles } from "../components/AuthStage";
+import { GlassButton, PrimaryButton } from "../components/Buttons";
 import { useSessionStore } from "../state/session";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors } from "../theme/colors";
+import { fonts } from "../theme/typography";
 import { useAllowRotation } from "../hooks/useAllowRotation";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ProfileLookup">;
@@ -82,95 +75,110 @@ export function ProfileLookupScreen({ navigation }: Props) {
   };
 
   return (
-    <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === "ios" ? "padding" : "height"}>
-      <ScrollView
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
-      >
-        <AppHeader
-          eyebrow="Connected Server"
-          title="Find a profile"
-          subtitle={currentServerUrl ? currentServerUrl : "No server configured"}
-          actionLabel="Change"
-          onAction={() => setServerUrl("")}
-        />
-        <TextInput
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          autoCorrect={false}
-          placeholder="Email"
-          placeholderTextColor="#64748b"
-          style={styles.input}
-        />
-        <Pressable onPress={handleLookup} disabled={submitting} style={styles.primaryButton}>
-          <Text style={styles.primaryLabel}>{submitting ? "Loading..." : "Find Profiles"}</Text>
-        </Pressable>
-        <Pressable onPress={handleUnclaimed} disabled={submitting} style={styles.secondaryButton}>
-          <Text style={styles.secondaryLabel}>Use Unclaimed Profile</Text>
-        </Pressable>
-        <Pressable onPress={handleGuest} disabled={submitting} style={styles.secondaryButton}>
-          <Text style={styles.secondaryLabel}>Continue as Guest</Text>
-        </Pressable>
+    <AuthStage topPadding={28}>
+      <BrandWordmark />
+      <Text style={styles.tagline}>{"Your library.\nYour screen."}</Text>
+      <View style={styles.panel}>
+        <Text style={authStyles.heading} accessibilityRole="header">
+          Welcome back
+        </Text>
+        <Text style={authStyles.subheading}>Find your profile to start watching.</Text>
+        <View style={[authStyles.card, styles.card]}>
+          <View style={styles.serverRow}>
+            <Feather name="server" size={14} color={colors.textMuted} />
+            <Text style={styles.serverLabel} numberOfLines={1}>
+              {currentServerUrl ? currentServerUrl : "No server configured"}
+            </Text>
+            <Pressable onPress={() => setServerUrl("")} hitSlop={8} accessibilityRole="button">
+              <Text style={styles.changeLabel}>Change</Text>
+            </Pressable>
+          </View>
+          <TextInput
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="email-address"
+            placeholder="Email"
+            placeholderTextColor={colors.textDim}
+            style={authStyles.input}
+          />
+          <PrimaryButton
+            label={submitting ? "Loading..." : "Find Profiles"}
+            onPress={handleLookup}
+            disabled={submitting}
+            large
+          />
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerLabel}>or</Text>
+            <View style={styles.dividerLine} />
+          </View>
+          <GlassButton label="Use Unclaimed Profile" icon="users" onPress={handleUnclaimed} disabled={submitting} />
+          <GlassButton label="Continue as Guest" icon="user" onPress={handleGuest} disabled={submitting} />
+        </View>
         <Pressable onPress={() => navigation.navigate("Register")} style={styles.linkButton}>
           <Text style={styles.linkLabel}>Create a new profile</Text>
         </Pressable>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      </View>
+    </AuthStage>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
+  tagline: {
+    color: "#ffffff",
+    fontFamily: fonts.display,
+    fontSize: 40,
+    lineHeight: 44,
+    letterSpacing: -1.6,
+    marginTop: 64,
+  },
+  panel: {
+    marginTop: 36,
+  },
+  card: {
+    marginTop: 18,
+    gap: 12,
+  },
+  serverRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingBottom: 4,
+  },
+  serverLabel: {
     flex: 1,
-    backgroundColor: colors.background,
+    color: colors.textMuted,
+    fontFamily: fonts.body,
+    fontSize: 13,
   },
-  content: {
-    padding: 20,
-    paddingBottom: 32,
-    flexGrow: 1,
+  changeLabel: {
+    color: colors.accentText,
+    fontFamily: fonts.bodySemiBold,
+    fontSize: 13,
   },
-  input: {
-    backgroundColor: colors.surfaceElevated,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: 16,
-    color: colors.text,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-  },
-  primaryButton: {
-    marginTop: 14,
-    backgroundColor: colors.primary,
-    borderRadius: 16,
-    paddingVertical: 15,
+  dividerRow: {
+    flexDirection: "row",
     alignItems: "center",
+    gap: 10,
   },
-  primaryLabel: {
-    color: colors.primaryText,
-    fontWeight: "700",
-    fontSize: 16,
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.border,
   },
-  secondaryButton: {
-    marginTop: 10,
-    backgroundColor: colors.surfaceAccent,
-    borderRadius: 16,
-    paddingVertical: 14,
-    alignItems: "center",
-  },
-  secondaryLabel: {
-    color: colors.text,
-    fontWeight: "700",
-    fontSize: 15,
+  dividerLabel: {
+    color: colors.textDim,
+    fontFamily: fonts.body,
+    fontSize: 12,
   },
   linkButton: {
-    marginTop: 12,
+    marginTop: 18,
     alignSelf: "center",
   },
   linkLabel: {
     color: colors.accentText,
-    fontWeight: "600",
+    fontFamily: fonts.bodySemiBold,
   },
 });

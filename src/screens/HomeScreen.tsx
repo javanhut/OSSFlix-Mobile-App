@@ -10,15 +10,15 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useNavigation } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { api } from "../api/client";
-import { AppHeader } from "../components/AppHeader";
 import { EmptyState } from "../components/EmptyState";
 import { FeaturedCarousel } from "../components/FeaturedCarousel";
 import { TitleRail } from "../components/TitleRail";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-import { useSessionStore } from "../state/session";
 import { colors } from "../theme/colors";
+import { fonts } from "../theme/typography";
 import { useAllowRotation } from "../hooks/useAllowRotation";
 import type { TitleSummary } from "../types/api";
 
@@ -45,7 +45,8 @@ export function HomeScreen() {
   const { width, height } = useWindowDimensions();
   const isLandscape = width > height;
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const profile = useSessionStore((state) => state.profile);
+  const insets = useSafeAreaInsets();
+  const heroHeight = isLandscape ? height * 0.85 : Math.min(height * 0.64, 620);
   const categoriesQuery = useQuery({
     queryKey: ["categories"],
     queryFn: api.getCategories,
@@ -96,14 +97,19 @@ export function HomeScreen() {
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} />}
     >
-      <Text style={styles.brand}>Reelscape</Text>
-      {!isLandscape ? <AppHeader title={`Welcome back${profile?.name ? `, ${profile.name}` : ""}`} /> : null}
-      {featured.length && !isLandscape ? (
+      {featured.length ? (
         <FeaturedCarousel
           items={featured}
+          height={heroHeight}
           onSelect={(item) => navigation.navigate("TitleDetails", { dirPath: item.pathToDir })}
+          onPlay={(item) => navigation.navigate("TitleDetails", { dirPath: item.pathToDir, autoplay: true })}
         />
-      ) : null}
+      ) : (
+        <View style={{ height: insets.top + 56 }} />
+      )}
+      <Text style={[styles.brand, { top: insets.top + 12 }]} accessibilityRole="header">
+        Reelscape
+      </Text>
       <TitleRail
         title="Continue Watching"
         items={continueWatchingQuery.data?.titles || []}
@@ -135,18 +141,22 @@ export function HomeScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#070b16",
+    backgroundColor: colors.background,
   },
   content: {
     padding: 18,
     paddingBottom: 48,
   },
   brand: {
-    color: colors.primary,
-    fontSize: 28,
-    fontWeight: "900",
-    letterSpacing: -0.5,
-    marginBottom: 20,
+    position: "absolute",
+    left: 22,
+    color: colors.accentText,
+    fontFamily: fonts.display,
+    fontSize: 26,
+    letterSpacing: -1.2,
+    textShadowColor: "rgba(0,0,0,0.5)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 8,
   },
   loading: {
     flex: 1,

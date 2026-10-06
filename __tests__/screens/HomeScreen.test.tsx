@@ -35,7 +35,7 @@ describe("HomeScreen", () => {
     expect(UNSAFE_root).toBeTruthy();
   });
 
-  it("renders the welcome message and rails when data is loaded", async () => {
+  it("renders the brand and rails when data is loaded", async () => {
     jest.spyOn(api, "getCategories").mockResolvedValue([
       {
         genre: "Action",
@@ -51,13 +51,13 @@ describe("HomeScreen", () => {
       titles: [{ name: "Saved", imagePath: null, pathToDir: "movies/Saved" }],
     });
     const { findByText, getByText } = renderWithQuery(<HomeScreen />);
-    expect(await findByText(/Welcome back, Ada/)).toBeTruthy();
-    expect(getByText("CONTINUE WATCHING")).toBeTruthy();
-    expect(getByText("MY LIST")).toBeTruthy();
-    expect(getByText("ACTION")).toBeTruthy();
+    expect(await findByText("Reelscape")).toBeTruthy();
+    expect(getByText("Continue Watching")).toBeTruthy();
+    expect(getByText("My List")).toBeTruthy();
+    expect(getByText("Action")).toBeTruthy();
   });
 
-  it("navigates to TitleDetails when a featured slide is pressed", async () => {
+  it("hero More Info opens details and Play opens details with autoplay", async () => {
     jest.spyOn(api, "getCategories").mockResolvedValue([
       {
         genre: "Newly Added",
@@ -72,11 +72,17 @@ describe("HomeScreen", () => {
     ]);
     jest.spyOn(api, "getContinueWatching").mockResolvedValue({ genre: "Continue", titles: [] });
     jest.spyOn(api, "getWatchlist").mockResolvedValue({ genre: "Watchlist", titles: [] });
+    jest.spyOn(api, "getTitleDetails").mockReturnValue(new Promise(() => {}));
 
-    const { findByText } = renderWithQuery(<HomeScreen />);
-    fireEvent.press(await findByText("Open Title"));
+    const { findByText, getByText } = renderWithQuery(<HomeScreen />);
+    fireEvent.press(await findByText("More Info"));
     expect(mockNavigate).toHaveBeenCalledWith("TitleDetails", {
       dirPath: "movies/Hero",
+    });
+    fireEvent.press(getByText("Play"));
+    expect(mockNavigate).toHaveBeenCalledWith("TitleDetails", {
+      dirPath: "movies/Hero",
+      autoplay: true,
     });
   });
 
@@ -86,14 +92,5 @@ describe("HomeScreen", () => {
     jest.spyOn(api, "getWatchlist").mockResolvedValue({ genre: "Watchlist", titles: [] });
     const { findByText } = renderWithQuery(<HomeScreen />);
     expect(await findByText("No library data yet")).toBeTruthy();
-  });
-
-  it("omits the comma when no profile name is set", async () => {
-    useSessionStore.setState({ profile: null });
-    jest.spyOn(api, "getCategories").mockResolvedValue([]);
-    jest.spyOn(api, "getContinueWatching").mockResolvedValue({ genre: "Continue", titles: [] });
-    jest.spyOn(api, "getWatchlist").mockResolvedValue({ genre: "Watchlist", titles: [] });
-    const { findByText } = renderWithQuery(<HomeScreen />);
-    expect(await findByText("Welcome back")).toBeTruthy();
   });
 });

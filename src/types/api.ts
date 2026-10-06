@@ -35,6 +35,12 @@ export interface TitleSummary {
   progressPct?: number;
 }
 
+export interface Recommendation extends TitleSummary {
+  score: number;
+  /** e.g. "Because you watch Action, Drama" */
+  reason: string;
+}
+
 export interface CategoryRow {
   genre: string;
   titles: TitleSummary[];

@@ -6,9 +6,7 @@ jest.mock("expo-secure-store", () => ({
 
 jest.mock("expo-navigation-bar", () => ({
   setVisibilityAsync: jest.fn(async () => {}),
-  setBehaviorAsync: jest.fn(async () => {}),
-  setBackgroundColorAsync: jest.fn(async () => {}),
-  setButtonStyleAsync: jest.fn(async () => {}),
+  setStyle: jest.fn(),
 }));
 
 jest.mock("expo-screen-orientation", () => ({

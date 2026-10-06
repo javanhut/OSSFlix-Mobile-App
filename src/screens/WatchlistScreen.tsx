@@ -1,12 +1,12 @@
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, View } from "react-native";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { api } from "../api/client";
-import { AppHeader } from "../components/AppHeader";
 import { EmptyState } from "../components/EmptyState";
-import { TitleCard } from "../components/TitleCard";
+import { PageHero } from "../components/PageHero";
+import { PosterGrid } from "../components/PosterGrid";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors } from "../theme/colors";
 import { useAllowRotation } from "../hooks/useAllowRotation";
@@ -27,31 +27,22 @@ export function WatchlistScreen() {
     );
   }
 
+  const items = query.data?.titles || [];
+
   return (
-    <FlatList
-      data={query.data?.titles || []}
-      keyExtractor={(item) => item.pathToDir}
-      numColumns={2}
-      columnWrapperStyle={styles.row}
-      contentContainerStyle={styles.list}
-      refreshControl={
-        <RefreshControl
-          refreshing={query.isRefetching}
-          onRefresh={() => void query.refetch()}
-          tintColor={colors.primary}
+    <PosterGrid
+      items={items}
+      refreshing={query.isRefetching}
+      onRefresh={() => void query.refetch()}
+      onSelect={(item) => navigation.navigate("TitleDetails", { dirPath: item.pathToDir })}
+      header={
+        <PageHero
+          title="My List"
+          subtitle={`${items.length} saved ${items.length === 1 ? "title" : "titles"} · Everything you've saved to watch next.`}
+          images={items.map((item) => item.imagePath)}
         />
       }
-      ListHeaderComponent={<AppHeader title="My List" subtitle="Titles you have explicitly saved for quick access." />}
-      ListEmptyComponent={
-        <EmptyState title="Your list is empty" subtitle="Add titles from any details screen to keep them here." />
-      }
-      renderItem={({ item }) => (
-        <TitleCard
-          item={item}
-          width={160}
-          onPress={() => navigation.navigate("TitleDetails", { dirPath: item.pathToDir })}
-        />
-      )}
+      empty={<EmptyState title="Your list is empty." subtitle="Add titles from their detail page." />}
     />
   );
 }
@@ -62,14 +53,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.background,
-  },
-  list: {
-    padding: 18,
-    backgroundColor: colors.background,
-    paddingBottom: 32,
-  },
-  row: {
-    justifyContent: "space-between",
-    marginBottom: 18,
   },
 });

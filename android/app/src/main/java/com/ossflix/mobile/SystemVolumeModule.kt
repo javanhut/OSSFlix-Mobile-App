@@ -13,7 +13,7 @@ class SystemVolumeModule(reactContext: ReactApplicationContext) : ReactContextBa
 
   @ReactMethod
   fun setPlayerStream() {
-    val activity = currentActivity ?: return
+    val activity = reactApplicationContext.currentActivity ?: return
     activity.setVolumeControlStream(AudioManager.STREAM_MUSIC)
   }
 

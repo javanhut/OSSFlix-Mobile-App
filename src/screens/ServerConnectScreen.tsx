@@ -45,7 +45,6 @@ export function ServerConnectScreen() {
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : "height"}>
       <ScrollView style={styles.screen} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <AppHeader
-          eyebrow="Android Setup"
           title="Connect to Reelscape"
           subtitle="Enter the base URL for your server. Example: http://192.168.1.20:3000"
         />
@@ -55,7 +54,7 @@ export function ServerConnectScreen() {
           autoCapitalize="none"
           autoCorrect={false}
           placeholder="http://192.168.1.20:3000"
-          placeholderTextColor="#64748b"
+          placeholderTextColor={colors.textDim}
           style={styles.input}
         />
         <Pressable

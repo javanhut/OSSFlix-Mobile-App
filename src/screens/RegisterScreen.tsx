@@ -54,14 +54,14 @@ export function RegisterScreen() {
           value={name}
           onChangeText={setName}
           placeholder="Profile name"
-          placeholderTextColor="#64748b"
+          placeholderTextColor={colors.textDim}
           style={styles.input}
         />
         <TextInput
           value={email}
           onChangeText={setEmail}
           placeholder="Email"
-          placeholderTextColor="#64748b"
+          placeholderTextColor={colors.textDim}
           autoCapitalize="none"
           style={styles.input}
         />

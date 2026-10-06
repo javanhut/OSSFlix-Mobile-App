@@ -5,6 +5,7 @@ import type {
   PlaybackProgress,
   ProfileData,
   PublicProfile,
+  Recommendation,
   SearchResponse,
   ServerInfo,
   StreamProbeResponse,
@@ -132,7 +133,11 @@ export const api = {
   },
 
   getCategories() {
-    return requestJson<CategoryRow[]>("/api/media/categories", undefined, false);
+    return requestJson<CategoryRow[]>("/api/media/categories");
+  },
+
+  getRecommendations(limit = 5) {
+    return requestJson<Recommendation[]>(`/api/recommendations?limit=${limit}`);
   },
 
   getContinueWatching() {

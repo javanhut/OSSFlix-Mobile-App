@@ -1,4 +1,4 @@
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 
 import { api, resolveAssetUrl } from "../api/client";
 import { buildDownloadsSnapshot, useDownloadsStore } from "../state/downloads";

@@ -3,11 +3,13 @@ import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { NavigationContainer, DarkTheme } from "@react-navigation/native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { useFonts } from "expo-font";
 
 import { bootstrapDownloads } from "../downloads/downloadManager";
 import { buildSessionSnapshot, useSessionStore } from "../state/session";
 import { loadSessionSnapshot, saveSessionSnapshot } from "../storage/sessionStorage";
 import { colors } from "../theme/colors";
+import { fontAssets } from "../theme/typography";
 
 const queryClient = new QueryClient();
 
@@ -18,6 +20,8 @@ function BootstrappedApp({ children }: PropsWithChildren) {
   const token = useSessionStore((state) => state.token);
   const profile = useSessionStore((state) => state.profile);
   const selectedProfile = useSessionStore((state) => state.selectedProfile);
+  // A font load failure falls back to the system font rather than blocking the app.
+  const [fontsLoaded, fontError] = useFonts(fontAssets);
 
   useEffect(() => {
     loadSessionSnapshot()
@@ -39,7 +43,7 @@ function BootstrappedApp({ children }: PropsWithChildren) {
     void saveSessionSnapshot(buildSessionSnapshot());
   }, [bootstrapped, serverUrl, token, profile, selectedProfile]);
 
-  if (!bootstrapped) {
+  if (!bootstrapped || (!fontsLoaded && !fontError)) {
     return (
       <View style={styles.loadingShell}>
         <ActivityIndicator size="large" color={colors.primary} />

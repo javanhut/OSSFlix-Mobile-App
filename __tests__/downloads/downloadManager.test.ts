@@ -1,4 +1,4 @@
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 
 jest.mock("../../src/api/client", () => ({
   api: {
@@ -51,7 +51,7 @@ function fsStore(): Map<string, string> {
 
 async function flush(iterations = 30): Promise<void> {
   for (let i = 0; i < iterations; i++) {
-    await new Promise((resolve) => setImmediate(resolve));
+    await new Promise<void>((resolve) => setImmediate(resolve));
   }
 }
 

@@ -1,19 +1,30 @@
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { type RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { api } from "../api/client";
-import { AppHeader } from "../components/AppHeader";
 import { EmptyState } from "../components/EmptyState";
-import { TitleCard } from "../components/TitleCard";
+import { PageHero } from "../components/PageHero";
+import { PosterGrid } from "../components/PosterGrid";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors } from "../theme/colors";
 import { useAllowRotation } from "../hooks/useAllowRotation";
 
+// Same copy as the web Movies / TV Shows pages.
+function librarySubtitle(type: string, count: number): string {
+  if (type.toLowerCase() === "movie") {
+    return `${count} ${count === 1 ? "movie" : "movies"} · Every film in your library, ready when you are.`;
+  }
+  if (type.toLowerCase() === "tv show") {
+    return `${count} series · Binge-worthy shows, right where you left off.`;
+  }
+  return `${count} ${count === 1 ? "title" : "titles"}`;
+}
+
 export function LibraryScreen() {
   useAllowRotation();
-  const route = useRoute<RouteProp<Record<string, { type: string; title: string }>, string>>();
+  const route = useRoute<RouteProp<RootStackParamList, "Library">>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { type, title } = route.params;
   const query = useQuery({
@@ -29,38 +40,27 @@ export function LibraryScreen() {
     );
   }
 
+  const items = query.data || [];
+
   return (
-    <FlatList
-      data={query.data || []}
-      keyExtractor={(item) => item.pathToDir}
-      numColumns={2}
-      columnWrapperStyle={styles.row}
-      contentContainerStyle={styles.list}
-      refreshControl={
-        <RefreshControl
-          refreshing={query.isRefetching}
-          onRefresh={() => void query.refetch()}
-          tintColor={colors.primary}
+    <PosterGrid
+      items={items}
+      refreshing={query.isRefetching}
+      onRefresh={() => void query.refetch()}
+      onSelect={(item) => navigation.navigate("TitleDetails", { dirPath: item.pathToDir })}
+      header={
+        <PageHero
+          title={title}
+          subtitle={librarySubtitle(type, items.length)}
+          images={items.map((item) => item.imagePath)}
         />
       }
-      ListHeaderComponent={
-        <View style={styles.header}>
-          <AppHeader title={title} subtitle={`Browse every ${title.toLowerCase()} entry available on this server.`} />
-        </View>
-      }
-      ListEmptyComponent={
+      empty={
         <EmptyState
-          title={`No ${title.toLowerCase()} found`}
+          title={`No ${title.toLowerCase()} found.`}
           subtitle="This server has not scanned any matching titles yet."
         />
       }
-      renderItem={({ item }) => (
-        <TitleCard
-          item={item}
-          width={160}
-          onPress={() => navigation.navigate("TitleDetails", { dirPath: item.pathToDir })}
-        />
-      )}
     />
   );
 }
@@ -71,17 +71,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.background,
-  },
-  list: {
-    padding: 18,
-    backgroundColor: colors.background,
-    paddingBottom: 32,
-  },
-  row: {
-    justifyContent: "space-between",
-    marginBottom: 18,
-  },
-  header: {
-    marginBottom: 8,
   },
 });

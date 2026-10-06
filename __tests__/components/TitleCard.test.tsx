@@ -35,7 +35,6 @@ describe("TitleCard", () => {
   it("falls back to a placeholder with the title text when imagePath is null", () => {
     const item = { ...baseItem, imagePath: null };
     const { getAllByText } = render(<TitleCard item={item} onPress={() => {}} />);
-    // The title appears twice: once in the placeholder, once below the image area.
     expect(getAllByText("Inception").length).toBeGreaterThanOrEqual(1);
   });
 
@@ -44,14 +43,9 @@ describe("TitleCard", () => {
     expect(getByText("Inception")).toBeTruthy();
   });
 
-  it("renders a type badge when item.type is set", () => {
+  it("shows only the title, not a type badge (redesigned poster card)", () => {
     const item = { ...baseItem, type: "Movie" };
-    const { getByText } = render(<TitleCard item={item} onPress={() => {}} />);
-    expect(getByText("Movie")).toBeTruthy();
-  });
-
-  it("does not render a badge when item.type is missing", () => {
-    const { queryByText } = render(<TitleCard item={baseItem} onPress={() => {}} />);
+    const { queryByText } = render(<TitleCard item={item} onPress={() => {}} />);
     expect(queryByText("Movie")).toBeNull();
   });
 

@@ -1,13 +1,13 @@
 import { useMemo } from "react";
-import { ActivityIndicator, FlatList, StyleSheet, View } from "react-native";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { type RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { api } from "../api/client";
-import { AppHeader } from "../components/AppHeader";
 import { EmptyState } from "../components/EmptyState";
-import { TitleCard } from "../components/TitleCard";
+import { PageHero } from "../components/PageHero";
+import { PosterGrid } from "../components/PosterGrid";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors } from "../theme/colors";
 import { useAllowRotation } from "../hooks/useAllowRotation";
@@ -43,32 +43,28 @@ export function GenreScreen() {
     );
   }
 
+  const items = row?.titles || [];
+  const isAnime = ANIME_ALIASES.has(genre.toLowerCase());
+  const count = `${items.length} ${items.length === 1 ? "title" : "titles"}`;
+  const subtitle = isAnime
+    ? `${count} · Series and films from the world of anime.`
+    : row
+      ? `${count} · Everything tagged ${row.genre}.`
+      : `No titles tagged "${genre}" yet.`;
+
   return (
-    <FlatList
-      data={row?.titles || []}
-      keyExtractor={(item) => item.pathToDir}
-      numColumns={2}
-      columnWrapperStyle={styles.row}
-      contentContainerStyle={styles.list}
-      ListHeaderComponent={
-        <View style={styles.header}>
-          <AppHeader
-            eyebrow="Genre"
-            title={row?.genre || genre}
-            subtitle={row ? `Browse every title in ${row.genre}.` : `No titles tagged "${genre}" yet.`}
-          />
-        </View>
-      }
-      ListEmptyComponent={
-        <EmptyState title={`No ${genre} titles`} subtitle="Nothing in this genre is indexed on this server." />
-      }
-      renderItem={({ item }) => (
-        <TitleCard
-          item={item}
-          width={160}
-          onPress={() => navigation.navigate("TitleDetails", { dirPath: item.pathToDir })}
+    <PosterGrid
+      items={items}
+      refreshing={query.isRefetching}
+      onRefresh={() => void query.refetch()}
+      onSelect={(item) => navigation.navigate("TitleDetails", { dirPath: item.pathToDir })}
+      header={<PageHero title={row?.genre || genre} subtitle={subtitle} images={items.map((i) => i.imagePath)} />}
+      empty={
+        <EmptyState
+          title={isAnime ? "No anime found." : `No ${genre} titles`}
+          subtitle="Nothing in this genre is indexed on this server."
         />
-      )}
+      }
     />
   );
 }
@@ -79,18 +75,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.background,
-  },
-  list: {
-    padding: 18,
-    backgroundColor: colors.background,
-    paddingBottom: 32,
-    flexGrow: 1,
-  },
-  row: {
-    justifyContent: "space-between",
-    marginBottom: 18,
-  },
-  header: {
-    marginBottom: 8,
   },
 });

@@ -4,17 +4,11 @@
  */
 
 const mockSetVisibility = jest.fn<Promise<void>, [string]>(async () => {});
-const mockSetBehavior = jest.fn<Promise<void>, [string]>(async () => {});
-const mockSetBg = jest.fn<Promise<void>, [string]>(async () => {});
-const mockSetButton = jest.fn<Promise<void>, [string]>(async () => {});
-const mockSetPosition = jest.fn<Promise<void>, [string]>(async () => {});
+const mockSetStyle = jest.fn<void, [string]>();
 
 jest.mock("expo-navigation-bar", () => ({
   setVisibilityAsync: (arg: string) => mockSetVisibility(arg),
-  setBehaviorAsync: (arg: string) => mockSetBehavior(arg),
-  setBackgroundColorAsync: (arg: string) => mockSetBg(arg),
-  setButtonStyleAsync: (arg: string) => mockSetButton(arg),
-  setPositionAsync: (arg: string) => mockSetPosition(arg),
+  setStyle: (arg: string) => mockSetStyle(arg),
 }));
 
 jest.mock("expo-status-bar", () => ({
@@ -57,10 +51,7 @@ describe("App", () => {
     render(<App />);
     await waitFor(() => {
       expect(mockSetVisibility).toHaveBeenCalledWith("hidden");
-      expect(mockSetBehavior).toHaveBeenCalledWith("overlay-swipe");
-      expect(mockSetBg).toHaveBeenCalledWith("#00000000");
-      expect(mockSetButton).toHaveBeenCalledWith("light");
-      expect(mockSetPosition).toHaveBeenCalledWith("absolute");
+      expect(mockSetStyle).toHaveBeenCalledWith("light");
     });
   });
 
@@ -68,6 +59,6 @@ describe("App", () => {
     Object.defineProperty(Platform, "OS", { configurable: true, value: "ios" });
     render(<App />);
     expect(mockSetVisibility).not.toHaveBeenCalled();
-    expect(mockSetBehavior).not.toHaveBeenCalled();
+    expect(mockSetStyle).not.toHaveBeenCalled();
   });
 });

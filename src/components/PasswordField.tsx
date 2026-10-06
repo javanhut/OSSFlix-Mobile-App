@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, TextInput, type TextInputProps, View } from "rea
 import { Feather } from "@expo/vector-icons";
 
 import { colors } from "../theme/colors";
+import { fonts } from "../theme/typography";
 
 type Props = Omit<TextInputProps, "secureTextEntry"> & {
   /** Override the default placeholder text color so screens can theme if needed. */
@@ -19,7 +20,7 @@ export function PasswordField({ style, placeholderTextColor, ...textProps }: Pro
         secureTextEntry={!visible}
         autoCapitalize="none"
         autoCorrect={false}
-        placeholderTextColor={placeholderTextColor ?? "#64748b"}
+        placeholderTextColor={placeholderTextColor ?? colors.textDim}
         style={styles.input}
       />
       <Pressable
@@ -38,16 +39,17 @@ export function PasswordField({ style, placeholderTextColor, ...textProps }: Pro
 const styles = StyleSheet.create({
   wrapper: {
     position: "relative",
-    backgroundColor: colors.surfaceElevated,
-    borderRadius: 16,
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.borderBright,
     justifyContent: "center",
   },
   input: {
     color: colors.text,
+    fontFamily: fonts.body,
     paddingHorizontal: 16,
-    paddingVertical: 15,
+    paddingVertical: 13,
     paddingRight: 48,
     fontSize: 16,
   },

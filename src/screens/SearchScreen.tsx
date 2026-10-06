@@ -30,7 +30,7 @@ export function SearchScreen() {
         value={query}
         onChangeText={setQuery}
         placeholder="Search titles"
-        placeholderTextColor="#64748b"
+        placeholderTextColor={colors.textDim}
         style={styles.input}
       />
       {results.isFetching && <ActivityIndicator color={colors.primary} style={styles.spinner} />}

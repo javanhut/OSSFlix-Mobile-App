@@ -17,9 +17,23 @@ jest.mock("@expo/vector-icons", () => {
   );
 });
 
-// In-memory expo-file-system so download storage/manager tests can run without
+// Screens read safe-area insets; use the library's mock so they render without a provider.
+jest.mock("react-native-safe-area-context", () => require("react-native-safe-area-context/jest/mock").default);
+
+// PosterWall checks reduce-motion asynchronously; leave it pending so screens don't
+// get state updates after a test finishes. PosterWall's own test overrides this.
+require("react-native").AccessibilityInfo.isReduceMotionEnabled = () => new Promise(() => {});
+
+// Fonts are bundled assets; report them as loaded so screens render immediately.
+jest.mock("expo-font", () => ({
+  useFonts: () => [true, null],
+  loadAsync: jest.fn(async () => {}),
+  isLoaded: () => true,
+}));
+
+// In-memory expo-file-system/legacy so download storage/manager tests can run without
 // native modules and still round-trip the manifest through read/write.
-jest.mock("expo-file-system", () => {
+jest.mock("expo-file-system/legacy", () => {
   const store = new Map();
   return {
     documentDirectory: "file:///documents/",

@@ -24,7 +24,7 @@ beforeEach(() => {
     selectedProfile: null,
   });
   fetchMock = jest.fn() as unknown as FetchMock;
-  global.fetch = fetchMock as unknown as typeof fetch;
+  globalThis.fetch = fetchMock as unknown as typeof fetch;
 });
 
 afterEach(() => {
@@ -242,10 +242,10 @@ describe("api endpoints", () => {
     expectCall(0, { url: `${SERVER}/api/mobile/auth/me`, auth: true });
   });
 
-  it("getCategories is unauthenticated", async () => {
+  it("getCategories is authenticated", async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse([]));
     await api.getCategories();
-    expectCall(0, { url: `${SERVER}/api/media/categories`, auth: false });
+    expectCall(0, { url: `${SERVER}/api/media/categories`, auth: true });
   });
 
   it("getContinueWatching is authenticated", async () => {

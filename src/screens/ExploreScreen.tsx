@@ -3,12 +3,14 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 
 import { api } from "../api/client";
-import { AppHeader } from "../components/AppHeader";
 import { EmptyState } from "../components/EmptyState";
+import { PageHero, SCREEN_GUTTER } from "../components/PageHero";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-import { colors } from "../theme/colors";
+import { brandGradient, colors } from "../theme/colors";
+import { fonts } from "../theme/typography";
 import { useAllowRotation } from "../hooks/useAllowRotation";
 
 export function ExploreScreen() {
@@ -44,9 +46,11 @@ export function ExploreScreen() {
         />
       }
       ListHeaderComponent={
-        <View style={styles.header}>
-          <AppHeader title="Explore" subtitle="Browse every category on this server." />
-        </View>
+        <PageHero
+          title="Explore"
+          subtitle="Browse every genre and tag in your library."
+          images={rows.flatMap((row) => row.titles.slice(0, 2).map((t) => t.imagePath))}
+        />
       }
       ListEmptyComponent={
         <EmptyState
@@ -59,7 +63,12 @@ export function ExploreScreen() {
           onPress={() => navigation.navigate("Genre", { genre: item.genre })}
           style={({ pressed }) => [styles.tile, pressed && styles.tilePressed]}
         >
-          <View style={styles.tileAccent} />
+          <LinearGradient
+            colors={[...brandGradient]}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={styles.tileAccent}
+          />
           <Text style={styles.tileTitle} numberOfLines={2}>
             {item.genre}
           </Text>
@@ -81,28 +90,28 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   list: {
-    padding: 18,
+    padding: SCREEN_GUTTER,
     paddingBottom: 36,
-  },
-  header: {
-    marginBottom: 6,
+    backgroundColor: colors.background,
+    flexGrow: 1,
   },
   row: {
-    gap: 14,
-    marginBottom: 14,
+    gap: 12,
+    marginBottom: 12,
   },
   tile: {
     flex: 1,
     padding: 16,
     borderRadius: 16,
-    backgroundColor: colors.surfaceElevated,
+    backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
     minHeight: 120,
     justifyContent: "space-between",
   },
   tilePressed: {
-    backgroundColor: colors.surfaceAccent,
+    backgroundColor: colors.surfaceHover,
+    borderColor: colors.borderBright,
   },
   tileAccent: {
     width: 30,
@@ -113,8 +122,9 @@ const styles = StyleSheet.create({
   },
   tileTitle: {
     color: colors.text,
+    fontFamily: fonts.displayBold,
     fontSize: 17,
-    fontWeight: "800",
+    letterSpacing: -0.3,
   },
   tileFooter: {
     flexDirection: "row",
@@ -124,7 +134,7 @@ const styles = StyleSheet.create({
   },
   tileCount: {
     color: colors.textMuted,
+    fontFamily: fonts.bodyMedium,
     fontSize: 12,
-    fontWeight: "700",
   },
 });

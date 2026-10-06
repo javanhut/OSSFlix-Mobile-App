@@ -142,7 +142,6 @@ export function SwitchProfileScreen({ navigation }: Props) {
     <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <AppHeader
-          eyebrow="Same email"
           title="Switch Profile"
           subtitle={`Profiles on this server for ${email}.`}
           actionLabel="Back"

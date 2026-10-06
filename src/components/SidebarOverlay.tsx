@@ -4,6 +4,7 @@ import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { colors } from "../theme/colors";
+import { fonts } from "../theme/typography";
 
 export interface SidebarItem {
   icon: React.ComponentProps<typeof Feather>["name"];
@@ -138,7 +139,7 @@ const styles = StyleSheet.create({
     zIndex: 50,
   },
   backdrop: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: "#000",
     zIndex: 60,
   },
@@ -147,16 +148,17 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     left: 0,
-    backgroundColor: "#0b1220",
+    backgroundColor: colors.glassStrong,
     borderRightWidth: 1,
     borderRightColor: colors.border,
     paddingHorizontal: 20,
     zIndex: 70,
   },
   brand: {
-    color: colors.primary,
+    color: colors.accentText,
+    fontFamily: fonts.display,
     fontSize: 24,
-    fontWeight: "900",
+    letterSpacing: -1,
     marginBottom: 24,
   },
   item: {
@@ -172,7 +174,7 @@ const styles = StyleSheet.create({
   },
   itemLabel: {
     color: colors.text,
+    fontFamily: fonts.bodySemiBold,
     fontSize: 16,
-    fontWeight: "700",
   },
 });
